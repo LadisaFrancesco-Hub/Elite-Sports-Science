@@ -1,0 +1,15 @@
+{
+  "name": "Elite Sports Science",
+  "short_name": "Elite",
+  "start_url": "/", 
+  "display": "fullscreen",
+  "background_color": "#0a0f1d",
+  "theme_color": "#0a0f1d",
+  "icons": [
+    {
+      "src": "icona.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
