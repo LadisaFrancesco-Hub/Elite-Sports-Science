@@ -1,0 +1,27 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node --check /Users/ladisa/Desktop/CoachOS/workout.js)",
+      "Bash(node --check /Users/ladisa/Desktop/CoachOS/analytics.js)",
+      "Bash(node --input-type=module)",
+      "Bash(node -e ' *)",
+      "Bash(awk -F: '$2 == \"}\" {print NR\": \"$1}')",
+      "Bash(npx vercel *)",
+      "Bash(vercel *)",
+      "Bash(grep *)",
+      "Bash(git *)",
+      "Bash(gh auth *)",
+      "Bash(brew install *)",
+      "Read(//opt/homebrew/bin/**)",
+      "Read(//usr/local/bin/**)",
+      "Bash(sw_vers)",
+      "Bash(curl -sL https://github.com/cli/cli/releases/download/v2.72.0/gh_2.72.0_macOS_arm64.tar.gz -o /tmp/gh.tar.gz)",
+      "Bash(tar -xzf /tmp/gh.tar.gz -C /tmp)",
+      "Bash(sudo mv /tmp/gh_2.72.0_macOS_arm64/bin/gh /usr/local/bin/gh)",
+      "Bash(gh --version)",
+      "Bash(curl -sL \"https://github.com/cli/cli/releases/download/v2.72.0/gh_2.72.0_macOS_arm64.zip\" -o /tmp/gh.zip)",
+      "Bash(unzip -o /tmp/gh.zip -d /tmp/gh_extracted)",
+      "Bash(sudo mv /tmp/gh_extracted/gh_2.72.0_macOS_arm64/bin/gh /usr/local/bin/gh)"
+    ]
+  }
+}
