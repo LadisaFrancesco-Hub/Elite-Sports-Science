@@ -680,8 +680,11 @@ function renderAthletes() {
 }
 
 async function addAthlete() {
-    const name = document.getElementById('ma-name').value.trim();
-    if (!name) { toast('Inserisci il nome'); return; }
+    const name  = document.getElementById('ma-name').value.trim();
+    const email = document.getElementById('ma-email').value.trim();
+    if (!name)                         { toast('Inserisci il nome');        return; }
+    if (!email || !email.includes('@')) { toast('Inserisci un\'email valida'); return; }
+
     const w  = parseFloat(document.getElementById('ma-w').value)  || 0;
     const bf = parseFloat(document.getElementById('ma-bf').value) || 0;
 
@@ -689,8 +692,11 @@ async function addAthlete() {
     const codiceGenerato = primoNome + Math.floor(1000 + Math.random() * 9000);
     const nuovoId        = uid();
 
+    const btn = document.getElementById('ma-save-btn');
+    btn.textContent = 'Aggiunta...'; btn.disabled = true;
+
     const a = {
-        id: nuovoId, name,
+        id: nuovoId, name, email,
         level:   document.getElementById('ma-lvl').value,
         goal:    document.getElementById('ma-goal').value,
         freq:    +document.getElementById('ma-freq').value,
@@ -701,30 +707,50 @@ async function addAthlete() {
         notes: document.getElementById('ma-notes').value
     };
 
-    // Salva le credenziali su Supabase
     try {
         if (window.mySupabase) {
             const { error } = await window.mySupabase.from('atleti').insert([{
-                id: a.id, name: a.name, codice_accesso: codiceGenerato,
+                id: a.id, name: a.name, email: a.email,
+                codice_accesso: codiceGenerato,
                 level: a.level, goal: a.goal, freq: a.freq,
                 height: a.height, weight: a.weight, bf: a.bf,
                 notes: a.notes, anthropo_history: a.anthropoHistory
             }]);
-            if (error) console.error('Errore salvataggio credenziali:', error);
+            if (error) {
+                toast('Errore: ' + error.message);
+                btn.textContent = 'Aggiungi'; btn.disabled = false;
+                return;
+            }
         }
-    } catch (e) { console.error('Supabase non disponibile:', e); }
+    } catch (e) {
+        toast('Supabase non disponibile: ' + e.message);
+        btn.textContent = 'Aggiungi'; btn.disabled = false;
+        return;
+    }
 
     DB.schedules[a.id] = {
         meso: 'Meso 1', phase: 'Accumulo', coachNote: '', objective: '',
         sessions: [{ id: uid(), name: 'Seduta A', exercises: [] }]
     };
     DB.athletes.push(a);
-    await saveDB(); populateSelects(); renderAthletes(); closeMo('mo-ath');
-    alert(`Atleta aggiunto!\n\nCodice di accesso per ${name}:\n👉 ${codiceGenerato}`);
+    await saveDB();
+    populateSelects();
+    renderAthletes();
+    closeMo('mo-ath');
+    btn.textContent = 'Aggiungi'; btn.disabled = false;
+
+    alert(
+        `Atleta aggiunto!\n\n` +
+        `Nome: ${name}\n` +
+        `Email: ${email}\n` +
+        `Codice di accesso: ${codiceGenerato}\n\n` +
+        `Al primo accesso l'atleta inserisce il codice, poi imposta\n` +
+        `email e password definitivi. Comunicagli il codice.`
+    );
 }
 
 function openNewAthleteModal() {
-    ['ma-name','ma-h','ma-w','ma-bf','ma-notes'].forEach(id => { document.getElementById(id).value = ''; });
+    ['ma-name','ma-email','ma-h','ma-w','ma-bf','ma-notes'].forEach(id => { document.getElementById(id).value = ''; });
     const btn = document.getElementById('ma-save-btn');
     btn.textContent = 'Aggiungi'; btn.onclick = addAthlete;
     openMo('mo-ath');

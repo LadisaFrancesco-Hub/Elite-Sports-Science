@@ -76,6 +76,14 @@ const loginTranslations = {
 
 let currentLoginLang = 'it';
 
+// Stato del login atleta: atleta trovato tramite codice, e il codice stesso
+let pendingAthlete = null;
+let pendingCode    = '';
+
+// Rate limiting: contatore tentativi falliti e timestamp lock
+let loginAttempts  = 0;
+let loginLockUntil = 0;
+
 
 // ─────────────────────────────────────────────────────────────
 // 4. setLoginLanguage(lang)
@@ -108,56 +116,240 @@ function setLoginLanguage(lang) {
 
 
 // ─────────────────────────────────────────────────────────────
-// 5. handleLoginStepCode()
-//    Step 1 del login:
-//      - Codice "COACH" / "ADMIN" → mostra il form admin
-//      - Qualsiasi altro codice   → verifica su Supabase (tabella atleti)
-//      - Se onboarding non completato → mostra wizard
+// 5. Utility rate limiting per il login
+// ─────────────────────────────────────────────────────────────
+function _isLoginLocked() {
+    const now = Date.now();
+    if (loginLockUntil > now) {
+        const secsLeft = Math.ceil((loginLockUntil - now) / 1000);
+        alert(`Troppi tentativi. Riprova tra ${secsLeft} secondi.`);
+        return true;
+    }
+    return false;
+}
+
+function _registerFailedAttempt() {
+    loginAttempts++;
+    if      (loginAttempts >= 10) loginLockUntil = Date.now() + 5 * 60 * 1000;
+    else if (loginAttempts >= 5)  loginLockUntil = Date.now() + 30 * 1000;
+    else if (loginAttempts >= 3)  loginLockUntil = Date.now() + 5 * 1000;
+}
+
+// ─────────────────────────────────────────────────────────────
+// 6. handleLoginStepCode()
+//    Step 1 del login atleta: cerca il profilo tramite codice.
+//    Usa la funzione RPC lookup_athlete_by_code (SECURITY DEFINER)
+//    per evitare di esporre dati sensibili via anon key.
+//    - Atleta con account → chiede la password
+//    - Atleta senza account (legacy) → primo accesso / setup password
 // ─────────────────────────────────────────────────────────────
 async function handleLoginStepCode() {
+    if (_isLoginLocked()) return;
+
     const codice = document.getElementById('input-login-code').value.trim();
     const t      = loginTranslations[currentLoginLang];
 
-    if (!codice) {
-        alert(t.alertEmpty);
-        return;
-    }
+    if (!codice) { alert(t.alertEmpty); return; }
+    if (!window.mySupabase) { alert('Connessione non disponibile. Riprova tra un momento.'); return; }
 
-    if (codice.toUpperCase() === 'COACH' || codice.toUpperCase() === 'ADMIN') {
-        // Accesso coach: mostra il secondo step con email + password
-        document.getElementById('login-step-code').style.display  = 'none';
-        document.getElementById('login-step-admin').style.display = 'block';
-        document.getElementById('login-card').style.borderLeft    = '4px solid #10b981';
-    } else {
-        // Accesso atleta: verifica il codice sul database
-        const { data } = await window.mySupabase
-            .from('atleti')
-            .select('*')
-            .eq('codice_accesso', codice)
-            .single();
+    const btn = document.getElementById('btn-login-code');
+    btn.disabled = true;
+    btn.textContent = '...';
 
-        if (data) {
-            window.mioIdLoggato = data.id;
-            DB.athletes = [data];
-            document.getElementById('login-screen').style.display = 'none';
+    try {
+        // Chiama la funzione RPC sicura che restituisce solo campi non sensibili.
+        // Fallback su query diretta se la funzione non è ancora stata deployata.
+        let athleteInfo = null;
+        let fullData    = null;
 
-            // Se l'onboarding non è stato completato, mostra il wizard
-            if (!data.onboarding_completed) {
-                document.getElementById('onboarding-screen').style.display = 'block';
+        const { data: rpcData, error: rpcErr } = await window.mySupabase
+            .rpc('lookup_athlete_by_code', { p_code: codice });
+
+        if (!rpcErr && Array.isArray(rpcData) && rpcData.length > 0) {
+            athleteInfo = rpcData[0];
+        } else if (rpcErr) {
+            // Funzione non ancora deployata: fallback su query diretta (pre-migrazione)
+            const { data: fd } = await window.mySupabase
+                .from('atleti')
+                .select('id, name, email, user_id, onboarding_completed, codice_accesso')
+                .eq('codice_accesso', codice)
+                .single();
+            if (fd) {
+                fullData    = fd;
+                athleteInfo = { id: fd.id, name: fd.name, email: fd.email, has_auth: !!fd.user_id, onboarding_completed: !!fd.onboarding_completed };
             }
-
-            resolveAppAuth('ATLETA');
-        } else {
-            alert(t.alertErrorCode);
         }
+
+        if (!athleteInfo) {
+            _registerFailedAttempt();
+            alert(t.alertErrorCode);
+            return;
+        }
+
+        // Reset tentativi: il codice era valido
+        loginAttempts = 0;
+        pendingCode   = codice;
+        pendingAthlete = {
+            id:                   athleteInfo.id,
+            name:                 athleteInfo.name,
+            email:                athleteInfo.email || '',
+            has_auth:             athleteInfo.has_auth,
+            onboarding_completed: athleteInfo.onboarding_completed,
+            // conserva dati completi se disponibili dal fallback
+            ...(fullData || {})
+        };
+
+        document.getElementById('login-step-code').style.display = 'none';
+
+        if (athleteInfo.has_auth) {
+            // Atleta con account Supabase Auth → chiede la password
+            const welcome = document.getElementById('lbl-ath-welcome');
+            if (welcome) welcome.textContent = `Bentornato, ${athleteInfo.name.split(' ')[0]}!`;
+            document.getElementById('login-step-athlete-password').style.display = 'block';
+        } else {
+            // Atleta legacy (solo codice) → primo accesso con setup credenziali
+            const emailField = document.getElementById('input-ath-setup-email');
+            if (emailField && athleteInfo.email) emailField.value = athleteInfo.email;
+            document.getElementById('login-step-athlete-setup').style.display = 'block';
+        }
+    } finally {
+        btn.disabled = false;
+        btn.textContent = loginTranslations[currentLoginLang].btnCode;
     }
 }
 
 
 // ─────────────────────────────────────────────────────────────
-// 6. handleLoginAdmin()
-//    Step 2 del login: autentica il coach via email/password
-//    tramite Supabase Auth.
+// 7. handleAthletePasswordLogin()
+//    Step 2A: atleta con account esistente inserisce la password.
+// ─────────────────────────────────────────────────────────────
+async function handleAthletePasswordLogin() {
+    if (_isLoginLocked()) return;
+    if (!pendingAthlete) { backToCodeStep(); return; }
+
+    const password = document.getElementById('input-ath-password').value;
+    if (!password) { alert('Inserisci la password.'); return; }
+
+    const { data, error } = await window.mySupabase.auth.signInWithPassword({
+        email: pendingAthlete.email,
+        password
+    });
+
+    if (error) {
+        _registerFailedAttempt();
+        alert('Password errata. Riprova.');
+        document.getElementById('input-ath-password').value = '';
+        return;
+    }
+
+    loginAttempts = 0;
+    await _completeAthleteLogin();
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// 8. handleAthleteFirstTimeSetup()
+//    Step 2B: atleta legacy crea le proprie credenziali sicure.
+//    Crea il profilo Supabase Auth e collega l'account al profilo.
+// ─────────────────────────────────────────────────────────────
+async function handleAthleteFirstTimeSetup() {
+    if (!pendingAthlete) { backToCodeStep(); return; }
+
+    const email   = document.getElementById('input-ath-setup-email').value.trim();
+    const pass    = document.getElementById('input-ath-setup-password').value;
+    const confirm = document.getElementById('input-ath-setup-confirm').value;
+
+    if (!email || !pass)     { alert('Compila tutti i campi.');                    return; }
+    if (pass.length < 8)     { alert('La password deve avere almeno 8 caratteri.'); return; }
+    if (pass !== confirm)    { alert('Le password non coincidono.');                return; }
+    if (!email.includes('@')){ alert('Inserisci un\'email valida.');                return; }
+
+    const btn = document.querySelector('#login-step-athlete-setup button');
+    if (btn) { btn.disabled = true; btn.textContent = 'Creazione account...'; }
+
+    try {
+        // Crea l'account Supabase Auth
+        const { data: signUpData, error: signUpErr } = await window.mySupabase.auth.signUp({
+            email, password: pass
+        });
+
+        if (signUpErr) { alert('Errore: ' + signUpErr.message); return; }
+
+        const userId = signUpData?.user?.id;
+        if (!userId) {
+            // Email confirmation attiva: informa l'atleta
+            alert('Controlla la tua email per confermare l\'account, poi accedi con email e password.');
+            backToCodeStep();
+            return;
+        }
+
+        // Collega user_id al profilo atleta (via funzione SECURITY DEFINER)
+        const { data: linked } = await window.mySupabase.rpc('link_athlete_auth', {
+            p_athlete_id: pendingAthlete.id,
+            p_user_id:    userId,
+            p_email:      email,
+            p_code:       pendingCode
+        });
+
+        if (!linked) {
+            alert('Errore nel collegamento account. Il codice non corrisponde o l\'account è già collegato.');
+            return;
+        }
+
+        // Accedi con le nuove credenziali
+        const { error: signInErr } = await window.mySupabase.auth.signInWithPassword({ email, password: pass });
+        if (signInErr) {
+            alert('Account creato! Accedi ora con email e password.');
+            backToCodeStep();
+            return;
+        }
+
+        pendingAthlete.email   = email;
+        pendingAthlete.user_id = userId;
+        loginAttempts = 0;
+        await _completeAthleteLogin();
+
+    } finally {
+        if (btn) { btn.disabled = false; btn.textContent = 'Crea account e accedi'; }
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// 9. _completeAthleteLogin()
+//    Finalizza il login atleta: imposta lo stato globale e
+//    risolve la promise di autenticazione.
+// ─────────────────────────────────────────────────────────────
+async function _completeAthleteLogin() {
+    window.mioIdLoggato = pendingAthlete.id;
+    DB.athletes         = [pendingAthlete];
+    document.getElementById('login-screen').style.display = 'none';
+
+    if (!pendingAthlete.onboarding_completed) {
+        document.getElementById('onboarding-screen').style.display = 'block';
+    }
+
+    resolveAppAuth('ATLETA');
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// 10. showCoachLogin()
+//     Mostra il form di login coach (accesso tramite link discreto,
+//     non più tramite parola chiave nel campo codice atleta).
+// ─────────────────────────────────────────────────────────────
+function showCoachLogin() {
+    document.getElementById('login-step-code').style.display  = 'none';
+    document.getElementById('login-step-admin').style.display = 'block';
+    document.getElementById('login-card').style.borderLeft    = '4px solid #10b981';
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// 11. handleLoginAdmin()
+//     Autentica il coach via Supabase Auth.
+//     Imposta il ruolo 'coach' nei metadati utente al primo accesso,
+//     necessario per le policy RLS is_coach().
 // ─────────────────────────────────────────────────────────────
 async function handleLoginAdmin() {
     const email    = document.getElementById('input-admin-email').value.trim();
@@ -176,19 +368,37 @@ async function handleLoginAdmin() {
         return;
     }
 
+    // Imposta role='coach' nei metadati se non ancora presente.
+    // Necessario per le RLS policy is_coach() lato Supabase.
+    if (!data.user?.user_metadata?.role) {
+        await window.mySupabase.auth.updateUser({ data: { role: 'coach' } });
+    }
+
     document.getElementById('login-screen').style.display = 'none';
     resolveAppAuth('ADMIN');
 }
 
 
 // ─────────────────────────────────────────────────────────────
-// 7. backToCodeStep()
-//    Torna dal form admin allo step iniziale del codice atleta.
+// 12. backToCodeStep()
+//     Torna allo step iniziale del codice, resettando tutti gli
+//     step intermedi e lo stato dell'atleta in attesa.
 // ─────────────────────────────────────────────────────────────
 function backToCodeStep() {
-    document.getElementById('login-step-admin').style.display = 'none';
-    document.getElementById('login-step-code').style.display  = 'block';
-    document.getElementById('login-card').style.borderLeft    = '1px solid rgba(255,255,255,0.08)';
+    pendingAthlete = null;
+    pendingCode    = '';
+
+    ['login-step-admin', 'login-step-athlete-password', 'login-step-athlete-setup']
+        .forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+    const pwField = document.getElementById('input-ath-password');
+    if (pwField) pwField.value = '';
+
+    document.getElementById('login-step-code').style.display = 'block';
+    document.getElementById('login-card').style.borderLeft   = '1px solid rgba(255,255,255,0.08)';
 }
 
 
@@ -351,6 +561,42 @@ async function submitOnboarding() {
 //      c) Rimuove lo splash screen
 //      d) Restituisce authPromise (si risolve al login)
 // ─────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────
+// Auto-restore sessione Supabase esistente.
+// Chiamata al boot se getSession() trova un token valido in
+// localStorage — evita di mostrare la login screen all'atleta
+// che aveva già fatto accesso in precedenza.
+// ─────────────────────────────────────────────────────────────
+async function _autoRestoreSession(user) {
+    if (user.user_metadata?.role === 'coach') {
+        const el = document.getElementById('login-screen');
+        if (el) el.style.display = 'none';
+        resolveAppAuth('ADMIN');
+        return;
+    }
+
+    // Atleta: recupera il profilo tramite user_id (RLS garantisce solo il proprio)
+    try {
+        const { data: atleta } = await window.mySupabase
+            .from('atleti')
+            .select('id, name, email, onboarding_completed')
+            .eq('user_id', user.id)
+            .single();
+
+        if (atleta) {
+            window.mioIdLoggato = atleta.id;
+            pendingAthlete      = { ...atleta, has_auth: true };
+            DB.athletes         = [atleta];
+            const el = document.getElementById('login-screen');
+            if (el) el.style.display = 'none';
+            resolveAppAuth('ATLETA');
+        }
+    } catch (e) {
+        console.warn('Sessione trovata ma profilo non recuperato:', e);
+    }
+}
+
+
 async function initApp() {
     console.log("Avvio dell'app con sistema di protezione Fallback...");
 
@@ -386,7 +632,7 @@ async function initApp() {
         console.error('Errore nel caricamento dei dati locali:', e);
     }
 
-    // b) Supabase in background (non blocca lo splash)
+    // b) Supabase in background + auto-restore sessione esistente
     setTimeout(async () => {
         let attempts = 0;
         while (!window.mySupabase && attempts < 10) {
@@ -395,11 +641,19 @@ async function initApp() {
         }
         if (window.mySupabase) {
             console.log('Supabase agganciato in background!');
+            // Controlla se esiste una sessione valida in localStorage.
+            // Se sì, l'utente non vede la login screen.
+            try {
+                const { data: { session } } = await window.mySupabase.auth.getSession();
+                if (session?.user) {
+                    await _autoRestoreSession(session.user);
+                }
+            } catch (e) {
+                console.warn('Errore verifica sessione:', e);
+            }
         } else {
             console.warn('Supabase non disponibile. Modalità offline locale attiva.');
         }
-        // La rimozione dello splash è spostata alla fine di DOMContentLoaded,
-        // dopo go() e tutti i render, per evitare il flash di contenuto.
     }, 500);
 
     // c) Blocco sull'autenticazione

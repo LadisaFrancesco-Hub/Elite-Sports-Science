@@ -53,12 +53,36 @@
         <div style="color: var(--text-muted); font-size: 14px; margin-bottom: 30px;">Performance & Injury Prevention</div>
         <div id="login-step-code">
             <label id="lbl-login-code" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Codice Accesso Atleta</label>
-            <input type="text" id="input-login-code" placeholder="Inserisci il tuo codice" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 20px; outline:none; box-sizing:border-box;">
+            <input type="text" id="input-login-code" placeholder="Inserisci il tuo codice" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 20px; outline:none; box-sizing:border-box;" onkeydown="if(event.key==='Enter')handleLoginStepCode()">
             <button id="btn-login-code" onclick="handleLoginStepCode()" style="width:100%; padding:14px; background:#10b981; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer; transition:background 0.2s;">Accedi</button>
-            <div id="hint-login-code" style="margin-top:15px; font-size:12px; color:#6b7280;"></div>
-            <div style="margin-top: 35px; font-size: 11px; color: #4b5563; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 500;">
+            <div style="margin-top:20px; text-align:center;">
+                <span onclick="showCoachLogin()" style="font-size:12px; color:#4b5563; cursor:pointer; text-decoration:underline; letter-spacing:0.3px;">Accesso Coach</span>
+            </div>
+            <div style="margin-top: 20px; font-size: 11px; color: #4b5563; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 500;">
                 Developed by <span style="color: #6b7280; font-weight: 600;">Francesco Ladisa</span>
             </div>
+        </div>
+        <div id="login-step-athlete-password" style="display:none;">
+            <div id="lbl-ath-welcome" style="font-size:15px; font-weight:700; color:#fff; margin-bottom:6px; text-align:left;"></div>
+            <div style="font-size:12px; color:#6b7280; margin-bottom:20px; text-align:left;">Inserisci la tua password per accedere</div>
+            <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Password</label>
+            <input type="password" id="input-ath-password" name="password" autocomplete="current-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:20px; outline:none; box-sizing:border-box;" onkeydown="if(event.key==='Enter')handleAthletePasswordLogin()">
+            <button onclick="handleAthletePasswordLogin()" style="width:100%; padding:14px; background:#10b981; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Accedi</button>
+            <button onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">← Torna indietro</button>
+        </div>
+        <div id="login-step-athlete-setup" style="display:none;">
+            <div style="background:#1f2937; border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:20px; text-align:left;">
+                <div style="font-size:12px; font-weight:700; color:#f59e0b; margin-bottom:4px;">PRIMA CONFIGURAZIONE</div>
+                <div style="font-size:12px; color:#9ca3af; line-height:1.5;">Crea le tue credenziali sicure. Da ora userai email e password al posto del codice.</div>
+            </div>
+            <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Email</label>
+            <input type="email" id="input-ath-setup-email" name="email" autocomplete="email" placeholder="tua@email.com" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:15px; outline:none; box-sizing:border-box;">
+            <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Password (min 8 caratteri)</label>
+            <input type="password" id="input-ath-setup-password" name="password" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:15px; outline:none; box-sizing:border-box;">
+            <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Conferma password</label>
+            <input type="password" id="input-ath-setup-confirm" name="password-confirm" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:20px; outline:none; box-sizing:border-box;">
+            <button onclick="handleAthleteFirstTimeSetup()" style="width:100%; padding:14px; background:#10b981; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Crea account e accedi</button>
+            <button onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">← Torna indietro</button>
         </div>
         <div id="login-step-admin" style="display:none;">
             <label id="lbl-admin-email" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Email Admin</label>
@@ -123,6 +147,7 @@
     <div class="fg"><label class="fl">Nome completo</label><input type="text" id="ma-name" placeholder="Mario Rossi"></div>
     <div class="fg"><label class="fl">Livello</label><select id="ma-lvl"><option>Principiante</option><option>Intermedio</option><option selected>Intermedio avanzato</option><option>Avanzato</option></select></div>
   </div>
+  <div class="fg"><label class="fl">Email atleta <span style="color:#f59e0b;font-size:10px;">— usata per il login</span></label><input type="email" id="ma-email" placeholder="atleta@email.com"></div>
   <div class="fr">
     <div class="fg"><label class="fl">Obiettivo</label><select id="ma-goal"><option>Performance Atletica</option><option>Riabilitazione</option><option>Mobilità</option><option>Ipertrofia</option><option>Forza</option><option>Potenza</option></select></div>
     <div class="fg"><label class="fl">Sessioni/settimana</label><select id="ma-freq"><option>2</option><option>3</option><option selected>4</option><option>5</option></select></div>
