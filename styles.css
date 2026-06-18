@@ -652,6 +652,28 @@ tr:hover td { background: var(--s2); }
 }
 .toast.show { transform: translateY(0); }
 
+/* Update banner (service worker) */
+.sw-update-banner {
+  position: fixed; top: -80px; left: 50%; transform: translateX(-50%);
+  background: var(--s2); border: 1px solid var(--teal);
+  color: var(--text); border-radius: 12px;
+  display: flex; align-items: center; gap: 12px;
+  padding: 10px 16px; font-size: 13px; font-family: var(--fh); font-weight: 600;
+  z-index: 30001; transition: top .3s ease;
+  box-shadow: 0 8px 24px rgba(0,0,0,.35);
+  white-space: nowrap;
+}
+.sw-update-banner.show { top: 16px; }
+.sw-update-reload {
+  background: var(--teal); color: var(--bg);
+  border: none; border-radius: 8px; padding: 6px 14px;
+  font-family: var(--fh); font-weight: 700; font-size: 12px; cursor: pointer;
+}
+.sw-update-dismiss {
+  background: transparent; color: var(--text-muted);
+  border: none; font-size: 16px; cursor: pointer; padding: 2px 4px; line-height: 1;
+}
+
 /* ══════════════════════════════════════════════════════════════
    ATHLETE CARD
    ══════════════════════════════════════════════════════════════ */

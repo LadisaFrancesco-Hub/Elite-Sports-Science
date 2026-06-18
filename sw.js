@@ -1,66 +1,102 @@
-const CACHE_NAME = 'coachos-elite-v5.7';
-const ASSETS_TO_CACHE = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icona.png' // Se hai chiamato la tua icona in modo diverso, correggi questo nome
-];
+const APP_VERSION = 'v6.0';
+const SHELL_CACHE   = `coachos-shell-${APP_VERSION}`;
+const RUNTIME_CACHE = `coachos-runtime-${APP_VERSION}`;
 
-// FASE 1: Installazione (Salva i file essenziali)
+// App shell: sempre offline-ready
+const SHELL_ASSETS = ['/', '/index.html', '/manifest.json', '/icona.png'];
+
+// Asset statici: stale-while-revalidate (serve veloce, aggiorna in background)
+const STATIC_EXT = /\.(js|css|png|jpg|jpeg|svg|ico|woff2?|ttf|webp)(\?.*)?$/;
+
+// ── Install ───────────────────────────────────────────────────────────────────
+// Non si chiama skipWaiting: l'UI mostra un banner e aspetta il consenso utente.
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      console.log('Cache aperta, salvataggio asset...');
-      return cache.addAll(ASSETS_TO_CACHE);
-    })
+    caches.open(SHELL_CACHE).then(cache => cache.addAll(SHELL_ASSETS))
   );
 });
 
-// FASE 2: Attivazione (Pulisce le vecchie cache spazzatura)
+// ── Activate ──────────────────────────────────────────────────────────────────
 self.addEventListener('activate', (event) => {
+  const keep = new Set([SHELL_CACHE, RUNTIME_CACHE]);
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
-      return Promise.all(
-        cacheNames.map((cache) => {
-          if (cache !== CACHE_NAME) {
-            console.log('Rimozione vecchia cache:', cache);
-            return caches.delete(cache);
-          }
-        })
-      );
-    })
+    caches.keys()
+      .then(keys => Promise.all(keys.filter(k => !keep.has(k)).map(k => caches.delete(k))))
+      .then(() => self.clients.claim())
   );
-  self.clients.claim();
 });
 
-// FASE 3: Intercettazione (Network First, Fallback to Cache)
+// ── Message ───────────────────────────────────────────────────────────────────
+// Il banner nell'UI invia SKIP_WAITING quando l'utente clicca "Ricarica"
+self.addEventListener('message', (event) => {
+  if (event.data?.type === 'SKIP_WAITING') self.skipWaiting();
+});
+
+// ── Fetch ─────────────────────────────────────────────────────────────────────
 self.addEventListener('fetch', (event) => {
-  // 1. FIX CRITICO: Ignora le estensioni di Chrome (Risolve l'errore rosso in console)
-  if (!event.request.url.startsWith('http')) {
-      return;
+  const { request } = event;
+  const url = new URL(request.url);
+
+  // Bypass: schemi non-http e chiamate Supabase
+  if (!request.url.startsWith('http')) return;
+  if (url.hostname.includes('supabase.co')) return;
+
+  // 1. Navigazione → shell cache-first (SPA: serve sempre /index.html)
+  if (request.mode === 'navigate') {
+    event.respondWith(
+      caches.match('/index.html')
+        .then(cached => cached || fetch('/index.html'))
+        .catch(() => new Response('Offline — riconnettiti e ricarica.', {
+          status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' }
+        }))
+    );
+    return;
   }
 
-  // 2. Lasciamo che le chiamate al database Supabase viaggino libere
-  if (event.request.url.includes('supabase.co')) {
-     return; 
+  // 2. Shell assets (manifest, icone) → cache-first
+  if (url.origin === self.location.origin && SHELL_ASSETS.includes(url.pathname)) {
+    event.respondWith(cacheFirst(request, SHELL_CACHE));
+    return;
   }
 
-  event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        if (response && response.status === 200 && response.type === 'basic') {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => {
-            cache.put(event.request, responseClone);
-          });
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(event.request).then((cachedResponse) => {
-          return cachedResponse || caches.match('/index.html');
-        });
-      })
-  );
+  // 3. Asset statici (JS, CSS, immagini, font) → stale-while-revalidate
+  if (url.origin === self.location.origin && STATIC_EXT.test(url.pathname)) {
+    event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
+    return;
+  }
+
+  // 4. Tutto il resto → network-first con fallback cache
+  event.respondWith(networkFirst(request, RUNTIME_CACHE));
 });
+
+// ── Strategie ─────────────────────────────────────────────────────────────────
+
+async function cacheFirst(request, cacheName) {
+  const cached = await caches.match(request);
+  if (cached) return cached;
+  const response = await fetch(request);
+  if (response.ok) (await caches.open(cacheName)).put(request, response.clone());
+  return response;
+}
+
+async function staleWhileRevalidate(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  const cached = await cache.match(request);
+  // Aggiornamento in background: non blocca la risposta all'utente
+  const revalidate = fetch(request).then(response => {
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  }).catch(() => null);
+  return cached ?? (await revalidate);
+}
+
+async function networkFirst(request, cacheName) {
+  const cache = await caches.open(cacheName);
+  try {
+    const response = await fetch(request);
+    if (response.ok) cache.put(request, response.clone());
+    return response;
+  } catch {
+    return (await cache.match(request)) ?? (await caches.match('/index.html'));
+  }
+}

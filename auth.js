@@ -560,9 +560,38 @@ async function loadDB() {
 // 11. Service Worker — PWA offline support
 // ─────────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
-    navigator.serviceWorker
-        .register('./sw.js')
-        .catch(err => console.log('SW Error:', err));
+    navigator.serviceWorker.register('./sw.js').then(reg => {
+        // SW già in attesa (es. tab riaperto dopo un aggiornamento)
+        if (reg.waiting) _showUpdateBanner(reg.waiting);
+
+        // Nuovo SW trovato durante questa sessione
+        reg.addEventListener('updatefound', () => {
+            const newWorker = reg.installing;
+            newWorker.addEventListener('statechange', () => {
+                if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    _showUpdateBanner(newWorker);
+                }
+            });
+        });
+    }).catch(err => console.log('SW Error:', err));
+
+    // Quando il controller cambia (dopo skipWaiting), ricarica per applicare il nuovo SW
+    let _swRefreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        if (!_swRefreshing) { _swRefreshing = true; location.reload(); }
+    });
+}
+
+function _showUpdateBanner(worker) {
+    const banner = document.getElementById('sw-update-banner');
+    if (!banner || banner.classList.contains('show')) return;
+    banner.classList.add('show');
+    banner.querySelector('.sw-update-reload').addEventListener('click', () => {
+        worker.postMessage({ type: 'SKIP_WAITING' });
+    });
+    banner.querySelector('.sw-update-dismiss').addEventListener('click', () => {
+        banner.classList.remove('show');
+    });
 }
 
 
