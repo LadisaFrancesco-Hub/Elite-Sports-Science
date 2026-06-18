@@ -705,7 +705,10 @@ async function addAthlete() {
     try {
         if (window.mySupabase) {
             const { error } = await window.mySupabase.from('atleti').insert([{
-                id: a.id, name: a.name, codice_accesso: codiceGenerato
+                id: a.id, name: a.name, codice_accesso: codiceGenerato,
+                level: a.level, goal: a.goal, freq: a.freq,
+                height: a.height, weight: a.weight, bf: a.bf,
+                notes: a.notes, anthropo_history: a.anthropoHistory
             }]);
             if (error) console.error('Errore salvataggio credenziali:', error);
         }
@@ -759,7 +762,17 @@ async function saveAthleteEdits() {
     a.notes  = document.getElementById('ma-notes').value;
 
     try {
-        if (window.mySupabase) await window.mySupabase.from('atleti').update({ name: a.name }).eq('id', a.id);
+        if (window.mySupabase) await window.mySupabase.from('atleti').update({
+            name:   a.name,
+            level:  a.level,
+            goal:   a.goal,
+            freq:   a.freq,
+            height: a.height,
+            weight: a.weight,
+            bf:     a.bf,
+            notes:  a.notes,
+            anthropo_history: a.anthropoHistory
+        }).eq('id', a.id);
     } catch (e) { console.error('Errore sync Supabase:', e); }
 
     await saveDB(); populateSelects(); renderAthletes(); renderDashboard(); closeMo('mo-ath');
@@ -1737,7 +1750,10 @@ async function submitFB() {
                 doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, reply: ''
             }]);
             if (error) { alert('⚠️ Sync Cloud fallita. Dati salvati in locale.'); }
-            else { toast('Allenamento registrato e sincronizzato nel Cloud! ✓'); window.realLog = {}; }
+            else {
+                if (ath) await window.mySupabase.from('atleti').update({ anthropo_history: ath.anthropoHistory }).eq('id', selAthId);
+                toast('Allenamento registrato e sincronizzato nel Cloud! ✓'); window.realLog = {};
+            }
         } else { window.realLog = {}; }
     } catch (err) { console.error(err); }
 
