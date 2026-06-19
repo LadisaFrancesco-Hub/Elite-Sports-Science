@@ -2,8 +2,8 @@
    ELITE SPORTS SCIENCE — analytics.js
    Responsabilità:
      1.  calculateACWR(athId)              — EWMA duale Gym/Campo
-     2.  renderE1rmChart()                 — Grafico line e1RM per settimana
-     3.  renderAnalytics()                 — Orchestratore pannello Analytics:
+     2.  window.renderE1rmChart()                 — Grafico line e1RM per settimana
+     3.  window.renderAnalytics()                 — Orchestratore pannello Analytics:
      4.  calculateEfficiencyIndex(athId)   — Tonnellaggio / sRPE per settimana
      5.  calculateProgressionIndex(exName) — % incremento e1RM settimanale
      6.  getRollingHrvTrend(athId, days)   — Media mobile 7 gg HRV
@@ -23,10 +23,12 @@
      hrvPerfChart              (let — locale al modulo)
 
    Dipendenze globali (definite in app.js / auth.js / wellness.js):
-     DB, selAthId, athById(), calculateACWR()
+     DB, appState.selAthId, athById(), calculateACWR()
    ══════════════════════════════════════════════════════════════ */
 
-'use strict';
+import { DB, appState } from './state.js';
+import { uid, escHtml, toast, athName, athById } from './utils.js';
+
 
 // Istanze Chart.js — distrutte e ricreate ad ogni render
 let e1rmChartInstance = null;
@@ -55,7 +57,7 @@ let hrvPerfChart      = null;
 //    Requisito minimo: 7 sessioni totali.
 //    Restituisce: { gym: {value, text, color}, field: {value, text, color} }
 // ─────────────────────────────────────────────────────────────
-function calculateACWR(athId) {
+export function calculateACWR(athId) {
     // Copia difensiva — non muta mai l'array globale durante l'iterazione
     const s = [...DB.sessions]
         .filter(x => x.athlete === athId)
@@ -117,18 +119,18 @@ function calculateACWR(athId) {
 
 
 // ─────────────────────────────────────────────────────────────
-// 2. renderE1rmChart(sessionFilter, exerciseFilter)
+// 2. window.renderE1rmChart(sessionFilter, exerciseFilter)
 //    Grafico line — Evoluzione del picco e1RM settimana per
 //    settimana, filtrata per sessione e opzionalmente per esercizio.
 //    Stato vuoto premium: messaggio inline centrato sul canvas.
 //    Gradient fill verde OLED dal 40% all'0% di opacità.
 // ─────────────────────────────────────────────────────────────
-function renderE1rmChart(sessionFilter, exerciseFilter) {
+export function window.renderE1rmChart(sessionFilter, exerciseFilter) {
     const ctxE1rm   = document.getElementById('chart-e1rm');
     const container = ctxE1rm ? ctxE1rm.parentElement : null;
     if (!ctxE1rm || !container) return;
 
-    let sess = DB.sessions.filter(s => s.athlete === selAthId);
+    let sess = DB.sessions.filter(s => s.athlete === appState.selAthId);
     if (sessionFilter) {
         sess = sess.filter(s => s.session === sessionFilter);
     }
@@ -250,15 +252,15 @@ function renderE1rmChart(sessionFilter, exerciseFilter) {
 
 
 // ─────────────────────────────────────────────────────────────
-// 3. renderAnalytics()
+// 3. window.renderAnalytics()
 //    Orchestratore principale del pannello Analytics.
 //    Chiama in sequenza tutti i sotto-motori di calcolo e
-//    rendering. Non accetta argomenti: legge selAthId e DB
+//    rendering. Non accetta argomenti: legge appState.selAthId e DB
 //    dallo stato globale.
 // ─────────────────────────────────────────────────────────────
-function renderAnalytics() {
-    const ath  = athById(selAthId);
-    const sess = DB.sessions.filter(s => s.athlete === selAthId);
+export function window.renderAnalytics() {
+    const ath  = athById(appState.selAthId);
+    const sess = DB.sessions.filter(s => s.athlete === appState.selAthId);
 
     // ── a) Sottotitolo + storico antropometrico ──────────────
     document.getElementById('an-sub').textContent =
@@ -418,7 +420,7 @@ function renderAnalytics() {
     }
 
     // ── e) ACWR Insight Box ───────────────────────────────────
-    const acwrRes = calculateACWR(selAthId);
+    const acwrRes = calculateACWR(appState.selAthId);
     let acwrHtml  = '';
 
     if (acwrRes && acwrRes.field.value !== null) {
@@ -631,7 +633,7 @@ function renderAnalytics() {
             radarPlaceholder.style.display = 'none';
 
             // HRV baseline dinamica: media ultimi 30 giorni
-            const hrvTrend   = getRollingHrvTrend(selAthId, 30);
+            const hrvTrend   = getRollingHrvTrend(appState.selAthId, 30);
             const hrvBaseline = hrvTrend.length > 0
                 ? parseFloat((hrvTrend.reduce((s, p) => s + p.hrv, 0) / hrvTrend.length).toFixed(1))
                 : 65;
@@ -890,7 +892,7 @@ function renderAnalytics() {
     // ── i) HRV TREND — Linea storica + Media Mobile 7 giorni ─
     const hrvTrendWrapper = document.getElementById('hrv-trend-wrapper');
     if (hrvTrendWrapper) {
-        const hrvTrendData = getRollingHrvTrend(selAthId, 30);
+        const hrvTrendData = getRollingHrvTrend(appState.selAthId, 30);
 
         if (hrvTrendData.length < 2) {
             hrvTrendWrapper.innerHTML = '';
@@ -1005,7 +1007,7 @@ function renderAnalytics() {
 //      { week, tonnellaggio, sRPEAvg, efficiencyIndex }
 //    Le settimane prive di entrambi i segnali sono escluse.
 // ─────────────────────────────────────────────────────────────
-function calculateEfficiencyIndex(athId) {
+export function calculateEfficiencyIndex(athId) {
     const sess  = DB.sessions.filter(s => s.athlete === athId);
     const weeks = [...new Set(sess.map(s => s.week))].sort((a, b) => a - b);
 
@@ -1046,9 +1048,9 @@ function calculateEfficiencyIndex(athId) {
 //      avgWeeklyGain → % incremento medio per settimana (può essere <0)
 //      totalGain     → % incremento totale nel periodo considerato
 // ─────────────────────────────────────────────────────────────
-function calculateProgressionIndex(exName, weeks = 4) {
+export function calculateProgressionIndex(exName, weeks = 4) {
     const sess = DB.sessions.filter(
-        s => s.athlete === selAthId &&
+        s => s.athlete === appState.selAthId &&
              s.e1rmPerExercise &&
              (s.e1rmPerExercise[exName] || 0) > 0
     );
@@ -1104,7 +1106,7 @@ function calculateProgressionIndex(exName, weeks = 4) {
 //    Restituisce: array ordinato per data di oggetti
 //      { date: 'YYYY-MM-DD', hrv: number, rolling7d: number|null }
 // ─────────────────────────────────────────────────────────────
-function getRollingHrvTrend(athId, days = 30) {
+export function getRollingHrvTrend(athId, days = 30) {
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - days);
     cutoff.setHours(0, 0, 0, 0);

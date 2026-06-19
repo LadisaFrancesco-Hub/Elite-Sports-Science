@@ -14,12 +14,14 @@
     10. Utilità                              (formatTime)
 
    Dipendenze globali (definite in app.js / auth.js):
-     DB, selAthId, KEY, uid(), saveDB(), getEdExercises(),
-     openMo(), closeMo(), go(), toast(),
-     renderAnalytics(), renderDashboard(), renderE1rmChart()
+     DB, appState.selAthId, KEY, uid(), window.saveDB(), window.getEdExercises(),
+     openMo(), closeMo(), window.go(), toast(),
+     window.renderAnalytics(), window.renderDashboard(), window.renderE1rmChart()
    ══════════════════════════════════════════════════════════════ */
 
-'use strict';
+import { DB, appState, EXERCISE_LIBRARY, KEY } from './state.js';
+import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus } from './utils.js';
+
 
 // ─────────────────────────────────────────────────────────────
 // 1. STATO CONDIVISO DELLA SESSIONE LIVE
@@ -64,7 +66,7 @@ window.liveE1rmNDom = 0;
 //      - Timer REST inline per ogni esercizio
 //      - Ripristino pallini da crash recovery (localStorage)
 // ─────────────────────────────────────────────────────────────
-function loadLive() {
+export function loadLive() {
     try {
     const select     = document.getElementById('lv-sess');
     const selectWeek = document.getElementById('lv-week');
@@ -80,7 +82,7 @@ function loadLive() {
     select.innerHTML = '';
     if (wrap) wrap.innerHTML = '';
 
-    const sch = DB.schedules[selAthId];
+    const sch = DB.schedules[appState.selAthId];
 
     // ── Fallback: nessuna scheda assegnata ───────────────────
     if (!sch || !sch.sessions || sch.sessions.length === 0) {
@@ -100,7 +102,7 @@ function loadLive() {
         });
         const filterDivFallback = document.getElementById('e1rm-ex-filter');
         if (filterDivFallback) filterDivFallback.innerHTML = '';
-        try { renderE1rmChart(); } catch (e) { console.warn('[loadLive] renderE1rmChart fallback:', e); }
+        try { window.renderE1rmChart(); } catch (e) { console.warn('[loadLive] window.renderE1rmChart fallback:', e); }
         return;
     }
 
@@ -135,7 +137,7 @@ function loadLive() {
         if (isSessionChanged) {
             // Trova l'ultima settimana completata per QUESTA sessione
             const pastPerformances = DB.sessions.filter(
-                s => s.athlete === selAthId && s.session === sessionName
+                s => s.athlete === appState.selAthId && s.session === sessionName
             );
             let maxCompletedWeek = 0;
             if (pastPerformances.length > 0) {
@@ -162,7 +164,7 @@ function loadLive() {
         if (wrap) wrap.innerHTML = '<div style="color:var(--muted);padding:10px;text-align:center;">Nessun esercizio programmato per questa seduta.</div>';
         const filterDivEmpty = document.getElementById('e1rm-ex-filter');
         if (filterDivEmpty) filterDivEmpty.innerHTML = '';
-        try { renderE1rmChart(sessionName); } catch (e) { console.warn('[loadLive] renderE1rmChart empty:', e); }
+        try { window.renderE1rmChart(sessionName); } catch (e) { console.warn('[loadLive] window.renderE1rmChart empty:', e); }
         return;
     }
 
@@ -450,7 +452,7 @@ function loadLive() {
             if (ex.anatomicalZone && ex.anatomicalZone !== '') {
                 if (!DB.injuries) DB.injuries = [];
                 const activeInj = DB.injuries.find(inj =>
-                    inj.athlete === selAthId &&
+                    inj.athlete === appState.selAthId &&
                     inj.status  === 'Attivo' &&
                     inj.vas     >= 4 &&
                     inj.zone    === ex.anatomicalZone
@@ -539,7 +541,7 @@ function loadLive() {
                 const el = document.getElementById(id);
                 if (el) el.classList.add('done');
             });
-            setTimeout(() => updateLiveTotals(getEdExercises()), 100);
+            setTimeout(() => updateLiveTotals(window.getEdExercises()), 100);
         }
     } catch (e) { /* Silenzioso: primo avvio senza cache */ }
 
@@ -576,7 +578,7 @@ function loadLive() {
                     this.style.background  = 'var(--teal)';
                     this.style.color       = '#000';
                     this.style.borderColor = 'var(--teal)';
-                    renderE1rmChart(this.dataset.sessName, this.dataset.exName);
+                    window.renderE1rmChart(this.dataset.sessName, this.dataset.exName);
                 });
                 filterDiv.appendChild(btn);
             });
@@ -589,7 +591,7 @@ function loadLive() {
         parseFloat(ex.kg) > 0 &&
         parseInt(ex.rep) > 0
     );
-    try { renderE1rmChart(sessionName, defaultEx ? defaultEx.name : null); } catch (e) { console.warn('[loadLive] renderE1rmChart main:', e); }
+    try { window.renderE1rmChart(sessionName, defaultEx ? defaultEx.name : null); } catch (e) { console.warn('[loadLive] window.renderE1rmChart main:', e); }
     attachDotSwipe();
 
     } catch (err) { console.error('Crash loadLive:', err); }
@@ -608,7 +610,7 @@ function loadLive() {
 //      - Se tutti i set completati: crea/aggiorna sessione nel DB
 //        e propone il redirect al Post-Workout log
 // ─────────────────────────────────────────────────────────────
-function updateLiveTotals(exs) {
+export function updateLiveTotals(exs) {
     let vol                 = 0;
     let sets                = 0;
     let maxE1rm             = 0;
@@ -626,7 +628,7 @@ function updateLiveTotals(exs) {
 
     // Se l'atleta è loggato, gli esercizi vanno presi dalla scheda (non dall'editor)
     if (!exs || exs.length === 0 || window.userRole === 'ATLETA') {
-        const sch     = DB.schedules[selAthId];
+        const sch     = DB.schedules[appState.selAthId];
         const curSess = sch && sch.sessions ? sch.sessions.find(x => x.id === sessId) : null;
         exs = curSess ? curSess.exercises : [];
     }
@@ -719,7 +721,7 @@ function updateLiveTotals(exs) {
     if (tuttiiSetCompletati && maxE1rm > 0) {
         const today   = new Date().toISOString().slice(0, 10);
         let sessioneEsistente = DB.sessions.find(
-            s => s.athlete === selAthId && s.session === sessionName && s.date === today
+            s => s.athlete === appState.selAthId && s.session === sessionName && s.date === today
         );
 
         const roundedE1rmPerEx = Object.fromEntries(
@@ -737,11 +739,11 @@ function updateLiveTotals(exs) {
             // Crea la sessione automaticamente
             DB.sessions.push({
                 id:               'live_speed_' + uid(),
-                athlete:          selAthId,
+                athlete:          appState.selAthId,
                 date:             today,
                 session:          sessionName,
                 week:             weekVal,
-                phase:            DB.schedules[selAthId] ? DB.schedules[selAthId].phase : 'Accumulo',
+                phase:            DB.schedules[appState.selAthId] ? DB.schedules[appState.selAthId].phase : 'Accumulo',
                 readiness:        parseInt(document.getElementById('ring-n').textContent) || 80,
                 vol:              vol,
                 e1rmDom:          Math.round(e1rmDom),
@@ -758,14 +760,14 @@ function updateLiveTotals(exs) {
             });
         }
 
-        saveDB();
-        if (typeof renderAnalytics  === 'function') renderAnalytics();
-        if (typeof renderDashboard  === 'function') renderDashboard();
+        window.saveDB();
+        if (typeof renderAnalytics  === 'function') window.renderAnalytics();
+        if (typeof renderDashboard  === 'function') window.renderDashboard();
 
         // Proposta redirect Post-Workout (con leggero delay per iOS)
         setTimeout(function () {
             if (confirm('🎯 Sessione completata! Ottimo lavoro. Ti va di compilare il feedback Post-Workout ora?')) {
-                go('feedback');
+                window.go('feedback');
                 const pwType = document.getElementById('pw-type');
                 const lvSess = document.getElementById('lv-sess');
                 if (pwType && lvSess && lvSess.options.length > 0 && lvSess.selectedIndex >= 0) {
@@ -787,7 +789,7 @@ function updateLiveTotals(exs) {
 //      - LONG PRESS (>400ms) → openRealLog (modifica Rep/Kg)
 //    Ignora i movimenti verticali (scroll della pagina).
 // ─────────────────────────────────────────────────────────────
-function attachDotSwipe() {
+export function attachDotSwipe() {
     document.querySelectorAll('.dot').forEach(dot => {
         let startX = 0, startY = 0;
         let pressTimer;
@@ -849,7 +851,7 @@ function attachDotSwipe() {
 //      - OFF → rimuove .done, resetta stili e cancella realLog
 //    Aggiorna i totali live con un micro-delay per iOS.
 // ─────────────────────────────────────────────────────────────
-function toggleDot(dot) {
+export function toggleDot(dot) {
     dot.classList.toggle('done');
 
     if (!dot.classList.contains('done')) {
@@ -874,7 +876,7 @@ function toggleDot(dot) {
     }
 
     // Micro-delay necessario per far aggiornare la UI grafica prima del calcolo su iOS
-    setTimeout(() => updateLiveTotals(getEdExercises()), 10);
+    setTimeout(() => updateLiveTotals(window.getEdExercises()), 10);
 }
 
 
@@ -886,8 +888,8 @@ function toggleDot(dot) {
 //      - I valori già inseriti dall'atleta per quel set (se esistono)
 //    Emette un haptic leggero di apertura.
 // ─────────────────────────────────────────────────────────────
-function openRealLog(exIndex, setIndex) {
-    const sch         = DB.schedules[selAthId];
+export function openRealLog(exIndex, setIndex) {
+    const sch         = DB.schedules[appState.selAthId];
     const activeSessId = document.getElementById('lv-sess').value;
     const curSess     = sch.sessions.find(x => x.id === activeSessId);
     const ex          = curSess.exercises[exIndex];
@@ -930,7 +932,7 @@ function openRealLog(exIndex, setIndex) {
 //    chiude il modale e ricalcola i totali live.
 //    Emette una tripla vibrazione di conferma.
 // ─────────────────────────────────────────────────────────────
-function saveRealLog() {
+export function saveRealLog() {
     const exI  = document.getElementById('rl-ex-i').value;
     const setL = document.getElementById('rl-set-l').value;
     const rep  = parseInt(document.getElementById('rl-rep').value)   || 0;
@@ -954,7 +956,7 @@ function saveRealLog() {
     }
 
     closeMo('mo-reallog');
-    updateLiveTotals(getEdExercises());
+    updateLiveTotals(window.getEdExercises());
 
     // Tripla vibrazione di conferma (pattern premium)
     if (navigator.vibrate) navigator.vibrate([30, 50, 30]);
@@ -971,7 +973,7 @@ function saveRealLog() {
 //      "65"    → imposta il valore diretto in kg
 //    Salva in localStorage e sincronizza su Supabase.
 // ─────────────────────────────────────────────────────────────
-async function saveLiveNextLoad(exIndex, val) {
+export async function saveLiveNextLoad(exIndex, val) {
     if (!val || val.trim() === '') return;
 
     const selectLiveSess = document.getElementById('lv-sess');
@@ -979,12 +981,12 @@ async function saveLiveNextLoad(exIndex, val) {
     const currentWeekStr = document.getElementById('lv-week') ? document.getElementById('lv-week').value : '1';
     const currentWeekNum = parseInt(currentWeekStr) || 1;
     const nextWeekNum    = currentWeekNum + 1;
-    const maxWeeks       = DB.schedules[selAthId] ? (DB.schedules[selAthId].duration || 4) : 4;
+    const maxWeeks       = DB.schedules[appState.selAthId] ? (DB.schedules[appState.selAthId].duration || 4) : 4;
 
     // Non scrivere oltre la durata del mesociclo
     if (!activeSessId || nextWeekNum > maxWeeks) return;
 
-    const sch = DB.schedules[selAthId];
+    const sch = DB.schedules[appState.selAthId];
     if (!sch || !sch.sessions) return;
 
     const curSess = sch.sessions.find(x => x.id === activeSessId);
@@ -1055,7 +1057,7 @@ let sharedAudioCtx = null;
  * Deve essere chiamata da qualsiasi handler touch prima
  * di qualsiasi suono reale.
  */
-function unlockAudio() {
+export function unlockAudio() {
     if (!sharedAudioCtx) {
         sharedAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
     }
@@ -1074,7 +1076,7 @@ function unlockAudio() {
  *   - Oscillatore sinusoidale a 880 Hz con fade-out in 1s
  * Usa sharedAudioCtx già sbloccato da unlockAudio().
  */
-function playTimerEndSound() {
+export function playTimerEndSound() {
     if ('vibrate' in navigator) navigator.vibrate([500, 200, 500]);
 
     try {
@@ -1109,7 +1111,7 @@ let activeTimers = {};
  *   - Seconda chiamata (reset) → ferma e ripristina a defaultSeconds
  * Al termine: display "VIA!", suono + vibrazione.
  */
-function startTimer(exerciseId, defaultSeconds) {
+export function startTimer(exerciseId, defaultSeconds) {
     unlockAudio(); // Sblocca audio iOS al primo tap
 
     // Se il timer è già attivo → RESET
@@ -1163,7 +1165,7 @@ let activeIsoTimers = {};
  *   - Seconda chiamata → ferma e ripristina
  * Al termine: display "FINE!", suono + vibrazione.
  */
-function startIsoTimer(exerciseId, defaultSeconds) {
+export function startIsoTimer(exerciseId, defaultSeconds) {
     unlockAudio();
 
     // Se il timer è già attivo → STOP/RESET
@@ -1210,7 +1212,7 @@ function startIsoTimer(exerciseId, defaultSeconds) {
 // 12. formatTime(seconds)
 //    Converte secondi interi nel formato M:SS (es. 90 → "1:30").
 // ─────────────────────────────────────────────────────────────
-function formatTime(seconds) {
+export function formatTime(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
@@ -1229,7 +1231,7 @@ function formatTime(seconds) {
  * _buildCircuitCard(ex, i)
  * Costruisce il div completo del blocco circuito per la sessione live.
  */
-function _buildCircuitCard(ex, i) {
+export function _buildCircuitCard(ex, i) {
     const meta    = ex.circuitMeta    || { workTime: 40, restBetweenEx: 20, restBetweenRounds: 120, rounds: 3 };
     const circExs = ex.circuitExercises || [];
 
@@ -1319,10 +1321,10 @@ function _buildCircuitCard(ex, i) {
  * startCircuit(circuitIdx)
  * Avvia il circuito oppure, se già in corso, lo resetta.
  */
-function startCircuit(circuitIdx) {
+export function startCircuit(circuitIdx) {
     unlockAudio();
 
-    const sch          = DB.schedules[selAthId];
+    const sch          = DB.schedules[appState.selAthId];
     const activeSessId = document.getElementById('lv-sess').value;
     const curSess      = sch && sch.sessions ? sch.sessions.find(x => x.id === activeSessId) : null;
     if (!curSess) return;
@@ -1357,7 +1359,7 @@ function startCircuit(circuitIdx) {
  * Avvia un intervallo per la fase corrente della state machine
  * e gestisce la transizione alla fase successiva.
  */
-function _tickCircuit(circuitIdx, ex) {
+export function _tickCircuit(circuitIdx, ex) {
     const state = window.circuitStates[circuitIdx];
     if (!state || !state.running) return;
 
@@ -1460,7 +1462,7 @@ function _tickCircuit(circuitIdx, ex) {
  * _resetCircuitUI(circuitIdx, ex)
  * Riporta la card del circuito allo stato idle.
  */
-function _resetCircuitUI(circuitIdx, ex) {
+export function _resetCircuitUI(circuitIdx, ex) {
     const meta    = ex.circuitMeta    || {};
     const circExs = ex.circuitExercises || [];
 

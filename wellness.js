@@ -13,18 +13,20 @@
      8. Sblocco sessione (confermaWellnessLive)
 
    Dipendenze globali (definite in app.js / auth.js):
-     DB, selAthId, uid(), saveDB(), athById(),
-     toast(), updateCloudStatus(), renderDashboard(), go()
+     DB, appState.selAthId, uid(), window.saveDB(), athById(),
+     toast(), updateCloudStatus(), window.renderDashboard(), window.go()
    ══════════════════════════════════════════════════════════════ */
 
-'use strict';
+import { DB, appState } from './state.js';
+import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus } from './utils.js';
+
 
 // ─────────────────────────────────────────────────────────────
 // 1. mkPips(id, val, color)
 //    Aggiorna la barra di indicatori visivi (pip dots) sotto
 //    ciascun parametro soggettivo del Wellness Check-in.
 // ─────────────────────────────────────────────────────────────
-function mkPips(id, val, color) {
+export function mkPips(id, val, color) {
     const wrap = document.getElementById('wp-' + id);
     if (!wrap) return;
     wrap.innerHTML = '';
@@ -45,7 +47,7 @@ function mkPips(id, val, color) {
 //      'good-low'  → verde se basso (es. stress, dolore)
 //    Lancia vibrazione tattile e ricalcola upW().
 // ─────────────────────────────────────────────────────────────
-function setW(metric, val, logicType) {
+export function setW(metric, val, logicType) {
     // 1. Aggiorna il valore nell'input nascosto
     document.getElementById('w-' + metric).value = val;
 
@@ -93,8 +95,8 @@ function setW(metric, val, logicType) {
 //      h) Iniezione messaggio coach con contesto fisiologico
 //      i) Persistenza in DB.wellness + saveWellnessCloud()
 // ─────────────────────────────────────────────────────────────
-function upW() {
-    const ath = athById(selAthId);
+export function upW() {
+    const ath = athById(appState.selAthId);
 
     // ── a) Lettura parametri soggettivi Hooper ───────────────
     const sl = +document.getElementById('w-sleep').value;
@@ -123,7 +125,7 @@ function upW() {
             // L'atleta ha cambiato la data → salviamo nel profilo
             if (ath && ath.lastCycleStart !== cycleStartInput.value) {
                 ath.lastCycleStart = cycleStartInput.value;
-                saveDB();
+                window.saveDB();
             }
         } else if (ath && ath.lastCycleStart) {
             // Campo vuoto ma c'è una data in memoria → la ripristiniamo
@@ -201,7 +203,7 @@ function upW() {
     if (hrvRaw && !isNaN(hrvRaw) && hrvRaw > 0) {
         const currentHRV = parseFloat(hrvRaw);
         const today      = new Date();
-        const pastSess   = DB.sessions.filter(s => s.athlete === selAthId && s.hrv > 0);
+        const pastSess   = DB.sessions.filter(s => s.athlete === appState.selAthId && s.hrv > 0);
 
         let chronicHRV = currentHRV; // Media ultimi 30 giorni
         let acuteHRV   = currentHRV; // Media ultimi  7 giorni
@@ -234,7 +236,7 @@ function upW() {
 
     // f1. Penalità infortuni attivi (scala VAS)
     if (!DB.injuries) DB.injuries = [];
-    const infortuniAttivi = DB.injuries.filter(x => x.athlete === selAthId && x.status === 'Attivo');
+    const infortuniAttivi = DB.injuries.filter(x => x.athlete === appState.selAthId && x.status === 'Attivo');
     let maxVas = 0;
     infortuniAttivi.forEach(i => { if (i.vas > maxVas) maxVas = i.vas; });
 
@@ -247,7 +249,7 @@ function upW() {
 
     // f3. Modulazione SNC — CNS Finger Tap Test
     if (DB.wellness.cnsScore) {
-        const athCns = athById(selAthId);
+        const athCns = athById(appState.selAthId);
         if (athCns && athCns.cnsRecord > 0) {
             const dropPercent = ((athCns.cnsRecord - DB.wellness.cnsScore) / athCns.cnsRecord) * 100;
             if      (dropPercent >= 15)                             score -= 20; // Crollo grave (SNC soppresso)
@@ -340,8 +342,8 @@ function upW() {
 //    Aggiorna la spia Cloud nella topbar.
 //    Gestione blindata dei valori opzionali (NaN → 0).
 // ─────────────────────────────────────────────────────────────
-async function saveWellnessCloud() {
-    if (!selAthId) return; // Protezione: atleta non ancora caricato
+export async function saveWellnessCloud() {
+    if (!appState.selAthId) return; // Protezione: atleta non ancora caricato
 
     // Lettura sicura HRV e RHR (default 0 se vuoti o NaN)
     const hrvVal = parseFloat(document.getElementById('w-hrv').value)  || 0;
@@ -368,8 +370,8 @@ async function saveWellnessCloud() {
 
     // Pacchetto dati per Supabase (colonne tabella "wellness")
     const wellnessData = {
-        id:             'well_' + selAthId + '_' + new Date().toISOString().slice(0, 10),
-        athlete_id:     selAthId,
+        id:             'well_' + appState.selAthId + '_' + new Date().toISOString().slice(0, 10),
+        athlete_id:     appState.selAthId,
         date:           new Date().toISOString().slice(0, 10),
         sleep:          parseInt(document.getElementById('w-sleep').value)        || 4,
         sleep_hours:    parseFloat(document.getElementById('w-sleep-hours').value) || 0,
@@ -408,12 +410,12 @@ async function saveWellnessCloud() {
  * per la zona articolare selezionata sulla body map SVG.
  * Precompila con i valori dell'eventuale infortunio già attivo.
  */
-function openInjuryMo(zone) {
+export function openInjuryMo(zone) {
     window.currentInjuryZone = zone;
     if (!DB.injuries) DB.injuries = [];
 
     const existing = DB.injuries.find(
-        x => x.athlete === selAthId && x.zone === zone && x.status === 'Attivo'
+        x => x.athlete === appState.selAthId && x.zone === zone && x.status === 'Attivo'
     );
 
     const vas    = existing ? existing.vas    : 5;
@@ -481,7 +483,7 @@ function openInjuryMo(zone) {
  * precedente record attivo per la stessa zona), poi aggiorna
  * la UI e ricalcola la Readiness.
  */
-function saveInjury() {
+export function saveInjury() {
     const zone   = window.currentInjuryZone;
     const vas    = parseInt(document.getElementById('inj-vas').value);
     const type   = document.getElementById('inj-type').value;
@@ -489,13 +491,13 @@ function saveInjury() {
 
     // Rimuove il record attivo precedente per evitare duplicati
     DB.injuries = DB.injuries.filter(
-        x => !(x.athlete === selAthId && x.zone === zone && x.status === 'Attivo')
+        x => !(x.athlete === appState.selAthId && x.zone === zone && x.status === 'Attivo')
     );
 
     // Inserisce il nuovo record
     DB.injuries.push({
         id:      uid(),
-        athlete: selAthId,
+        athlete: appState.selAthId,
         date:    new Date().toISOString().slice(0, 10),
         zone,
         vas,
@@ -504,12 +506,12 @@ function saveInjury() {
         status:  'Attivo'
     });
 
-    saveDB();
+    window.saveDB();
     document.getElementById('mo-injury').remove();
     renderInjuries();
     upW(); // Ricalcola la Readiness con la nuova penalità VAS
 
-    if (typeof renderDashboard === 'function') renderDashboard(); // Aggiorna Triage Coach
+    if (typeof renderDashboard === 'function') window.renderDashboard(); // Aggiorna Triage Coach
 
     toast('Area mappata nel database clinico!');
 }
@@ -519,18 +521,18 @@ function saveInjury() {
  * Marca l'infortunio attivo della zona come "Risolto"
  * e aggiorna UI e Readiness.
  */
-function resolveInjury(zone) {
+export function resolveInjury(zone) {
     const inj = DB.injuries.find(
-        x => x.athlete === selAthId && x.zone === zone && x.status === 'Attivo'
+        x => x.athlete === appState.selAthId && x.zone === zone && x.status === 'Attivo'
     );
     if (inj) inj.status = 'Risolto';
 
-    saveDB();
+    window.saveDB();
     document.getElementById('mo-injury').remove();
     renderInjuries();
     upW();
 
-    if (typeof renderDashboard === 'function') renderDashboard();
+    if (typeof renderDashboard === 'function') window.renderDashboard();
 }
 
 /**
@@ -538,12 +540,12 @@ function resolveInjury(zone) {
  * Popola il pannello "active-injuries-list" con le card
  * degli infortuni attivi, incluso badge VAS colorato.
  */
-function renderInjuries() {
+export function renderInjuries() {
     const wrap = document.getElementById('active-injuries-list');
     if (!wrap) return;
     if (!DB.injuries) DB.injuries = [];
 
-    const act = DB.injuries.filter(x => x.athlete === selAthId && x.status === 'Attivo');
+    const act = DB.injuries.filter(x => x.athlete === appState.selAthId && x.status === 'Attivo');
 
     if (!act.length) {
         wrap.innerHTML = `
@@ -594,7 +596,7 @@ let cnsInterval = null;
  * Inizializza e avvia il countdown del Tap Test.
  * Nasconde il bottone START, mostra il bottone TAP.
  */
-function startCnsTest() {
+export function startCnsTest() {
     cnsTaps  = 0;
     cnsTimer = 10.0;
 
@@ -621,7 +623,7 @@ function startCnsTest() {
  *   - animazione scale di compressione del bottone
  *   - haptic feedback minimo (15ms — colpo secco)
  */
-function registerCnsTap(e) {
+export function registerCnsTap(e) {
     e.preventDefault(); // Blocca zoom / scroll accidentale sui tap veloci
     if (cnsTimer <= 0) return;
 
@@ -642,7 +644,7 @@ function registerCnsTap(e) {
  * Ferma il countdown e aggiorna la UI al termine dei 10 secondi.
  * Chiama evaluateCnsTest() per il giudizio clinico.
  */
-function endCnsTest() {
+export function endCnsTest() {
     clearInterval(cnsInterval);
 
     document.getElementById('cns-tap-btn').style.display       = 'none';
@@ -664,8 +666,8 @@ function endCnsTest() {
  *   - Nella norma    → stato SNC accettabile
  * Aggiorna DB.wellness.cnsScore e ricalcola upW().
  */
-function evaluateCnsTest() {
-    const ath = athById(selAthId);
+export function evaluateCnsTest() {
+    const ath = athById(appState.selAthId);
     if (!ath) return;
     if (!ath.cnsRecord) ath.cnsRecord = 0;
 
@@ -680,7 +682,7 @@ function evaluateCnsTest() {
     if (cnsTaps > ath.cnsRecord) {
         // Nuovo Personal Best neurale
         ath.cnsRecord = cnsTaps;
-        saveDB();
+        window.saveDB();
         feedback.innerHTML = `<span style="color:var(--teal);">🏆 NUOVO RECORD SNC! Reattività neurale eccellente.</span>`;
         status.innerHTML   = `<span style="color:var(--teal);">OTTIMO (${cnsTaps})</span>`;
     } else {
@@ -707,7 +709,7 @@ function evaluateCnsTest() {
 //    Wellness Check-in. Forza un ultimo salvataggio, emette
 //    un doppio haptic di sblocco, e naviga alla Sessione.
 // ─────────────────────────────────────────────────────────────
-function confermaWellnessLive() {
+export function confermaWellnessLive() {
     // Forza un ultimo salvataggio pulito di tutti i parametri
     saveWellnessCloud();
 
@@ -718,7 +720,7 @@ function confermaWellnessLive() {
 
     // Naviga alla Sessione Live con un leggero ritardo per il toast
     setTimeout(() => {
-        go('sessione');
+        window.go('sessione');
     }, 400);
 }
 
@@ -738,12 +740,12 @@ function confermaWellnessLive() {
 //
 //    Usata da loadLive() in workout.js.
 // ─────────────────────────────────────────────────────────────
-function computeSessionModifiers() {
+export function computeSessionModifiers() {
     const readiness = (DB.wellness && DB.wellness.readinessScore !== undefined)
         ? DB.wellness.readinessScore : 80;
     const cnsScore  = (DB.wellness && DB.wellness.cnsScore) ? DB.wellness.cnsScore : 0;
     const cycle     = (DB.wellness && DB.wellness.cycle)    ? DB.wellness.cycle    : 'N/A';
-    const ath       = athById(selAthId);
+    const ath       = athById(appState.selAthId);
     const cnsRecord = (ath && ath.cnsRecord) ? ath.cnsRecord : 0;
 
     let kgMultiplier = 1.0;
