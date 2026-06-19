@@ -286,8 +286,6 @@ async function handleAthleteFirstTimeSetup() {
         // Collega user_id al profilo atleta (via funzione SECURITY DEFINER)
         const { data: linked } = await window.mySupabase.rpc('link_athlete_auth', {
             p_athlete_id: pendingAthlete.id,
-            p_user_id:    userId,
-            p_email:      email,
             p_code:       pendingCode
         });
 
@@ -366,12 +364,6 @@ async function handleLoginAdmin() {
     if (error) {
         alert('Accesso negato: ' + error.message);
         return;
-    }
-
-    // Imposta role='coach' nei metadati se non ancora presente.
-    // Necessario per le RLS policy is_coach() lato Supabase.
-    if (!data.user?.user_metadata?.role) {
-        await window.mySupabase.auth.updateUser({ data: { role: 'coach' } });
     }
 
     document.getElementById('login-screen').style.display = 'none';
@@ -568,7 +560,7 @@ async function submitOnboarding() {
 // che aveva già fatto accesso in precedenza.
 // ─────────────────────────────────────────────────────────────
 async function _autoRestoreSession(user) {
-    if (user.user_metadata?.role === 'coach') {
+    if (user.app_metadata?.role === 'coach') {
         const el = document.getElementById('login-screen');
         if (el) el.style.display = 'none';
         resolveAppAuth('ADMIN');
