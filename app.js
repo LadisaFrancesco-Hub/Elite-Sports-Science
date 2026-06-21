@@ -519,13 +519,26 @@ export async function addAthlete() {
         toast('Supabase non disponibile: ' + e.message); btn.textContent = 'Aggiungi'; btn.disabled = false; return;
     }
 
+    const defaultSessId = uid();
     DB.schedules[a.id] = {
         meso: 'Meso 1', phase: 'Accumulo', coachNote: '', objective: '',
-        sessions: [{ id: uid(), name: 'Seduta A', exercises: [] }]
+        sessions: [{ id: defaultSessId, name: 'Seduta A', exercises: [] }]
     };
     DB.athletes.push(a);
     appState.selAthId = a.id;
-    appState.edSessId = DB.schedules[a.id].sessions[0].id;
+    appState.edSessId = defaultSessId;
+
+    // Persisti la scheda default su Supabase subito
+    try {
+        if (window.mySupabase) {
+            await window.mySupabase.from('schedules').insert([{
+                id: defaultSessId, athlete_id: a.id, session_name: 'Seduta A',
+                meso: 'Meso 1', duration: 4, phase: 'Accumulo',
+                coach_note: '', objective: '', exercises: []
+            }]);
+        }
+    } catch (e) { console.warn('Schedule default non salvata su cloud:', e); }
+
     await saveDB();
     populateSelects();
     const edAth = document.getElementById('ed-ath');
@@ -766,8 +779,14 @@ export async function saveSess() {
 export function renderEditor() {
     const athId = document.getElementById('ed-ath').value || appState.selAthId;
     if (athId) document.getElementById('ed-ath').value = athId;
+    if (!DB.schedules[athId]) {
+        DB.schedules[athId] = {
+            meso: 'Meso 1', phase: 'Accumulo', coachNote: '', objective: '',
+            sessions: [{ id: uid(), name: 'Seduta A', exercises: [] }]
+        };
+        appState.edSessId = DB.schedules[athId].sessions[0].id;
+    }
     const sch = DB.schedules[athId];
-    if (!sch) return;
 
     document.getElementById('ed-meso').value      = sch.meso      || 'Meso 1';
     document.getElementById('ed-duration').value  = sch.duration  || 4;
