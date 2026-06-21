@@ -524,6 +524,7 @@ export async function addAthlete() {
         sessions: [{ id: uid(), name: 'Seduta A', exercises: [] }]
     };
     DB.athletes.push(a);
+    appState.selAthId = a.id;
     await saveDB(); populateSelects(); renderAthletes(); closeMo('mo-ath');
     btn.textContent = 'Aggiungi'; btn.disabled = false;
 
