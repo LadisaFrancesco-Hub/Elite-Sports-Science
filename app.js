@@ -525,7 +525,12 @@ export async function addAthlete() {
     };
     DB.athletes.push(a);
     appState.selAthId = a.id;
-    await saveDB(); populateSelects(); renderAthletes(); closeMo('mo-ath');
+    appState.edSessId = DB.schedules[a.id].sessions[0].id;
+    await saveDB();
+    populateSelects();
+    const edAth = document.getElementById('ed-ath');
+    if (edAth) edAth.value = a.id;
+    renderAthletes(); closeMo('mo-ath');
     btn.textContent = 'Aggiungi'; btn.disabled = false;
 
     alert(`Atleta aggiunto!\n\nNome: ${name}\nEmail: ${email}\nCodice di accesso: ${codiceGenerato}\n\nAl primo accesso l'atleta inserisce il codice, poi imposta\nemail e password definitivi. Comunicagli il codice.`);
