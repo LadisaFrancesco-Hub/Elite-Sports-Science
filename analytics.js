@@ -125,7 +125,7 @@ export function calculateACWR(athId) {
 //    Stato vuoto premium: messaggio inline centrato sul canvas.
 //    Gradient fill verde OLED dal 40% all'0% di opacità.
 // ─────────────────────────────────────────────────────────────
-export function window.renderE1rmChart(sessionFilter, exerciseFilter) {
+export function renderE1rmChart(sessionFilter, exerciseFilter) {
     const ctxE1rm   = document.getElementById('chart-e1rm');
     const container = ctxE1rm ? ctxE1rm.parentElement : null;
     if (!ctxE1rm || !container) return;
@@ -258,7 +258,7 @@ export function window.renderE1rmChart(sessionFilter, exerciseFilter) {
 //    rendering. Non accetta argomenti: legge appState.selAthId e DB
 //    dallo stato globale.
 // ─────────────────────────────────────────────────────────────
-export function window.renderAnalytics() {
+export function renderAnalytics() {
     const ath  = athById(appState.selAthId);
     const sess = DB.sessions.filter(s => s.athlete === appState.selAthId);
 
