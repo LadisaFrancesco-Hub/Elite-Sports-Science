@@ -8,7 +8,7 @@
      5. Registrazione Service Worker
    ══════════════════════════════════════════════════════════════ */
 
-import { DB, KEY, replaceDB } from './state.js';
+import { DB, KEY, replaceDB, appState } from './state.js';
 import { toast, escHtml }     from './utils.js';
 
 // ─────────────────────────────────────────────────────────────
@@ -639,6 +639,148 @@ export async function loadDB() {
         // seed è in app.js — disponibile via window bridge
         if (typeof window.seed === 'function') window.seed();
     }
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// 18. startRealtime(role)
+//     Attiva le Postgres Changes subscription per mantenere
+//     coach e atleta sincronizzati senza ricaricamento manuale.
+//     Richiede: ALTER PUBLICATION supabase_realtime ADD TABLE ...
+//     (vedi realtime_migration.sql)
+// ─────────────────────────────────────────────────────────────
+export function startRealtime(role) {
+    if (!window.mySupabase) return;
+
+    window.mySupabase
+        .channel('rt-schedules')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' },
+            payload => _onScheduleChange(payload, role))
+        .subscribe(s => { if (s === 'SUBSCRIBED') console.log('[RT] schedules ✓'); });
+
+    window.mySupabase
+        .channel('rt-sessions')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' },
+            payload => _onSessionChange(payload, role))
+        .subscribe(s => { if (s === 'SUBSCRIBED') console.log('[RT] sessions ✓'); });
+
+    if (role === 'ADMIN') {
+        window.mySupabase
+            .channel('rt-atleti')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'atleti' },
+                _onAtletiChange)
+            .subscribe(s => { if (s === 'SUBSCRIBED') console.log('[RT] atleti ✓'); });
+    }
+}
+
+function _onScheduleChange(payload, role) {
+    const row = payload.new || payload.old;
+    if (!row) return;
+
+    const athId = row.athlete_id;
+    if (role === 'ATLETA' && athId !== window.mioIdLoggato) return;
+
+    if (payload.eventType === 'DELETE') {
+        if (DB.schedules[athId]) {
+            DB.schedules[athId].sessions = DB.schedules[athId].sessions.filter(s => s.id !== row.id);
+        }
+    } else {
+        if (!DB.schedules[athId]) {
+            DB.schedules[athId] = {
+                meso:      row.meso       || 'Meso 1',
+                duration:  row.duration   || 4,
+                phase:     row.phase      || 'Accumulo',
+                coachNote: row.coach_note || '',
+                objective: row.objective  || '',
+                sessions:  []
+            };
+        } else {
+            DB.schedules[athId].meso      = row.meso       || DB.schedules[athId].meso;
+            DB.schedules[athId].duration  = row.duration   || DB.schedules[athId].duration;
+            DB.schedules[athId].phase     = row.phase      || DB.schedules[athId].phase;
+            DB.schedules[athId].coachNote = row.coach_note || DB.schedules[athId].coachNote;
+            DB.schedules[athId].objective = row.objective  || DB.schedules[athId].objective;
+        }
+        const sess = { id: row.id, name: row.session_name, exercises: row.exercises || [] };
+        const idx  = DB.schedules[athId].sessions.findIndex(s => s.id === row.id);
+        if (idx >= 0) DB.schedules[athId].sessions[idx] = sess;
+        else          DB.schedules[athId].sessions.push(sess);
+    }
+
+    if (role === 'ATLETA') {
+        if (typeof window.loadLive === 'function') window.loadLive();
+        toast('📋 Scheda aggiornata dal coach');
+    } else if (appState.curPanel === 'editor') {
+        if (typeof window.renderEditor === 'function') window.renderEditor();
+    }
+}
+
+function _onSessionChange(payload, role) {
+    const row = payload.new || payload.old;
+    if (!row) return;
+    if (role === 'ATLETA' && row.athlete_id !== window.mioIdLoggato) return;
+
+    const mapped = {
+        id:          row.id,
+        athlete:     row.athlete_id,
+        date:        row.date,
+        session:     row.session_name,
+        sessionType: row.session_type,
+        week:        row.week,
+        phase:       row.phase,
+        readiness:   row.readiness,
+        vol:         row.vol,
+        sRPE:        row.sRPE || row.srpe,
+        rpe:         row.rpe,
+        qual:        row.qual,
+        hrv:         row.hrv,
+        maxE1rm:     row.max_e1rm,
+        e1rmDom:     row.e1rm_dom,
+        e1rmNDom:    row.e1rm_ndom,
+        doms:        row.doms,
+        flag:        row.flag,
+        notes:       row.notes,
+        reply:       row.reply
+    };
+
+    if (payload.eventType === 'DELETE') {
+        DB.sessions = DB.sessions.filter(s => s.id !== row.id);
+    } else {
+        const idx = DB.sessions.findIndex(s => s.id === row.id);
+        if (idx >= 0) DB.sessions[idx] = mapped;
+        else          DB.sessions.push(mapped);
+    }
+
+    if (appState.curPanel === 'dashboard' && typeof window.renderDashboard === 'function')
+        window.renderDashboard();
+    if (appState.curPanel === 'storico' && typeof window.renderStorico === 'function')
+        window.renderStorico();
+
+    if (role === 'ADMIN' && payload.eventType === 'INSERT') {
+        const ath  = DB.athletes.find(a => a.id === row.athlete_id);
+        const nome = ath ? ath.name.split(' ')[0] : 'Atleta';
+        toast(`⚡ Nuova sessione da ${nome}`);
+    }
+    if (role === 'ATLETA' && payload.eventType === 'UPDATE' && row.reply) {
+        toast('💬 Nuovo reply del coach!');
+    }
+}
+
+function _onAtletiChange(payload) {
+    const row = payload.new || payload.old;
+    if (!row) return;
+
+    if (payload.eventType === 'DELETE') {
+        DB.athletes = DB.athletes.filter(a => a.id !== row.id);
+    } else {
+        const idx = DB.athletes.findIndex(a => a.id === row.id);
+        if (idx >= 0) Object.assign(DB.athletes[idx], row);
+        else          DB.athletes.push(row);
+    }
+
+    if (typeof window.renderAthletes === 'function') window.renderAthletes();
+    if (appState.curPanel === 'dashboard' && typeof window.renderDashboard === 'function')
+        window.renderDashboard();
 }
 
 

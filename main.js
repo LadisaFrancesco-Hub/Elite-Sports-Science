@@ -5,7 +5,7 @@
    e lancia il bootstrap DOMContentLoaded.
    ══════════════════════════════════════════════════════════════ */
 
-import { initApp, loadDB,
+import { initApp, loadDB, startRealtime,
          setLoginLanguage, backToCodeStep, showCoachLogin,
          handleLoginStepCode, handleLoginAdmin,
          handleAthletePasswordLogin, handleAthleteFirstTimeSetup,
@@ -112,6 +112,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     window.userRole  = authResult;
 
     await loadDB();
+    startRealtime(authResult);
 
     try {
         if (authResult === 'ATLETA') {
