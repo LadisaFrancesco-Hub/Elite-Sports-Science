@@ -1389,7 +1389,8 @@ export async function submitFB() {
                     ex.progression[`w${nextWeekNum}`].kg = Math.round(nk / 2.5) * 2.5;
                 });
                 if (modified && window.mySupabase) {
-                    window.mySupabase.from('schedules').update({ exercises: curSess.exercises }).eq('id', curSess.id);
+                    const { error } = await window.mySupabase.from('schedules').update({ exercises: curSess.exercises }).eq('id', curSess.id);
+                    if (error) console.error('[saveFeedback] Errore sync carichi Supabase:', error);
                 }
             }
         }

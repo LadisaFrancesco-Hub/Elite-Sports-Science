@@ -1030,15 +1030,16 @@ export async function saveLiveNextLoad(exIndex, val) {
     // Salvataggio locale immediato
     await localforage.setItem(KEY, DB);
 
-    // Sincronizzazione cloud (fire-and-forget) — aggiorna SOLO exercises.
+    // Sincronizzazione cloud — aggiorna SOLO exercises.
     // Un upsert completo riscriveva anche il campo meso con il valore
     // presente in memoria, che poteva essere errato se loadDB aveva caricato
     // un meso stantio. Aggiornare solo exercises spezza il loop di corruzione.
     if (window.mySupabase) {
-        window.mySupabase
+        const { error } = await window.mySupabase
             .from('schedules')
             .update({ exercises: curSess.exercises })
             .eq('id', curSess.id);
+        if (error) console.error('[saveLiveNextLoad] Errore sync Supabase:', error);
     }
 }
 
