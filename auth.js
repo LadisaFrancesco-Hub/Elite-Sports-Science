@@ -674,9 +674,8 @@ export function startRealtime(role) {
         .channel('coach-broadcast')
         .on('broadcast', { event: 'schedule_updated' }, ({ payload }) => {
             console.log('[RT] broadcast schedule_updated ricevuto:', payload);
-            if (role === 'ATLETA' && payload?.athlete_id === window.mioIdLoggato) {
-                if (typeof window.loadLive === 'function') window.loadLive();
-                toast('📋 Scheda aggiornata dal coach');
+            if (role === 'ATLETA') {
+                _reloadAthleteSchedule(window.mioIdLoggato);
             }
         })
         .on('broadcast', { event: 'session_reply' }, ({ payload }) => {
@@ -692,6 +691,36 @@ export function startRealtime(role) {
     // ── Postgres Changes: sessions (coach riceve sessioni atleta) ──
     _sub('sessions',  'sessions',  payload => _onSessionChange(payload, role));
     if (role === 'ADMIN') _sub('atleti', 'atleti', _onAtletiChange);
+}
+
+async function _reloadAthleteSchedule(athId) {
+    if (!window.mySupabase || !athId) return;
+    try {
+        const { data, error } = await window.mySupabase
+            .from('schedules')
+            .select('*')
+            .eq('athlete_id', athId);
+        if (error || !data) return;
+
+        const sessions = data.map(row => ({
+            id:        row.id,
+            name:      row.session_name,
+            exercises: row.exercises || []
+        }));
+        const meta = data[0] || {};
+        DB.schedules[athId] = {
+            meso:      meta.meso      || 'Meso 1',
+            duration:  meta.duration  || 4,
+            phase:     meta.phase     || 'Accumulo',
+            coachNote: meta.coach_note || '',
+            objective: meta.objective  || '',
+            sessions
+        };
+        if (typeof window.loadLive === 'function') window.loadLive();
+        toast('📋 Scheda aggiornata dal coach');
+    } catch (e) {
+        console.error('[RT] _reloadAthleteSchedule error:', e);
+    }
 }
 
 function _updateRtIndicator(connected) {
