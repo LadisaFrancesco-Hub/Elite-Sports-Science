@@ -1040,6 +1040,12 @@ export async function saveLiveNextLoad(exIndex, val) {
             .update({ exercises: curSess.exercises })
             .eq('id', curSess.id);
         if (error) console.error('[saveLiveNextLoad] Errore sync Supabase:', error);
+        else if (window._rtBroadcast) {
+            window._rtBroadcast.send({
+                type: 'broadcast', event: 'schedule_updated',
+                payload: { athlete_id: appState.selAthId }
+            });
+        }
     }
 }
 

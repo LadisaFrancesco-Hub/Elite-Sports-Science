@@ -666,7 +666,30 @@ export function startRealtime(role) {
             });
     };
 
-    _sub('schedules', 'schedules', payload => _onScheduleChange(payload, role));
+    // ── Broadcast channel (schedule notifications coach → atleta) ──
+    // Usa Broadcast invece di postgres_changes per evitare dipendenze
+    // da RLS filtering lato server, che può essere inaffidabile sul
+    // free tier con tabelle a politiche complesse.
+    const broadcast = window.mySupabase
+        .channel('coach-broadcast')
+        .on('broadcast', { event: 'schedule_updated' }, ({ payload }) => {
+            console.log('[RT] broadcast schedule_updated ricevuto:', payload);
+            if (role === 'ATLETA' && payload?.athlete_id === window.mioIdLoggato) {
+                if (typeof window.loadLive === 'function') window.loadLive();
+                toast('📋 Scheda aggiornata dal coach');
+            }
+        })
+        .on('broadcast', { event: 'session_reply' }, ({ payload }) => {
+            if (role === 'ATLETA' && payload?.athlete_id === window.mioIdLoggato) {
+                toast('💬 Nuovo reply del coach!');
+            }
+        })
+        .subscribe((status, err) => {
+            console.log(`[RT] broadcast: ${status}`, err ?? '');
+        });
+    window._rtBroadcast = broadcast;
+
+    // ── Postgres Changes: sessions (coach riceve sessioni atleta) ──
     _sub('sessions',  'sessions',  payload => _onSessionChange(payload, role));
     if (role === 'ADMIN') _sub('atleti', 'atleti', _onAtletiChange);
 }
@@ -773,9 +796,6 @@ function _onSessionChange(payload, role) {
         const ath  = DB.athletes.find(a => a.id === row.athlete_id);
         const nome = ath ? ath.name.split(' ')[0] : 'Atleta';
         toast(`⚡ Nuova sessione da ${nome}`);
-    }
-    if (role === 'ATLETA' && payload.eventType === 'UPDATE' && row.reply) {
-        toast('💬 Nuovo reply del coach!');
     }
 }
 

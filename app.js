@@ -722,6 +722,12 @@ export async function saveReply() {
         if (window.mySupabase) {
             const { error } = await window.mySupabase.from('sessions').update({ reply: r }).eq('id', id);
             toast(error ? '⚠️ Errore di rete: salvata solo in locale.' : "Risposta inviata all'atleta! ✓");
+            if (!error && window._rtBroadcast) {
+                window._rtBroadcast.send({
+                    type: 'broadcast', event: 'session_reply',
+                    payload: { athlete_id: s.athlete }
+                });
+            }
         }
     } catch (e) { toast('⚠️ Errore di connessione.'); }
 }
@@ -1275,6 +1281,11 @@ export async function saveSchedule() {
                 if (error) throw error;
             }
             toast('Schede sincronizzate sul Cloud! ✓');
+            if (window._rtBroadcast) {
+                window._rtBroadcast.send({
+                    type: 'broadcast', event: 'schedule_updated', payload: { athlete_id: athId }
+                });
+            }
         }
     } catch (err) { console.error('Errore salvataggio schede:', err); }
     await saveDB();
