@@ -650,27 +650,38 @@ export async function loadDB() {
 //     (vedi realtime_migration.sql)
 // ─────────────────────────────────────────────────────────────
 export function startRealtime(role) {
-    if (!window.mySupabase) return;
-
-    window.mySupabase
-        .channel('rt-schedules')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'schedules' },
-            payload => _onScheduleChange(payload, role))
-        .subscribe(s => { if (s === 'SUBSCRIBED') console.log('[RT] schedules ✓'); });
-
-    window.mySupabase
-        .channel('rt-sessions')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'sessions' },
-            payload => _onSessionChange(payload, role))
-        .subscribe(s => { if (s === 'SUBSCRIBED') console.log('[RT] sessions ✓'); });
-
-    if (role === 'ADMIN') {
-        window.mySupabase
-            .channel('rt-atleti')
-            .on('postgres_changes', { event: '*', schema: 'public', table: 'atleti' },
-                _onAtletiChange)
-            .subscribe(s => { if (s === 'SUBSCRIBED') console.log('[RT] atleti ✓'); });
+    if (!window.mySupabase) {
+        console.warn('[RT] mySupabase non disponibile — realtime saltato');
+        return;
     }
+
+    const _sub = (name, table, handler) => {
+        window.mySupabase
+            .channel(`rt-${name}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table }, handler)
+            .subscribe((status, err) => {
+                console.log(`[RT] ${name}: ${status}`, err ?? '');
+                if (status === 'SUBSCRIBED') _updateRtIndicator(true);
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') _updateRtIndicator(false);
+            });
+    };
+
+    _sub('schedules', 'schedules', payload => _onScheduleChange(payload, role));
+    _sub('sessions',  'sessions',  payload => _onSessionChange(payload, role));
+    if (role === 'ADMIN') _sub('atleti', 'atleti', _onAtletiChange);
+}
+
+function _updateRtIndicator(connected) {
+    let dot = document.getElementById('rt-dot');
+    if (!dot) {
+        dot = document.createElement('span');
+        dot.id = 'rt-dot';
+        dot.title = 'Realtime';
+        dot.style.cssText = 'width:7px;height:7px;border-radius:50%;display:inline-block;margin-left:6px;vertical-align:middle;transition:background .4s';
+        const topbar = document.querySelector('.topbar');
+        if (topbar) topbar.appendChild(dot);
+    }
+    dot.style.background = connected ? '#10B981' : '#EF4444';
 }
 
 function _onScheduleChange(payload, role) {
