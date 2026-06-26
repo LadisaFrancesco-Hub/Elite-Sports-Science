@@ -685,6 +685,7 @@ function _updateRtIndicator(connected) {
 }
 
 function _onScheduleChange(payload, role) {
+    console.log('[RT] schedule event →', payload.eventType, payload.new, payload.old);
     const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
     if (!row || !row.id) return;
 
@@ -727,6 +728,7 @@ function _onScheduleChange(payload, role) {
 }
 
 function _onSessionChange(payload, role) {
+    console.log('[RT] session event →', payload.eventType, payload.new, payload.old);
     const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
     if (!row || !row.id) return;
     if (role === 'ATLETA' && row.athlete_id !== window.mioIdLoggato) return;
