@@ -674,8 +674,8 @@ export function startRealtime(role) {
 }
 
 function _onScheduleChange(payload, role) {
-    const row = payload.new || payload.old;
-    if (!row) return;
+    const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
+    if (!row || !row.id) return;
 
     const athId = row.athlete_id;
     if (role === 'ATLETA' && athId !== window.mioIdLoggato) return;
@@ -716,8 +716,8 @@ function _onScheduleChange(payload, role) {
 }
 
 function _onSessionChange(payload, role) {
-    const row = payload.new || payload.old;
-    if (!row) return;
+    const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
+    if (!row || !row.id) return;
     if (role === 'ATLETA' && row.athlete_id !== window.mioIdLoggato) return;
 
     const mapped = {
@@ -767,8 +767,8 @@ function _onSessionChange(payload, role) {
 }
 
 function _onAtletiChange(payload) {
-    const row = payload.new || payload.old;
-    if (!row) return;
+    const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
+    if (!row || !row.id) return;
 
     if (payload.eventType === 'DELETE') {
         DB.athletes = DB.athletes.filter(a => a.id !== row.id);
