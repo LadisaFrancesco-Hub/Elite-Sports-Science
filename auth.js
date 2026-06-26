@@ -667,26 +667,41 @@ export function startRealtime(role) {
     };
 
     // ── Broadcast channel (schedule notifications coach → atleta) ──
-    // Usa Broadcast invece di postgres_changes per evitare dipendenze
-    // da RLS filtering lato server, che può essere inaffidabile sul
-    // free tier con tabelle a politiche complesse.
     const broadcast = window.mySupabase
         .channel('coach-broadcast')
         .on('broadcast', { event: 'schedule_updated' }, ({ payload }) => {
             console.log('[RT] broadcast schedule_updated ricevuto:', payload);
-            if (role === 'ATLETA') {
-                _reloadAthleteSchedule(window.mioIdLoggato);
-            }
+            if (role === 'ATLETA') _reloadAthleteSchedule(window.mioIdLoggato);
         })
         .on('broadcast', { event: 'session_reply' }, ({ payload }) => {
-            if (role === 'ATLETA' && payload?.athlete_id === window.mioIdLoggato) {
+            if (role === 'ATLETA' && payload?.athlete_id === window.mioIdLoggato)
                 toast('💬 Nuovo reply del coach!');
-            }
         })
         .subscribe((status, err) => {
             console.log(`[RT] broadcast: ${status}`, err ?? '');
+            if (status === 'SUBSCRIBED') _updateRtIndicator(true);
         });
     window._rtBroadcast = broadcast;
+
+    // ── Postgres Changes con filter (meccanismo primario per atleta) ──
+    // Il filter server-side bypassa i problemi di RLS generico:
+    // il server invia eventi SOLO per le righe dove athlete_id corrisponde.
+    if (role === 'ATLETA' && window.mioIdLoggato) {
+        window.mySupabase
+            .channel('athlete-schedule-watch')
+            .on('postgres_changes', {
+                event: '*', schema: 'public', table: 'schedules',
+                filter: `athlete_id=eq.${window.mioIdLoggato}`
+            }, () => {
+                console.log('[RT] postgres_changes schedules → reload');
+                _reloadAthleteSchedule(window.mioIdLoggato);
+            })
+            .subscribe((status, err) => {
+                console.log(`[RT] athlete-schedule-watch: ${status}`, err ?? '');
+                if (status === 'SUBSCRIBED') _updateRtIndicator(true);
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') _updateRtIndicator(false);
+            });
+    }
 
     // ── Postgres Changes: sessions (coach riceve sessioni atleta) ──
     _sub('sessions',  'sessions',  payload => _onSessionChange(payload, role));

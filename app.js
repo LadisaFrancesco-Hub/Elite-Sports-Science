@@ -1282,9 +1282,10 @@ export async function saveSchedule() {
             }
             toast('Schede sincronizzate sul Cloud! ✓');
             if (window._rtBroadcast) {
-                window._rtBroadcast.send({
+                const sendResult = await window._rtBroadcast.send({
                     type: 'broadcast', event: 'schedule_updated', payload: { athlete_id: athId }
                 });
+                console.log('[RT] broadcast send result:', sendResult);
             }
         }
     } catch (err) { console.error('Errore salvataggio schede:', err); }
