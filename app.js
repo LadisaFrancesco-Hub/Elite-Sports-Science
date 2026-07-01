@@ -1155,7 +1155,9 @@ export async function saveProgressionData() {
             kg:  parseFloat(document.getElementById(`p-kg-${w}`).value)|| ex.kg
         };
     }
-    await saveDB(); renderEdExercises(); closeMo('mo-prog'); toast('Progressione salvata! ✓');
+    await saveDB();
+    await saveSchedule();
+    renderEdExercises(); closeMo('mo-prog'); toast('Progressione salvata! ✓');
 }
 
 export function applySmartMicrocycle(type) {
