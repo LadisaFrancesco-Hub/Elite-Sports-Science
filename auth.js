@@ -127,7 +127,8 @@ export function _registerFailedAttempt() {
 export async function handleLoginStepCode() {
     if (_isLoginLocked()) return;
 
-    const codice = document.getElementById('input-login-code').value.trim();
+    // Normalize: uppercase + strip spaces (mobile autocorrect can alter case)
+    const codice = document.getElementById('input-login-code').value.trim().toUpperCase().replace(/\s/g, '');
     const t      = loginTranslations[currentLoginLang];
 
     if (!codice) { alert(t.alertEmpty); return; }
@@ -168,7 +169,7 @@ export async function handleLoginStepCode() {
         pendingCode   = codice;
         pendingAthlete = {
             id:                   athleteInfo.id,
-            name:                 athleteInfo.name,
+            name:                 athleteInfo.name || '',
             email:                athleteInfo.email || '',
             has_auth:             athleteInfo.has_auth,
             onboarding_completed: athleteInfo.onboarding_completed,
@@ -179,13 +180,17 @@ export async function handleLoginStepCode() {
 
         if (athleteInfo.has_auth) {
             const welcome = document.getElementById('lbl-ath-welcome');
-            if (welcome) welcome.textContent = `Bentornato, ${athleteInfo.name.split(' ')[0]}!`;
+            const firstName = (athleteInfo.name || 'Atleta').split(' ')[0];
+            if (welcome) welcome.textContent = `Bentornato, ${firstName}!`;
             document.getElementById('login-step-athlete-password').style.display = 'block';
         } else {
             const emailField = document.getElementById('input-ath-setup-email');
             if (emailField && athleteInfo.email) emailField.value = athleteInfo.email;
             document.getElementById('login-step-athlete-setup').style.display = 'block';
         }
+    } catch (err) {
+        console.error('[login] Errore imprevisto durante il login:', err);
+        alert('Si è verificato un errore durante il login. Riprova o contatta il coach.');
     } finally {
         btn.disabled = false;
         btn.textContent = loginTranslations[currentLoginLang].btnCode;
