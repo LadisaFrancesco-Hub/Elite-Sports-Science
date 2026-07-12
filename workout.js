@@ -343,20 +343,38 @@ export function loadLive() {
             }
 
             // ── Generazione pallini ───────────────────────────
-            let dots = '';
-            for (let w = 0; w < ex.wset; w++) {
-                dots += `<div class="dot warm" id="wd-${i}-${w}">W</div>`;
-            }
-            for (let l = 0; l < actualSet; l++) {
-                const logKey = `${sessId}-w${currentWeek}-${i}-${l}`;
-                let label  = l + 1;
-                let isMod  = 'class="dot"';
-                if (window.realLog && window.realLog[logKey]) {
-                    label = window.realLog[logKey].rep;
-                    isMod = `class="dot done" style="background:var(--purple); border-color:var(--purple); color:#fff;"`;
-                }
-                dots += `<div ${isMod} id="ld-${i}-${l}">${label}</div>`;
-            }
+let dots = '';
+for (let w = 0; w < ex.wset; w++) {
+    dots += `<div class="dot warm" id="wd-${i}-${w}">W</div>`;
+}
+
+// Analizziamo il formato delle ripetizioni (es: "10-8-6-4" o "10,8,6,4")
+let repParts = [];
+if (typeof targetRep === 'string') {
+    repParts = targetRep.includes('-') ? targetRep.split('-') : targetRep.split(',');
+}
+
+for (let l = 0; l < actualSet; l++) {
+    const logKey = `${sessId}-w${currentWeek}-${i}-${l}`;
+    
+    // Default: se c'è un piramidale prende la rep della serie corrente, altrimenti mostra il numero di serie o il range
+    let defaultLabel = l + 1;
+    if (repParts.length > 1 && repParts[l]) {
+        defaultLabel = repParts[l].trim(); // Prende la rep specifica (es. 10 per la prima serie, 8 per la seconda)
+    } else if (typeof targetRep === 'string' && targetRep.includes('-') && repParts.length === 2) {
+        // Se è un range tipo "8-10", lasciamo l'indice o puoi mostrare il range. Teniamo l'indice della serie.
+        defaultLabel = l + 1;
+    }
+
+    let label  = defaultLabel;
+    let isMod  = 'class="dot"';
+    
+    if (window.realLog && window.realLog[logKey]) {
+        label = window.realLog[logKey].rep;
+        isMod = `class="dot done" style="background:var(--purple); border-color:var(--purple); color:#fff;"`;
+    }
+    dots += `<div ${isMod} id="ld-${i}-${l}">${label}</div>`;
+}
 
             // ── Label braccio dominante ───────────────────────
             const armLabel = (ex.arm && ex.arm !== 'Bi')
@@ -658,8 +676,21 @@ export function updateLiveTotals(exs) {
                 count++;
 
                 const logKey = `${sessId}-w${weekVal}-${i}-${l}`;
-                let sRep = parseInt(targetRep)   || 0;
-                let sKg  = parseFloat(targetKg)  || 0;
+
+// Estrattore intelligente per il volume teorico
+let sRep = 0;
+if (typeof targetRep === 'string') {
+    let parts = targetRep.includes('-') ? targetRep.split('-') : targetRep.split(',');
+    if (parts.length > 1 && parts[l]) {
+        sRep = parseInt(parts[l]) || 0; // Prende il pezzo del piramidale corrente
+    } else {
+        sRep = parseInt(targetRep) || 0; // Prende il primo numero del range (es. 8 da "8-10")
+    }
+} else {
+    sRep = parseInt(targetRep) || 0;
+}
+
+let sKg  = parseFloat(targetKg)  || 0;
 
                 // 🔴 IL CUORE DEL SISTEMA: il realLog sovrascrive il target programmato
                 if (window.realLog && window.realLog[logKey]) {
@@ -1039,8 +1070,10 @@ export async function saveLiveNextLoad(exIndex, val) {
             .from('schedules')
             .update({ exercises: curSess.exercises })
             .eq('id', curSess.id);
-        if (error) console.error('[saveLiveNextLoad] Errore sync Supabase:', error);
-        else if (window._rtBroadcast) {
+        if (error) {
+            console.error('[saveLiveNextLoad] Errore sync Supabase:', error);
+            toast('⚠️ Carico salvato in locale, sincronizzazione cloud fallita.');
+        } else if (window._rtBroadcast) {
             window._rtBroadcast.send({
                 type: 'broadcast', event: 'schedule_updated',
                 payload: { athlete_id: appState.selAthId }

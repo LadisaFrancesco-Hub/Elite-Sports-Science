@@ -1272,13 +1272,38 @@ export async function saveSchedule() {
 
     try {
         if (window.mySupabase && sch.sessions) {
+            // Fetch current Supabase exercises BEFORE deleting to preserve athlete progressions.
+            // The coach's local DB may be stale (athlete saves progressions live without the
+            // coach's browser receiving the update), so we read back what's actually in Supabase
+            // and re-attach any progression the coach doesn't have in memory.
+            const supabaseProgs = {};
+            const { data: currentRows } = await window.mySupabase
+                .from('schedules').select('id, exercises').eq('athlete_id', athId);
+            if (currentRows) {
+                currentRows.forEach(row => {
+                    supabaseProgs[row.id] = {};
+                    (row.exercises || []).forEach(ex => {
+                        if (ex.name && ex.progression) supabaseProgs[row.id][ex.name] = ex.progression;
+                    });
+                });
+            }
+
             const { error: delErr } = await window.mySupabase.from('schedules').delete().eq('athlete_id', athId);
             if (delErr) throw delErr;
             for (const s of sch.sessions) {
+                const sessionProgs = supabaseProgs[s.id] || {};
+                // Merge: if the coach has no progression in memory for an exercise, restore
+                // the one saved by the athlete from Supabase.
+                const exercises = s.exercises.map(ex => {
+                    if (!ex.progression && ex.name && sessionProgs[ex.name]) {
+                        return { ...ex, progression: sessionProgs[ex.name] };
+                    }
+                    return ex;
+                });
                 const { error } = await window.mySupabase.from('schedules').insert([{
                     id: s.id, athlete_id: athId, session_name: s.name,
                     meso: sch.meso, duration: sch.duration, phase: sch.phase,
-                    coach_note: sch.coachNote, objective: sch.objective, exercises: s.exercises
+                    coach_note: sch.coachNote, objective: sch.objective, exercises
                 }]);
                 if (error) throw error;
             }
