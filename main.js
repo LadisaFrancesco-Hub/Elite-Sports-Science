@@ -46,7 +46,7 @@ import { saveDB, seed, go, toggleMobileMenu,
          calcSrpe, initFB, submitFB,
          updateExpInfo, doExport, exportJSON, confirmReset } from './app.js';
 
-import { uid } from './utils.js';
+import { uid, openMo, closeMo } from './utils.js';
 import { appState, DB } from './state.js';
 
 
@@ -97,8 +97,10 @@ Object.assign(window, {
     updateExpInfo, doExport, exportJSON, confirmReset,
     // Persistenza (usata da auth.js via window bridge)
     saveDB, seed,
-    // Utility (usata negli onclick inline nell'editor)
-    uid,
+    // Utility (usata negli onclick inline nell'editor e nei modali)
+    uid, openMo, closeMo,
+    // Atleti — azioni dirette
+    addAthlete,
     // Render
     renderDashboard, renderProg,
 });
