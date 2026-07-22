@@ -937,25 +937,138 @@ export function openRealLog(exIndex, setIndex) {
     }
 
     document.getElementById('rl-set-num').textContent = parseInt(setIndex) + 1;
-    document.getElementById('rl-target').textContent  = `Target Originale: ${targetRep} rep @ ${targetKg} ${String(targetKg).includes('m/s') ? '' : 'kg'}`;
-
-    const logKey   = `${activeSessId}-w${w}-${exIndex}-${setIndex}`;
-    let actualRep  = parseInt(targetRep)  || 0;
-    let actualKg   = parseFloat(targetKg) || 0;
-
-    // Pre-compila con i valori già inseriti dall'atleta (se presenti)
-    if (window.realLog && window.realLog[logKey]) {
-        actualRep = window.realLog[logKey].rep;
-        actualKg  = window.realLog[logKey].kg;
-    }
-
-    document.getElementById('rl-rep').value   = actualRep;
-    document.getElementById('rl-kg').value    = actualKg;
     document.getElementById('rl-ex-i').value  = exIndex;
     document.getElementById('rl-set-l').value = setIndex;
 
+    const isIso = typeof targetKg === 'string' && /['"]/.test(targetKg);
+
+    if (isIso) {
+        const secs = parseIsometricSeconds(String(targetKg));
+        document.getElementById('rl-target').textContent = `Target: ${targetRep} serie da ${targetKg}`;
+        window._isoTimerTarget    = secs;
+        window._isoTimerRemaining = secs;
+        window._isoTimerRunning   = false;
+        if (window._isoTimerInterval) { clearInterval(window._isoTimerInterval); window._isoTimerInterval = null; }
+        const disp = document.getElementById('rl-timer-display');
+        const btn  = document.getElementById('rl-timer-btn');
+        const save = document.getElementById('rl-timer-save');
+        disp.textContent        = secs;
+        disp.style.color        = 'var(--purple)';
+        btn.textContent         = '▶ START';
+        btn.style.background    = 'var(--purple)';
+        save.style.opacity      = '0.35';
+        save.style.pointerEvents = 'none';
+        document.getElementById('rl-normal-section').style.display = 'none';
+        document.getElementById('rl-timer-section').style.display  = 'block';
+    } else {
+        document.getElementById('rl-target').textContent = `Target Originale: ${targetRep} rep @ ${targetKg} ${String(targetKg).includes('m/s') ? '' : 'kg'}`;
+        const logKey  = `${activeSessId}-w${w}-${exIndex}-${setIndex}`;
+        let actualRep = parseInt(targetRep)  || 0;
+        let actualKg  = parseFloat(targetKg) || 0;
+        if (window.realLog && window.realLog[logKey]) {
+            actualRep = window.realLog[logKey].rep;
+            actualKg  = window.realLog[logKey].kg;
+        }
+        document.getElementById('rl-rep').value = actualRep;
+        document.getElementById('rl-kg').value  = actualKg;
+        document.getElementById('rl-normal-section').style.display = 'block';
+        document.getElementById('rl-timer-section').style.display  = 'none';
+    }
+
     openMo('mo-reallog');
     if (navigator.vibrate) navigator.vibrate(20);
+}
+
+// Converte stringhe tipo "45''", "1'30''", "45s" in secondi
+function parseIsometricSeconds(str) {
+    str = str.trim();
+    // "1'30''" → 1 minuto e 30 secondi
+    const minsec = str.match(/^(\d+)'(\d+)''/);
+    if (minsec) return parseInt(minsec[1]) * 60 + parseInt(minsec[2]);
+    // "45''" → 45 secondi
+    const sec = str.match(/^(\d+)''/);
+    if (sec) return parseInt(sec[1]);
+    // "1'" → 1 minuto
+    const min = str.match(/^(\d+)'$/);
+    if (min) return parseInt(min[1]) * 60;
+    // "45s" o "45sec"
+    const s = str.match(/^(\d+)\s*s/i);
+    if (s) return parseInt(s[1]);
+    return parseInt(str) || 0;
+}
+
+export function toggleIsometricTimer() {
+    const disp = document.getElementById('rl-timer-display');
+    const btn  = document.getElementById('rl-timer-btn');
+
+    if (window._isoTimerRunning) {
+        // Pausa
+        clearInterval(window._isoTimerInterval);
+        window._isoTimerInterval = null;
+        window._isoTimerRunning  = false;
+        btn.textContent      = '▶ RIPRENDI';
+        btn.style.background = '#555';
+        return;
+    }
+
+    if (window._isoTimerRemaining <= 0) return; // già finito
+
+    window._isoTimerRunning = true;
+    btn.textContent      = '⏸ PAUSA';
+    btn.style.background = '#e67e22';
+
+    window._isoTimerInterval = setInterval(() => {
+        window._isoTimerRemaining--;
+        disp.textContent = window._isoTimerRemaining;
+
+        if (window._isoTimerRemaining <= 0) {
+            clearInterval(window._isoTimerInterval);
+            window._isoTimerInterval = null;
+            window._isoTimerRunning  = false;
+            disp.textContent      = '✓';
+            disp.style.color      = '#2ecc71';
+            btn.textContent       = '✓ COMPLETATO';
+            btn.style.background  = '#2ecc71';
+            btn.disabled          = true;
+            const save            = document.getElementById('rl-timer-save');
+            save.style.opacity      = '1';
+            save.style.pointerEvents = 'auto';
+            if (navigator.vibrate) navigator.vibrate([100, 60, 100, 60, 200]);
+        }
+    }, 1000);
+}
+
+export function abortIsometricTimer() {
+    if (window._isoTimerInterval) { clearInterval(window._isoTimerInterval); window._isoTimerInterval = null; }
+    window._isoTimerRunning = false;
+    closeMo('mo-reallog');
+}
+
+export function saveTimerSet() {
+    const exI  = document.getElementById('rl-ex-i').value;
+    const setL = document.getElementById('rl-set-l').value;
+
+    const activeSessId = document.getElementById('lv-sess').value;
+    const w            = document.getElementById('lv-week').value || '1';
+    const logKey       = `${activeSessId}-w${w}-${exI}-${setL}`;
+
+    if (!window.realLog) window.realLog = {};
+    window.realLog[logKey] = { rep: window._isoTimerTarget, kg: 0 };
+
+    const dot = document.getElementById(`ld-${exI}-${setL}`);
+    if (dot) {
+        dot.classList.add('done');
+        dot.style.background  = 'var(--purple)';
+        dot.style.borderColor = 'var(--purple)';
+        dot.style.color       = '#fff';
+        dot.textContent       = '✓';
+    }
+
+    if (window._isoTimerInterval) { clearInterval(window._isoTimerInterval); window._isoTimerInterval = null; }
+    window._isoTimerRunning = false;
+    closeMo('mo-reallog');
+    updateLiveTotals(window.getEdExercises ? window.getEdExercises() : []);
+    if (navigator.vibrate) navigator.vibrate([80, 40, 80, 40, 160]);
 }
 
 
