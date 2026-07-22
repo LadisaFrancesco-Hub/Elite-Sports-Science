@@ -284,13 +284,14 @@ export function loadLive() {
             let numKg       = parseFloat(targetKg) || 0;
             const isVBT     = (typeof targetKg === 'string' && targetKg.toLowerCase().includes('m/s'))
                                || (numKg > 0 && numKg <= 2.5);
+            const isIso     = typeof targetKg === 'string' && /['"]/.test(targetKg);
             const isHighCns = ['max effort', 'dynamic effort'].includes(currentType);
 
             let actualKg     = numKg;
             let actualSet    = targetSet;
             let autoRegBadge = '';
 
-            if (!isVBT && numKg > 0 && mods.kgMultiplier < 1.0) {
+            if (!isVBT && !isIso && numKg > 0 && mods.kgMultiplier < 1.0) {
                 actualKg = Math.round((numKg * mods.kgMultiplier) / 2.5) * 2.5;
                 const pct = Math.round((1 - mods.kgMultiplier) * 100);
                 const fc  = mods.warningType === 'critical' ? '#ef4444' : '#fbbf24';
@@ -403,13 +404,15 @@ for (let l = 0; l < actualSet; l++) {
                 : '';
 
             // ── Composizione display carico (usa actualKg post-autoregolazione) ─
-            let renderTargetLoad = isVBT
-                ? (String(targetKg).includes('m/s') ? targetKg : targetKg + ' m/s')
-                : actualKg + 'kg';
+            let renderTargetLoad = isIso
+                ? String(targetKg)
+                : isVBT
+                    ? (String(targetKg).includes('m/s') ? targetKg : targetKg + ' m/s')
+                    : actualKg + 'kg';
 
             // ── Ramping warm-up automatico ────────────────────
             let rampingHtml = '';
-            if (ex.wset > 0 && actualKg > 0 && !isVBT) {
+            if (ex.wset > 0 && actualKg > 0 && !isVBT && !isIso) {
                 let warmUps = [];
                 for (let w = 1; w <= ex.wset; w++) {
                     let perc = ex.wset === 1 ? 0.75
