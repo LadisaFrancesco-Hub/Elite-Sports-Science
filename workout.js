@@ -348,21 +348,23 @@ for (let w = 0; w < ex.wset; w++) {
     dots += `<div class="dot warm" id="wd-${i}-${w}">W</div>`;
 }
 
-// Analizziamo il formato delle ripetizioni (es: "10-8-6-4" o "10,8,6,4")
+// Analizziamo il formato delle ripetizioni (es: "10-8-6-4" o "10,8,6,4" o range "8-10")
 let repParts = [];
 if (typeof targetRep === 'string') {
     repParts = targetRep.includes('-') ? targetRep.split('-') : targetRep.split(',');
 }
+// Se i pezzi sono meno delle serie è un range (es. "8-10" con 3 serie) → mostra il range su ogni dot
+const isRepRange = repParts.length > 0 && repParts.length < actualSet;
 
 for (let l = 0; l < actualSet; l++) {
     const logKey = `${sessId}-w${currentWeek}-${i}-${l}`;
-    
-    // Default: se c'è un piramidale prende la rep della serie corrente, altrimenti mostra il numero di serie o il range
-    let defaultLabel = l + 1;
-    if (repParts.length > 1 && repParts[l]) {
-        defaultLabel = repParts[l].trim(); // Prende la rep specifica (es. 10 per la prima serie, 8 per la seconda)
-    } else if (typeof targetRep === 'string' && targetRep.includes('-') && repParts.length === 2) {
-        // Se è un range tipo "8-10", lasciamo l'indice o puoi mostrare il range. Teniamo l'indice della serie.
+
+    let defaultLabel;
+    if (isRepRange) {
+        defaultLabel = targetRep; // range "8-10" uguale su tutti i pallini
+    } else if (repParts.length > 1 && repParts[l]) {
+        defaultLabel = repParts[l].trim(); // piramidale: rep specifica per serie
+    } else {
         defaultLabel = l + 1;
     }
 
@@ -681,10 +683,11 @@ export function updateLiveTotals(exs) {
 let sRep = 0;
 if (typeof targetRep === 'string') {
     let parts = targetRep.includes('-') ? targetRep.split('-') : targetRep.split(',');
-    if (parts.length > 1 && parts[l]) {
-        sRep = parseInt(parts[l]) || 0; // Prende il pezzo del piramidale corrente
+    const isRange = parts.length > 0 && parts.length < actualSet;
+    if (!isRange && parts.length > 1 && parts[l]) {
+        sRep = parseInt(parts[l]) || 0; // piramidale: rep specifica per serie
     } else {
-        sRep = parseInt(targetRep) || 0; // Prende il primo numero del range (es. 8 da "8-10")
+        sRep = parseInt(targetRep) || 0; // range "8-10" → usa il primo valore (bound inferiore)
     }
 } else {
     sRep = parseInt(targetRep) || 0;
