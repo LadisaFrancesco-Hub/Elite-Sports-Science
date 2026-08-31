@@ -227,7 +227,7 @@ export async function handleAthletePasswordLogin() {
     }
 
     loginAttempts = 0;
-    subscribePush(data.user.id, 'athlete', pendingAthlete.id);
+    _showPushBanner(data.user.id, 'athlete', pendingAthlete.id);
     await _completeAthleteLogin();
 }
 
@@ -282,7 +282,7 @@ export async function handleAthleteFirstTimeSetup() {
         pendingAthlete.email   = email;
         pendingAthlete.user_id = userId;
         loginAttempts = 0;
-        subscribePush(userId, 'athlete', pendingAthlete.id);
+        _showPushBanner(userId, 'athlete', pendingAthlete.id);
         await _completeAthleteLogin();
 
     } finally {
@@ -332,7 +332,7 @@ export async function handleLoginAdmin() {
     if (error) { alert('Accesso negato: ' + error.message); return; }
 
     document.getElementById('login-screen').style.display = 'none';
-    subscribePush(data.user.id, 'coach');
+    _showPushBanner(data.user.id, 'coach');
     resolveAppAuth('ADMIN');
 }
 
@@ -461,7 +461,7 @@ async function _autoRestoreSession(user) {
     if (user.app_metadata?.role === 'coach') {
         const el = document.getElementById('login-screen');
         if (el) el.style.display = 'none';
-        subscribePush(user.id, 'coach');
+        _showPushBanner(user.id, 'coach');
         resolveAppAuth('ADMIN');
         return;
     }
@@ -479,7 +479,7 @@ async function _autoRestoreSession(user) {
             DB.athletes         = [atleta];
             const el = document.getElementById('login-screen');
             if (el) el.style.display = 'none';
-            subscribePush(user.id, 'athlete', atleta.id);
+            _showPushBanner(user.id, 'athlete', atleta.id);
             resolveAppAuth('ATLETA');
         }
     } catch (e) {
@@ -883,7 +883,53 @@ function _onAtletiChange(payload) {
 //   userId     → Supabase Auth user.id (UUID)
 //   userType   → 'coach' | 'athlete'
 //   athleteId  → id del profilo atleta (solo per gli atleti)
+//
+// _showPushBanner(...)
+//   Mostra un banner dopo il login. subscribePush viene chiamata
+//   solo al tap del pulsante "Abilita" — questo è il gesto utente
+//   richiesto da iOS/Android per aprire il dialog delle notifiche.
 // ─────────────────────────────────────────────────────────────
+
+export function _showPushBanner(userId, userType, athleteId = null) {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+    if (Notification.permission !== 'default') return; // già concesse o negate
+    if (VAPID_PUBLIC_KEY.startsWith('SOSTITUISCI')) return;
+
+    if (document.getElementById('push-banner')) return;
+
+    document.body.insertAdjacentHTML('beforeend', `
+        <div id="push-banner" style="
+            position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+            background:#1e293b; border:1px solid var(--teal,#10b981); border-radius:14px;
+            padding:14px 18px; z-index:99998; display:flex; align-items:center; gap:12px;
+            max-width:340px; width:90%; box-shadow:0 8px 24px rgba(0,0,0,0.5);
+            font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+            <span style="font-size:22px;flex-shrink:0;">🔔</span>
+            <div style="flex:1;font-size:12px;color:#e2e8f0;line-height:1.4;">
+                Abilita le notifiche per ricevere aggiornamenti in tempo reale
+            </div>
+            <button id="push-banner-yes" style="
+                background:#10b981;color:#000;border:none;border-radius:8px;
+                padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;
+                white-space:nowrap;flex-shrink:0;touch-action:manipulation;">
+                Abilita
+            </button>
+            <button id="push-banner-no" style="
+                background:none;border:none;color:#64748b;font-size:20px;
+                cursor:pointer;padding:2px 6px;flex-shrink:0;touch-action:manipulation;">
+                ✕
+            </button>
+        </div>`);
+
+    document.getElementById('push-banner-yes').addEventListener('click', () => {
+        document.getElementById('push-banner')?.remove();
+        subscribePush(userId, userType, athleteId);
+    });
+    document.getElementById('push-banner-no').addEventListener('click', () => {
+        document.getElementById('push-banner')?.remove();
+    });
+}
+
 function _urlBase64ToUint8Array(base64String) {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
