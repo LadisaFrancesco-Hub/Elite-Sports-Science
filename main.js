@@ -28,7 +28,7 @@ import { loadLive, updateLiveTotals, toggleDot,
          saveLiveNextLoad,
          toggleIsometricTimer, abortIsometricTimer, saveTimerSet } from './workout.js';
 
-import { saveDB, seed, go, toggleMobileMenu, testPushNotification,
+import { saveDB, seed, go, toggleMobileMenu,
          populateSelects, onAthChange, updateModalSessions,
          renderDashboard, renderAthletes, renderStorico, renderCoachReply,
          renderEditor, renderEdExercises, renderProg,
@@ -44,9 +44,8 @@ import { saveDB, seed, go, toggleMobileMenu, testPushNotification,
          addNewSessionToSchedule, renameCurrentSession, deleteCurrentSession,
          saveSchedule, updatePhaseStyle, updatePredictiveACWR,
          openMesocycleArchive, archiveAndNewMeso,
-         calcSrpe, initFB, submitFB,
-         updateExpInfo, doExport, exportJSON, confirmReset,
-    testPushNotification } from './app.js';
+         calcSrpe, initFB, submitFB, testPushNotification,
+         updateExpInfo, doExport, exportJSON, confirmReset } from './app.js';
 
 import { uid, openMo, closeMo } from './utils.js';
 import { appState, DB } from './state.js';
