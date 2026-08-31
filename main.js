@@ -28,7 +28,7 @@ import { loadLive, updateLiveTotals, toggleDot,
          saveLiveNextLoad,
          toggleIsometricTimer, abortIsometricTimer, saveTimerSet } from './workout.js';
 
-import { saveDB, seed, go, toggleMobileMenu,
+import { saveDB, seed, go, toggleMobileMenu, testPushNotification,
          populateSelects, onAthChange, updateModalSessions,
          renderDashboard, renderAthletes, renderStorico, renderCoachReply,
          renderEditor, renderEdExercises, renderProg,
@@ -45,7 +45,8 @@ import { saveDB, seed, go, toggleMobileMenu,
          saveSchedule, updatePhaseStyle, updatePredictiveACWR,
          openMesocycleArchive, archiveAndNewMeso,
          calcSrpe, initFB, submitFB,
-         updateExpInfo, doExport, exportJSON, confirmReset } from './app.js';
+         updateExpInfo, doExport, exportJSON, confirmReset,
+    testPushNotification } from './app.js';
 
 import { uid, openMo, closeMo } from './utils.js';
 import { appState, DB } from './state.js';
@@ -95,6 +96,8 @@ Object.assign(window, {
     openMesocycleArchive, archiveAndNewMeso,
     // Feedback
     calcSrpe, initFB, submitFB,
+    // Push test
+    testPushNotification,
     // Esportazione
     updateExpInfo, doExport, exportJSON, confirmReset,
     // Persistenza (usata da auth.js via window bridge)

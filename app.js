@@ -23,6 +23,30 @@ import { renderAnalytics, calculateACWR, renderE1rmChart } from './analytics.js'
 
 
 // ─────────────────────────────────────────────────────────────
+// PUSH — test manuale dalla sidebar coach
+// ─────────────────────────────────────────────────────────────
+export async function testPushNotification() {
+    if (!window.mySupabase) { toast('❌ Supabase non connesso'); return; }
+    toast('📡 Invio test push...');
+    try {
+        const { data, error } = await window.mySupabase.functions.invoke('send-push', {
+            body: { target_type: 'coach', target_id: null, title: '🔔 Test Push', body: 'Il sistema notifiche funziona!' }
+        });
+        if (error) {
+            console.error('[Push test] Errore Edge Function:', error);
+            toast('❌ Edge Function error: ' + (error.message || JSON.stringify(error)));
+        } else {
+            console.log('[Push test] Risposta Edge Function:', data);
+            toast('✅ Push inviata — controlla il telefono!');
+        }
+    } catch (e) {
+        console.error('[Push test] Eccezione:', e);
+        toast('❌ Eccezione: ' + e.message);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────
 // PUSH — helper per inviare notifiche via Edge Function
 //   targetType → 'coach' | 'athlete'
 //   targetId   → athlete_id (solo per 'athlete'), null per coach
