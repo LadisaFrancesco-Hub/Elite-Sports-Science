@@ -160,6 +160,10 @@ export function loadLive() {
     liveState = {};
     exs.forEach((_, i) => { liveState[i] = { wDone: new Set(), lDone: new Set() }; });
 
+    // Hint long-press: visibile finché l'atleta non usa il log reale almeno una volta.
+    const showHint = !localStorage.getItem('coachOS_hint_seen');
+    let   hintShown = false;
+
     if (!exs.length) {
         if (wrap) wrap.innerHTML = '<div style="color:var(--muted);padding:10px;text-align:center;">Nessun esercizio programmato per questa seduta.</div>';
         const filterDivEmpty = document.getElementById('e1rm-ex-filter');
@@ -489,6 +493,13 @@ for (let l = 0; l < actualSet; l++) {
                 }
             }
 
+            // ── Hint long-press (primo esercizio, finché non usato) ──
+            let hintHtml = '';
+            if (showHint && !hintShown) {
+                hintShown = true;
+                hintHtml = `<div id="hint-lp-first" style="margin-top:8px; font-size:10px; color:var(--purple); text-align:right; font-weight:700; letter-spacing:0.3px; opacity:0.85;">✎ tieni premuto per registrare rep/kg reali</div>`;
+            }
+
             // ── Assemblaggio card esercizio ───────────────────
             const div = document.createElement('div');
             div.style.cssText = 'width:100%; position:relative;';
@@ -549,6 +560,7 @@ for (let l = 0; l < actualSet; l++) {
                     : ''}
 
                 <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; width:100%;">${dots}</div>
+                ${hintHtml}
                 ${rampingHtml}
               </div>`;
 
@@ -1129,6 +1141,10 @@ export function saveRealLog() {
         dot.style.color       = '#fff';
         dot.textContent       = rep;
     }
+
+    // Al primo salvataggio reale: rimuove l'hint e lo sopprime per sempre
+    localStorage.setItem('coachOS_hint_seen', '1');
+    document.getElementById('hint-lp-first')?.remove();
 
     closeMo('mo-reallog');
     updateLiveTotals(window.getEdExercises());
