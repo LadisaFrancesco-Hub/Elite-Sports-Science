@@ -33,11 +33,18 @@ export async function testPushNotification() {
             body: { target_type: 'coach', target_id: null, title: '🔔 Test Push', body: 'Il sistema notifiche funziona!' }
         });
         if (error) {
-            console.error('[Push test] Errore Edge Function:', error);
-            toast('❌ Edge Function error: ' + (error.message || JSON.stringify(error)));
+            console.error('[Push test] Errore invoke:', error);
+            toast('❌ Invoke error: ' + (error.message || JSON.stringify(error)));
+            return;
+        }
+        console.log('[Push test] Risposta:', JSON.stringify(data, null, 2));
+        if (data?.ok) {
+            toast(`✅ Push inviata a ${data.sent} device — controlla il telefono!`);
+        } else if (data?.reason === 'no_subscriptions') {
+            toast('⚠️ Nessuna subscription trovata — abilita le notifiche dal telefono prima');
         } else {
-            console.log('[Push test] Risposta Edge Function:', data);
-            toast('✅ Push inviata — controlla il telefono!');
+            const detail = data?.failureReasons?.[0] || data?.error || JSON.stringify(data);
+            toast('❌ ' + detail.slice(0, 80));
         }
     } catch (e) {
         console.error('[Push test] Eccezione:', e);
