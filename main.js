@@ -10,7 +10,7 @@ import { initApp, loadDB, startRealtime,
          handleLoginStepCode, handleLoginAdmin,
          handleAthletePasswordLogin, handleAthleteFirstTimeSetup,
          toggleOtherSport, nextOnbStep, submitOnboarding,
-         _showUpdateBanner } from './auth.js';
+         subscribePush, _showUpdateBanner } from './auth.js';
 
 import { upW, setW, mkPips, renderInjuries,
          openInjuryMo, saveInjury, resolveInjury,

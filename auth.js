@@ -17,6 +17,12 @@ import { toast, escHtml }     from './utils.js';
 const SUPABASE_URL      = 'https://ncvmnoaelzdmuiqrvcjl.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5jdm1ub2FlbHpkbXVpcXJ2Y2psIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg4Njg1ODIsImV4cCI6MjA5NDQ0NDU4Mn0.hokcRP2rNZK6f_rn1-WSeXd-F46VlbGyNijj7wthdXA';
 
+// Chiave pubblica VAPID — genera la coppia con:
+//   npx web-push generate-vapid-keys
+// poi incolla qui la PUBLIC KEY e carica su Supabase:
+//   supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_EMAIL=tua@email.com
+const VAPID_PUBLIC_KEY = 'SOSTITUISCI_CON_VAPID_PUBLIC_KEY';
+
 const checkSupabase = setInterval(() => {
     if (typeof supabase !== 'undefined') {
         clearInterval(checkSupabase);
@@ -221,6 +227,7 @@ export async function handleAthletePasswordLogin() {
     }
 
     loginAttempts = 0;
+    subscribePush(data.user.id, 'athlete', pendingAthlete.id);
     await _completeAthleteLogin();
 }
 
@@ -275,6 +282,7 @@ export async function handleAthleteFirstTimeSetup() {
         pendingAthlete.email   = email;
         pendingAthlete.user_id = userId;
         loginAttempts = 0;
+        subscribePush(userId, 'athlete', pendingAthlete.id);
         await _completeAthleteLogin();
 
     } finally {
@@ -324,6 +332,7 @@ export async function handleLoginAdmin() {
     if (error) { alert('Accesso negato: ' + error.message); return; }
 
     document.getElementById('login-screen').style.display = 'none';
+    subscribePush(data.user.id, 'coach');
     resolveAppAuth('ADMIN');
 }
 
@@ -452,6 +461,7 @@ async function _autoRestoreSession(user) {
     if (user.app_metadata?.role === 'coach') {
         const el = document.getElementById('login-screen');
         if (el) el.style.display = 'none';
+        subscribePush(user.id, 'coach');
         resolveAppAuth('ADMIN');
         return;
     }
@@ -469,6 +479,7 @@ async function _autoRestoreSession(user) {
             DB.athletes         = [atleta];
             const el = document.getElementById('login-screen');
             if (el) el.style.display = 'none';
+            subscribePush(user.id, 'athlete', atleta.id);
             resolveAppAuth('ATLETA');
         }
     } catch (e) {
@@ -863,6 +874,50 @@ function _onAtletiChange(payload) {
     if (typeof window.renderAthletes === 'function') window.renderAthletes();
     if (appState.curPanel === 'dashboard' && typeof window.renderDashboard === 'function')
         window.renderDashboard();
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// PUSH NOTIFICATIONS
+// subscribePush(userId, userType, athleteId?)
+//   userId     → Supabase Auth user.id (UUID)
+//   userType   → 'coach' | 'athlete'
+//   athleteId  → id del profilo atleta (solo per gli atleti)
+// ─────────────────────────────────────────────────────────────
+function _urlBase64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64  = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
+}
+
+export async function subscribePush(userId, userType, athleteId = null) {
+    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+    if (Notification.permission === 'denied') return;
+    if (VAPID_PUBLIC_KEY.startsWith('SOSTITUISCI')) return;
+
+    try {
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') return;
+
+        const reg      = await navigator.serviceWorker.ready;
+        const existing = await reg.pushManager.getSubscription();
+        const sub      = existing || await reg.pushManager.subscribe({
+            userVisibleOnly:      true,
+            applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        });
+
+        if (window.mySupabase) {
+            await window.mySupabase.from('push_subscriptions').upsert([{
+                user_id:      userId,
+                user_type:    userType,
+                athlete_id:   athleteId,
+                subscription: JSON.stringify(sub)
+            }], { onConflict: 'user_id' });
+        }
+    } catch (e) {
+        console.warn('[Push] Sottoscrizione fallita:', e);
+    }
 }
 
 

@@ -23,6 +23,23 @@ import { renderAnalytics, calculateACWR, renderE1rmChart } from './analytics.js'
 
 
 // ─────────────────────────────────────────────────────────────
+// PUSH — helper per inviare notifiche via Edge Function
+//   targetType → 'coach' | 'athlete'
+//   targetId   → athlete_id (solo per 'athlete'), null per coach
+// ─────────────────────────────────────────────────────────────
+async function _sendPushNotification(targetType, targetId, title, body) {
+    if (!window.mySupabase) return;
+    try {
+        await window.mySupabase.functions.invoke('send-push', {
+            body: { target_type: targetType, target_id: targetId, title, body }
+        });
+    } catch (e) {
+        console.warn('[Push] Notifica non inviata:', e);
+    }
+}
+
+
+// ─────────────────────────────────────────────────────────────
 // PERSISTENZA
 // ─────────────────────────────────────────────────────────────
 export async function saveDB() {
@@ -722,11 +739,14 @@ export async function saveReply() {
         if (window.mySupabase) {
             const { error } = await window.mySupabase.from('sessions').update({ reply: r }).eq('id', id);
             toast(error ? '⚠️ Errore di rete: salvata solo in locale.' : "Risposta inviata all'atleta! ✓");
-            if (!error && window._rtBroadcast) {
-                window._rtBroadcast.send({
-                    type: 'broadcast', event: 'session_reply',
-                    payload: { athlete_id: s.athlete }
-                });
+            if (!error) {
+                if (window._rtBroadcast) {
+                    window._rtBroadcast.send({
+                        type: 'broadcast', event: 'session_reply',
+                        payload: { athlete_id: s.athlete }
+                    });
+                }
+                _sendPushNotification('athlete', s.athlete, '💬 Risposta del Coach', 'Il tuo coach ha risposto al tuo allenamento');
             }
         }
     } catch (e) { toast('⚠️ Errore di connessione.'); }
@@ -1327,6 +1347,7 @@ export async function saveSchedule() {
                 });
                 console.log('[RT] broadcast send result:', sendResult);
             }
+            _sendPushNotification('athlete', athId, '📋 Nuova Scheda', 'Il tuo coach ha aggiornato il tuo programma di allenamento');
         }
     } catch (err) {
         console.error('Errore salvataggio schede:', err);
@@ -1490,6 +1511,8 @@ export async function submitFB() {
             else {
                 if (ath) await window.mySupabase.from('atleti').update({ anthropo_history: ath.anthropoHistory }).eq('id', appState.selAthId);
                 toast('Allenamento registrato e sincronizzato nel Cloud! ✓');
+                const nomeAtleta = ath ? ath.name.split(' ')[0] : 'Un atleta';
+                _sendPushNotification('coach', null, '💪 Allenamento Completato', `${nomeAtleta} ha completato un allenamento`);
                 window.realLog = {};
             }
         } else { window.realLog = {}; }
