@@ -958,8 +958,9 @@ export async function subscribePush(userId, userType, athleteId = null) {
                 user_id:      userId,
                 user_type:    userType,
                 athlete_id:   athleteId,
+                endpoint:     sub.endpoint,
                 subscription: JSON.stringify(sub)
-            }], { onConflict: 'user_id' });
+            }], { onConflict: 'endpoint' });
         }
     } catch (e) {
         console.warn('[Push] Sottoscrizione fallita:', e);

@@ -48,7 +48,9 @@ serve(async (req: Request) => {
 
         const results = await Promise.allSettled(
             subs.map(async (row) => {
-                const sub = JSON.parse(row.subscription);
+                const sub = typeof row.subscription === 'string'
+                    ? JSON.parse(row.subscription)
+                    : row.subscription;
                 logs.push(`Invio a: ${sub.endpoint.slice(0, 60)}...`);
                 const r = await webpush.sendNotification(sub, JSON.stringify({ title, body, url: '/' }));
                 logs.push(`Risposta FCM: ${r.statusCode}`);
