@@ -2,6 +2,10 @@ import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import webpush from 'npm:web-push';
 
+const VAPID_PUBLIC_KEY  = 'BOCUOjnvp-AMT2XtzjxHoKwUX_qXJsiLWC0cWzsCbRvhEos2Aa6BabBi8qeMlyup6bWXKMXMa-w-fL3C0hcYbB4';
+const VAPID_PRIVATE_KEY = '-OrlG-zCSCsNrQPtAzX9xziLGHVK1IaVDPbon9wJ37o';
+const VAPID_EMAIL       = 'ladisafrancesco03@gmail.com';
+
 const corsHeaders = {
     'Access-Control-Allow-Origin':  '*',
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type'
@@ -15,19 +19,17 @@ serve(async (req: Request) => {
     try {
         const { target_type, target_id, title, body } = await req.json();
 
-        // Usa service_role per leggere le subscriptions bypassando RLS
         const supabase = createClient(
             Deno.env.get('SUPABASE_URL')!,
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
         );
 
         webpush.setVapidDetails(
-            `mailto:${Deno.env.get('VAPID_EMAIL')}`,
-            Deno.env.get('VAPID_PUBLIC_KEY')!,
-            Deno.env.get('VAPID_PRIVATE_KEY')!
+            `mailto:${VAPID_EMAIL}`,
+            VAPID_PUBLIC_KEY,
+            VAPID_PRIVATE_KEY
         );
 
-        // Recupera le subscription in base al target
         let query = supabase.from('push_subscriptions').select('subscription');
         if (target_type === 'coach') {
             query = query.eq('user_type', 'coach');
@@ -45,14 +47,12 @@ serve(async (req: Request) => {
             return new Response('No subscriptions', { status: 200, headers: corsHeaders });
         }
 
-        // Invia a tutte le subscription trovate (un utente può avere più device)
         await Promise.allSettled(
             subs.map(s =>
                 webpush.sendNotification(
                     JSON.parse(s.subscription),
                     JSON.stringify({ title, body, url: '/' })
                 ).catch((e: Error) => {
-                    // 410 Gone = subscription scaduta, andrebbe rimossa
                     console.warn(`Push failed (${e.message})`);
                 })
             )

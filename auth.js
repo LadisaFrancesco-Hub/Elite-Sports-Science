@@ -21,7 +21,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 //   npx web-push generate-vapid-keys
 // poi incolla qui la PUBLIC KEY e carica su Supabase:
 //   supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_EMAIL=tua@email.com
-const VAPID_PUBLIC_KEY = 'SOSTITUISCI_CON_VAPID_PUBLIC_KEY';
+const VAPID_PUBLIC_KEY = 'BOCUOjnvp-AMT2XtzjxHoKwUX_qXJsiLWC0cWzsCbRvhEos2Aa6BabBi8qeMlyup6bWXKMXMa-w-fL3C0hcYbB4';
 
 const checkSupabase = setInterval(() => {
     if (typeof supabase !== 'undefined') {
