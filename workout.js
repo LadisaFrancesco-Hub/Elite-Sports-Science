@@ -686,7 +686,7 @@ export function updateLiveTotals(exs) {
 let sRep = 0;
 if (typeof targetRep === 'string') {
     let parts = targetRep.includes('-') ? targetRep.split('-') : targetRep.split(',');
-    const isRange = parts.length > 0 && parts.length < actualSet;
+    const isRange = parts.length > 0 && parts.length < maxSet;
     if (!isRange && parts.length > 1 && parts[l]) {
         sRep = parseInt(parts[l]) || 0; // piramidale: rep specifica per serie
     } else {
@@ -803,15 +803,40 @@ let sKg  = parseFloat(targetKg)  || 0;
 
         // Proposta redirect Post-Workout (con leggero delay per iOS)
         setTimeout(function () {
-            if (confirm('🎯 Sessione completata! Ottimo lavoro. Ti va di compilare il feedback Post-Workout ora?')) {
+            const lvSess    = document.getElementById('lv-sess');
+            const sessText  = (lvSess && lvSess.selectedIndex >= 0)
+                ? lvSess.options[lvSess.selectedIndex].text : '';
+            const tipoSess  = sessText.includes('Campo') ? 'Campo' : 'Palestra';
+
+            const existing = document.getElementById('mo-session-done');
+            if (existing) existing.remove();
+
+            document.body.insertAdjacentHTML('beforeend', `
+                <div class="mo show" id="mo-session-done" style="z-index:99999;">
+                    <div class="mo-box" style="max-width:300px; text-align:center; border:1px solid var(--teal);">
+                        <div style="font-size:40px; margin-bottom:10px;">🎯</div>
+                        <div style="font-family:var(--fh); font-size:18px; font-weight:800; color:var(--teal); margin-bottom:6px;">Sessione Completata!</div>
+                        <div style="font-size:13px; color:var(--muted); margin-bottom:20px; line-height:1.5;">Ottimo lavoro. Compila il feedback Post-Workout per inviarlo al coach.</div>
+                        <div style="display:flex; flex-direction:column; gap:8px;">
+                            <button id="session-done-yes" class="btn btn-p" style="width:100%; padding:14px; font-weight:800; background:var(--teal); color:#000;">
+                                Compila feedback →
+                            </button>
+                            <button id="session-done-no" class="btn btn-g" style="width:100%; padding:12px;">
+                                Più tardi
+                            </button>
+                        </div>
+                    </div>
+                </div>`);
+
+            document.getElementById('session-done-yes').addEventListener('click', () => {
+                document.getElementById('mo-session-done').remove();
                 window.go('feedback');
                 const pwType = document.getElementById('pw-type');
-                const lvSess = document.getElementById('lv-sess');
-                if (pwType && lvSess && lvSess.options.length > 0 && lvSess.selectedIndex >= 0) {
-                    const sessText = lvSess.options[lvSess.selectedIndex].text;
-                    pwType.value   = sessText.includes('Campo') ? 'Campo' : 'Palestra';
-                }
-            }
+                if (pwType) pwType.value = tipoSess;
+            });
+            document.getElementById('session-done-no').addEventListener('click', () => {
+                document.getElementById('mo-session-done').remove();
+            });
         }, 800);
     }
 }

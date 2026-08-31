@@ -1272,41 +1272,54 @@ export async function saveSchedule() {
 
     try {
         if (window.mySupabase && sch.sessions) {
-            // Fetch current Supabase exercises BEFORE deleting to preserve athlete progressions.
-            // The coach's local DB may be stale (athlete saves progressions live without the
-            // coach's browser receiving the update), so we read back what's actually in Supabase
-            // and re-attach any progression the coach doesn't have in memory.
-            const supabaseProgs = {};
+            // Legge lo stato remoto per due motivi:
+            // 1. Preservare le progressioni salvate dall'atleta live (il coach può non averle in memoria)
+            // 2. Calcolare quali sessioni sono state rimosse localmente e vanno cancellate su Supabase
             const { data: currentRows } = await window.mySupabase
                 .from('schedules').select('id, exercises').eq('athlete_id', athId);
-            if (currentRows) {
-                currentRows.forEach(row => {
-                    supabaseProgs[row.id] = {};
-                    (row.exercises || []).forEach(ex => {
-                        if (ex.name && ex.progression) supabaseProgs[row.id][ex.name] = ex.progression;
-                    });
-                });
-            }
 
-            const { error: delErr } = await window.mySupabase.from('schedules').delete().eq('athlete_id', athId);
-            if (delErr) throw delErr;
-            for (const s of sch.sessions) {
+            const remoteIds    = new Set((currentRows || []).map(r => r.id));
+            const localIds     = new Set(sch.sessions.map(s => s.id));
+
+            const supabaseProgs = {};
+            (currentRows || []).forEach(row => {
+                supabaseProgs[row.id] = {};
+                (row.exercises || []).forEach(ex => {
+                    if (ex.name && ex.progression) supabaseProgs[row.id][ex.name] = ex.progression;
+                });
+            });
+
+            // Costruisce il batch di righe: merge progressioni remote dove il coach non le ha in memoria
+            const rows = sch.sessions.map(s => {
                 const sessionProgs = supabaseProgs[s.id] || {};
-                // Merge: if the coach has no progression in memory for an exercise, restore
-                // the one saved by the athlete from Supabase.
                 const exercises = s.exercises.map(ex => {
                     if (!ex.progression && ex.name && sessionProgs[ex.name]) {
                         return { ...ex, progression: sessionProgs[ex.name] };
                     }
                     return ex;
                 });
-                const { error } = await window.mySupabase.from('schedules').insert([{
+                return {
                     id: s.id, athlete_id: athId, session_name: s.name,
                     meso: sch.meso, duration: sch.duration, phase: sch.phase,
                     coach_note: sch.coachNote, objective: sch.objective, exercises
-                }]);
-                if (error) throw error;
+                };
+            });
+
+            // UPSERT atomico: inserisce le nuove sessioni, aggiorna quelle esistenti.
+            // Non cancella nulla prima — se la rete cade, i dati remoti rimangono intatti.
+            const { error: upsertErr } = await window.mySupabase
+                .from('schedules').upsert(rows, { onConflict: 'id' });
+            if (upsertErr) throw upsertErr;
+
+            // Solo dopo un upsert confermato: elimina le sessioni rimosse localmente.
+            // Se questo step fallisce rimangono sessioni orfane (non un problema per l'atleta).
+            const idsToDelete = [...remoteIds].filter(id => !localIds.has(id));
+            if (idsToDelete.length > 0) {
+                const { error: delErr } = await window.mySupabase
+                    .from('schedules').delete().in('id', idsToDelete);
+                if (delErr) console.warn('[saveSchedule] Rimozione sessioni obsolete fallita:', delErr);
             }
+
             toast('Schede sincronizzate sul Cloud! ✓');
             if (window._rtBroadcast) {
                 const sendResult = await window._rtBroadcast.send({
@@ -1315,7 +1328,10 @@ export async function saveSchedule() {
                 console.log('[RT] broadcast send result:', sendResult);
             }
         }
-    } catch (err) { console.error('Errore salvataggio schede:', err); }
+    } catch (err) {
+        console.error('Errore salvataggio schede:', err);
+        toast('⚠️ Errore di rete — scheda salvata in locale, riprova tra qualche secondo.');
+    }
     await saveDB();
 }
 
