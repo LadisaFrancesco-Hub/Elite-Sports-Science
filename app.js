@@ -545,6 +545,30 @@ export function renderDashboard() {
     const sess = appState.selAthId ? DB.sessions.filter(s => s.athlete === appState.selAthId) : [];
     const ath  = appState.selAthId ? athById(appState.selAthId) : null;
     document.getElementById('dh-title').textContent = ath ? ath.name : 'Seleziona un Atleta';
+
+    // Atleti inattivi — calcolato sempre, indipendente dall'atleta selezionato
+    const _today = new Date(); _today.setHours(0, 0, 0, 0);
+    const _inattivi = DB.athletes.map(a => {
+        const sa = DB.sessions.filter(s => s.athlete === a.id);
+        if (!sa.length) return null;
+        const last = sa.reduce((mx, s) => s.date > mx ? s.date : mx, sa[0].date);
+        const days = Math.floor((_today - new Date(last)) / 86400000);
+        return days > 5 ? { name: a.name, days } : null;
+    }).filter(Boolean).sort((a, b) => b.days - a.days);
+    const _inattiviDiv = document.getElementById('dh-inattivi');
+    if (_inattiviDiv) {
+        if (_inattivi.length) {
+            _inattiviDiv.style.display = '';
+            _inattiviDiv.innerHTML = `<div class="card-t" style="margin-bottom:10px">⏸ Atleti Inattivi (&gt;5 giorni)</div>` +
+                _inattivi.map(x => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
+                    <span style="color:var(--text);font-weight:600">${escHtml(x.name)}</span>
+                    <span style="color:var(--amber);font-size:12px;font-weight:700">${x.days} giorni fa</span>
+                </div>`).join('');
+        } else {
+            _inattiviDiv.style.display = 'none';
+        }
+    }
+
     if (!ath) return;
 
     const acwrData = appState.selAthId ? calculateACWR(appState.selAthId) : null;
