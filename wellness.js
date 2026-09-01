@@ -812,8 +812,9 @@ export function renderQuickWellness() {
     if (!el) return;
 
     // Nasconde il widget se il check-in è già stato fatto oggi
-    const today = new Date().toISOString().slice(0, 10);
-    if (DB.wellness?.date === today && DB.wellness?.sleep) {
+    const today   = new Date().toISOString().slice(0, 10);
+    const qwKey   = `qw_done_${appState.selAthId}`;
+    if (localStorage.getItem(qwKey) === today) {
         el.innerHTML = '';
         return;
     }
@@ -881,9 +882,13 @@ export async function quickWellnessSubmit() {
     // Ricalcola Readiness completo
     upW();
 
+    // Salva la data odierna per nascondere il widget al prossimo caricamento
+    const today = new Date().toISOString().slice(0, 10);
+    localStorage.setItem(`qw_done_${appState.selAthId}`, today);
+
     // Leggi il risultato dal ring aggiornato
     const readiness = parseInt(document.getElementById('ring-n')?.textContent || '0');
-    const col = readiness >= 75 ? 'var(--teal)' : readiness >= 50 ? 'var(--amber)' : '#ef4444';
+    const col   = readiness >= 75 ? 'var(--teal)' : readiness >= 50 ? 'var(--amber)' : '#ef4444';
     const label = readiness >= 75 ? 'Pronto ✓' : readiness >= 50 ? 'Parziale' : 'Recupero';
 
     const submitBtn = document.getElementById('qw-submit');
