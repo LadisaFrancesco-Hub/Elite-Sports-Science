@@ -720,7 +720,7 @@ export function renderStorico() {
         if (fa && s.athlete !== fa) return false;
         if (fs && s.session !== fs) return false;
         if (fp && s.phase   !== fp) return false;
-        if (fq && ![s.notes, s.doms, s.flag, s.reply, athName(s.athlete)].some(x => (x || '').toLowerCase().includes(fq))) return false;
+        if (fq && ![s.notes, s.doms, s.flag, s.reply, s.variations, athName(s.athlete)].some(x => (x || '').toLowerCase().includes(fq))) return false;
         return true;
     });
 
@@ -756,6 +756,14 @@ export function editReply(id) {
     window._replySessionId = id;
     document.getElementById('mr-notes').textContent = s.notes || '—';
     document.getElementById('mr-reply').value = s.reply || '';
+    const varsWrap = document.getElementById('mr-vars-wrap');
+    const varsEl   = document.getElementById('mr-vars');
+    if (s.variations) {
+        varsEl.textContent  = s.variations;
+        varsWrap.style.display = '';
+    } else {
+        varsWrap.style.display = 'none';
+    }
     openMo('mo-reply');
 }
 
@@ -1512,6 +1520,7 @@ export async function submitFB() {
     const cleanDOMS   = [...document.querySelectorAll('#pw-musc .on-t')].map(x => x.textContent).join(' · ');
     const cleanFlags  = [...document.querySelectorAll('#pw-flags .on-a')].map(x => x.textContent).join(',');
     const cleanNotes  = 'NOTE: ' + document.getElementById('pw-notes').value;
+    const cleanVars   = (document.getElementById('pw-vars')?.value || '').trim();
     const generatedId = DB.sessions.find(s => s.athlete===appState.selAthId && s.session===sessionName && s.date===today)?.id || ('sess_'+uid());
 
     DB.sessions = DB.sessions.filter(s => !(s.athlete===appState.selAthId && s.session===sessionName && s.date===today));
@@ -1525,7 +1534,7 @@ export async function submitFB() {
         maxE1rm:  sessType==='Campo' ? 0 : (window.liveMaxE1rm||0),
         e1rmDom:  sessType==='Campo' ? 0 : (window.liveE1rmDom||0),
         e1rmNDom: sessType==='Campo' ? 0 : (window.liveE1rmNDom||0),
-        doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, reply: ''
+        doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: ''
     };
     DB.sessions.push(sessObj);
     await saveDB();
@@ -1538,7 +1547,7 @@ export async function submitFB() {
                 week: currentWeekNum, phase: sessObj.phase, readiness: sessObj.readiness,
                 vol: sessObj.vol, srpe: sRPE, rpe: appState.pwRpe, qual: appState.pwStars, hrv: hrvVal,
                 max_e1rm: sessObj.maxE1rm, e1rm_dom: sessObj.e1rmDom, e1rm_ndom: sessObj.e1rmNDom,
-                doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, reply: ''
+                doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: ''
             }]);
             if (error) { alert('⚠️ Sync Cloud fallita. Dati salvati in locale.'); }
             else {

@@ -613,6 +613,7 @@ export async function loadDB() {
                 doms:        s.doms,
                 flag:        s.flag,
                 notes:       s.notes,
+                variations:  s.variations || '',
                 reply:       s.reply
             }));
         }
