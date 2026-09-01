@@ -31,6 +31,7 @@ import { loadLive, updateLiveTotals, toggleDot,
 import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          populateSelects, onAthChange, updateModalSessions,
          renderDashboard, renderAthletes, renderStorico, renderCoachReply,
+         renderCalendario, renderAthStorico,
          renderEditor, renderEdExercises, renderProg,
          getEdExercises, loadEditorForAthlete,
          getAthleteRiskScore, openNewAthleteModal, openEditAthleteModal,
@@ -49,7 +50,7 @@ import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          showConfirm, copyCodiceAtleta } from './app.js';
 
 import { uid, openMo, closeMo } from './utils.js';
-import { appState, DB } from './state.js';
+import { appState, DB, replaceDB } from './state.js';
 
 
 // ─────────────────────────────────────────────────────────────
@@ -104,13 +105,16 @@ Object.assign(window, {
     // Esportazione
     updateExpInfo, doExport, exportJSON, confirmReset,
     // Persistenza (usata da auth.js via window bridge)
-    saveDB, seed,
+    saveDB, seed, replaceDB,
+    // Stato condiviso (mutabile — tutti i moduli vedono la stessa reference)
+    appState,
     // Utility (usata negli onclick inline nell'editor e nei modali)
     uid, openMo, closeMo,
     // Atleti — azioni dirette
     addAthlete,
     // Render
     renderDashboard, renderProg,
+    renderCalendario, renderAthStorico,
 });
 
 
