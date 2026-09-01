@@ -421,7 +421,14 @@
 </div>
 
 <div class="panel" id="p-calendario">
-  <div class="ph">Calendario settimana</div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+    <div class="ph" style="margin:0">Calendario settimana</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      <button id="cal-today-btn" onclick="calToday()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--muted);cursor:pointer;opacity:.35">Oggi</button>
+      <button onclick="calPrev()" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+      <button onclick="calNext()" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+    </div>
+  </div>
   <div class="ps" id="cal-range">—</div>
   <div style="overflow-x:auto;margin-top:12px">
     <table id="cal-table" style="border-collapse:collapse;width:100%;min-width:500px"></table>

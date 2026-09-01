@@ -31,7 +31,7 @@ import { loadLive, updateLiveTotals, toggleDot,
 import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          populateSelects, onAthChange, updateModalSessions,
          renderDashboard, renderAthletes, renderStorico, renderCoachReply,
-         renderCalendario, renderAthStorico,
+         renderCalendario, renderAthStorico, calPrev, calNext, calToday,
          renderEditor, renderEdExercises, renderProg,
          getEdExercises, loadEditorForAthlete,
          getAthleteRiskScore, openNewAthleteModal, openEditAthleteModal,
@@ -114,7 +114,7 @@ Object.assign(window, {
     addAthlete,
     // Render
     renderDashboard, renderProg,
-    renderCalendario, renderAthStorico,
+    renderCalendario, renderAthStorico, calPrev, calNext, calToday,
 });
 
 

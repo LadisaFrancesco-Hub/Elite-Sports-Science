@@ -663,15 +663,23 @@ export function getAthleteRiskScore(athId) {
 // ─────────────────────────────────────────────────────────────
 // CALENDARIO SETTIMANALE COACH
 // ─────────────────────────────────────────────────────────────
+export function calPrev()  { appState.calWeekOffset--; renderCalendario(); }
+export function calNext()  { appState.calWeekOffset++; renderCalendario(); }
+export function calToday() { appState.calWeekOffset = 0; renderCalendario(); }
+
 export function renderCalendario() {
     const table = document.getElementById('cal-table');
     const rangeEl = document.getElementById('cal-range');
     if (!table) return;
 
-    // Calcola lunedì della settimana corrente
+    // Calcola lunedì della settimana con offset
     const today = new Date(); today.setHours(0, 0, 0, 0);
     const mon = new Date(today);
-    mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    mon.setDate(today.getDate() - ((today.getDay() + 6) % 7) + appState.calWeekOffset * 7);
+
+    // Aggiorna bottone Oggi
+    const todayBtn = document.getElementById('cal-today-btn');
+    if (todayBtn) todayBtn.style.opacity = appState.calWeekOffset === 0 ? '0.35' : '1';
 
     const days = Array.from({ length: 7 }, (_, i) => {
         const d = new Date(mon); d.setDate(mon.getDate() + i);

@@ -83,4 +83,5 @@ export const appState = {
     pwStars:             0,
     currentProgExIndex:  null,
     saveDbTimeout:       null,
+    calWeekOffset:       0,
 };
