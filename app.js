@@ -385,6 +385,14 @@ document.addEventListener('click', e => {
 });
 
 
+function updateReplyBadge() {
+    const unanswered = DB.sessions.filter(s => s.notes && s.notes.trim() && (!s.reply || !s.reply.trim())).length;
+    const el = document.getElementById('nb-reply');
+    if (!el) return;
+    el.textContent = unanswered;
+    el.style.display = unanswered > 0 ? '' : 'none';
+}
+
 // ─────────────────────────────────────────────────────────────
 // SELETTORI
 // ─────────────────────────────────────────────────────────────
@@ -408,6 +416,7 @@ export function populateSelects() {
 
     document.getElementById('nb-ath').textContent = DB.athletes.length;
     document.getElementById('nb-sto').textContent = DB.sessions.length;
+    updateReplyBadge();
     updateModalSessions();
 }
 
@@ -881,6 +890,7 @@ export function renderStorico() {
         tb.appendChild(tr);
     });
     document.getElementById('sto-count').textContent = `${rows.length} sessioni`;
+    updateReplyBadge();
 }
 
 export function editReply(id) {
