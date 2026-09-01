@@ -343,7 +343,7 @@ export function openMesocycleArchive() {
 // ─────────────────────────────────────────────────────────────
 export function go(id, btn) {
     if (window.userRole === 'ATLETA') {
-        const allowed = ['wellness', 'sessione', 'feedback', 'coach-reply', 'ath-progressi'];
+        const allowed = ['wellness', 'sessione', 'feedback', 'coach-reply', 'ath-progressi', 'ath-storico'];
         if (!allowed.includes(id)) return;
     }
 
@@ -363,7 +363,8 @@ export function go(id, btn) {
         'coach-reply':    renderCoachReply,
         analytics:        renderAnalytics,
         progressione:     renderProg,
-        'ath-progressi':  renderAthProgressi
+        'ath-progressi':  renderAthProgressi,
+        'ath-storico':    renderAthStorico
     };
     if (renders[id]) renders[id]();
 
@@ -861,6 +862,33 @@ export function renderCoachReply() {
             </div>
             ${s.notes ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;padding:6px 10px;background:var(--s1);border-radius:6px;"><span style="font-weight:600;color:var(--text)">La tua nota:</span> ${escHtml(s.notes.replace('NOTE: ',''))}</div>` : ''}
             <div style="font-size:13px;color:var(--purple);line-height:1.6;white-space:pre-wrap;padding:8px 10px;background:var(--s2);border-left:3px solid var(--purple);border-radius:0 6px 6px 0;">${escHtml(s.reply)}</div>
+        </div>`).join('');
+}
+
+export function renderAthStorico() {
+    const list = document.getElementById('ath-sto-list');
+    if (!list) return;
+    const sessions = [...DB.sessions]
+        .filter(s => s.athlete === window.mioIdLoggato)
+        .sort((a, b) => b.date.localeCompare(a.date))
+        .slice(0, 20);
+    if (!sessions.length) {
+        list.innerHTML = `<div style="text-align:center;color:var(--muted);padding:40px 20px;font-size:14px;">Nessuna sessione registrata.</div>`;
+        return;
+    }
+    list.innerHTML = sessions.map(s => `
+        <div class="card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span class="tag tg" style="font-size:11px">${escHtml(s.session)}</span>
+                <span style="color:var(--muted);font-size:11px">${s.date}</span>
+            </div>
+            <div style="display:flex;gap:12px;font-size:12px;color:var(--muted)">
+                <span>Vol <strong style="color:var(--text)">${(s.vol||0).toLocaleString('it-IT')}</strong></span>
+                <span>RPE <strong style="color:var(--amber)">${s.rpe||'—'}</strong></span>
+                ${s.maxE1rm ? `<span>e1RM <strong style="color:var(--blue)">${s.maxE1rm} kg</strong></span>` : ''}
+                ${s.reply ? `<span style="color:var(--purple);font-weight:700">💬 risposta</span>` : ''}
+            </div>
+            ${s.notes ? `<div style="margin-top:6px;font-size:11px;color:var(--muted);padding:5px 8px;background:var(--s1);border-radius:6px">${escHtml(s.notes)}</div>` : ''}
         </div>`).join('');
 }
 
