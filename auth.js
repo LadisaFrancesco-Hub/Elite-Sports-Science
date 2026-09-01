@@ -922,11 +922,43 @@ function _onAtletiChange(payload) {
 // ─────────────────────────────────────────────────────────────
 
 export function _showPushBanner(userId, userType, athleteId = null) {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-    if (Notification.permission !== 'default') return; // già concesse o negate
+    if (!('serviceWorker' in navigator)) return;
     if (VAPID_PUBLIC_KEY.startsWith('SOSTITUISCI')) return;
-
     if (document.getElementById('push-banner')) return;
+
+    const isIOS        = /iphone|ipad|ipod/i.test(navigator.userAgent);
+    const isStandalone = window.navigator.standalone === true;
+
+    // iOS senza PWA installata: PushManager non disponibile — mostra banner "Aggiungi alla schermata Home"
+    if (!('PushManager' in window)) {
+        if (!isIOS) return; // altri browser non supportati → silenzioso
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="push-banner" style="
+                position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+                background:#1e293b; border:1px solid var(--amber,#f59e0b); border-radius:14px;
+                padding:14px 18px; z-index:99998; display:flex; align-items:center; gap:12px;
+                max-width:340px; width:90%; box-shadow:0 8px 24px rgba(0,0,0,0.5);
+                font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+                <span style="font-size:22px;flex-shrink:0;">📲</span>
+                <div style="flex:1;font-size:12px;color:#e2e8f0;line-height:1.4;">
+                    Per ricevere notifiche su iOS, tocca <strong>Condividi</strong> poi <strong>Aggiungi alla schermata Home</strong>
+                </div>
+                <button id="push-banner-no" style="
+                    background:none;border:none;color:#64748b;font-size:20px;
+                    cursor:pointer;padding:2px 6px;flex-shrink:0;touch-action:manipulation;">
+                    ✕
+                </button>
+            </div>`);
+        document.getElementById('push-banner-no').addEventListener('click', () => {
+            document.getElementById('push-banner')?.remove();
+        });
+        return;
+    }
+
+    // Browser senza supporto Notification API
+    if (!('Notification' in window)) return;
+    // Permesso già gestito (concesso o negato)
+    if (Notification.permission !== 'default') return;
 
     document.body.insertAdjacentHTML('beforeend', `
         <div id="push-banner" style="
@@ -969,15 +1001,24 @@ function _urlBase64ToUint8Array(base64String) {
 }
 
 export async function subscribePush(userId, userType, athleteId = null) {
-    if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
-    if (Notification.permission === 'denied') return;
+    if (!('PushManager' in window) || !('serviceWorker' in navigator)) return;
+    if (!('Notification' in window) || Notification.permission === 'denied') return;
     if (VAPID_PUBLIC_KEY.startsWith('SOSTITUISCI')) return;
 
     try {
         const permission = await Notification.requestPermission();
-        if (permission !== 'granted') return;
+        if (permission !== 'granted') {
+            toast('Notifiche non autorizzate. Abilitale dalle impostazioni del browser.');
+            return;
+        }
 
         const reg      = await navigator.serviceWorker.ready;
+
+        if (!reg.pushManager) {
+            toast('Push non supportate su questo browser.');
+            return;
+        }
+
         const existing = await reg.pushManager.getSubscription();
         const sub      = existing || await reg.pushManager.subscribe({
             userVisibleOnly:      true,
@@ -985,16 +1026,27 @@ export async function subscribePush(userId, userType, athleteId = null) {
         });
 
         if (window.mySupabase) {
-            await window.mySupabase.from('push_subscriptions').upsert([{
+            // Fix D: salva come oggetto JSONB (sub.toJSON()), non come stringa
+            const { error } = await window.mySupabase.from('push_subscriptions').upsert([{
                 user_id:      userId,
                 user_type:    userType,
                 athlete_id:   athleteId,
                 endpoint:     sub.endpoint,
-                subscription: JSON.stringify(sub)
+                subscription: sub.toJSON()
             }], { onConflict: 'endpoint' });
+
+            if (error) {
+                console.error('[Push] Errore salvataggio subscription:', error);
+                toast('Notifiche: errore di sincronizzazione. Riprova.');
+            } else {
+                toast('Notifiche abilitate!');
+            }
+        } else {
+            toast('Notifiche abilitate (offline — sincronizza al prossimo accesso).');
         }
     } catch (e) {
         console.warn('[Push] Sottoscrizione fallita:', e);
+        toast('Notifiche non supportate su questo dispositivo.');
     }
 }
 

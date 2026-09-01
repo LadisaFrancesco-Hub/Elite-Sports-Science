@@ -48,9 +48,11 @@ serve(async (req: Request) => {
 
         const results = await Promise.allSettled(
             subs.map(async (row) => {
+                // subscription è JSONB object — supporta anche vecchie righe stringa per retrocompatibilità
                 const sub = typeof row.subscription === 'string'
                     ? JSON.parse(row.subscription)
                     : row.subscription;
+                if (!sub?.endpoint) { logs.push('Riga senza endpoint valido — saltata'); return; }
                 logs.push(`Invio a: ${sub.endpoint.slice(0, 60)}...`);
                 const r = await webpush.sendNotification(sub, JSON.stringify({ title, body, url: '/' }));
                 logs.push(`Risposta FCM: ${r.statusCode}`);
