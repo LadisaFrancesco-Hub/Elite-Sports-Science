@@ -351,6 +351,7 @@
     <button class="nav-btn on" onclick="go('dashboard',this)"><span class="ico">▦</span>Dashboard</button>
     <button class="nav-btn" onclick="go('athletes',this)"><span class="ico">◉</span>Atleti <span class="nav-badge" id="nb-ath">0</span></button>
     <button class="nav-btn" onclick="go('storico',this)"><span class="ico">≡</span>Storico <span class="nav-badge" id="nb-sto">0</span><span class="nav-badge-warn" id="nb-reply" style="display:none">0</span></button>
+    <button class="nav-btn" onclick="go('calendario',this)"><span class="ico">▦</span>Calendario</button>
     <button class="nav-btn" onclick="go('editor',this)"><span class="ico">✎</span>Editor schede</button>
   </div>
   <div class="nav-group">
@@ -417,6 +418,14 @@
   </div>
   <div class="tw"><table><thead><tr><th>Data</th><th>Sessione</th><th>Atleta</th><th>W</th><th>Fase</th><th>Read.</th><th>Vol kg</th><th>sRPE</th><th>RPE</th><th>e1RM</th><th>DOMS</th><th>Flag</th><th>Risposta</th><th>Var.</th><th></th></tr></thead><tbody id="sto-body"></tbody></table></div>
   <div style="text-align:right;margin-top:8px;font-size:10px;color:var(--muted)" id="sto-count"></div>
+</div>
+
+<div class="panel" id="p-calendario">
+  <div class="ph">Calendario settimana</div>
+  <div class="ps" id="cal-range">—</div>
+  <div style="overflow-x:auto;margin-top:12px">
+    <table id="cal-table" style="border-collapse:collapse;width:100%;min-width:500px"></table>
+  </div>
 </div>
 
 <div class="panel" id="p-editor">

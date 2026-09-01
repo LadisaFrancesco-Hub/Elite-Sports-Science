@@ -364,7 +364,8 @@ export function go(id, btn) {
         analytics:        renderAnalytics,
         progressione:     renderProg,
         'ath-progressi':  renderAthProgressi,
-        'ath-storico':    renderAthStorico
+        'ath-storico':    renderAthStorico,
+        'calendario':     renderCalendario
     };
     if (renders[id]) renders[id]();
 
@@ -658,6 +659,65 @@ export function getAthleteRiskScore(athId) {
     return score;
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// CALENDARIO SETTIMANALE COACH
+// ─────────────────────────────────────────────────────────────
+export function renderCalendario() {
+    const table = document.getElementById('cal-table');
+    const rangeEl = document.getElementById('cal-range');
+    if (!table) return;
+
+    // Calcola lunedì della settimana corrente
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+
+    const days = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date(mon); d.setDate(mon.getDate() + i);
+        return d;
+    });
+    const dayKeys = days.map(d => d.toISOString().slice(0, 10));
+    const dayLabels = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+    rangeEl.textContent = `${dayKeys[0]} — ${dayKeys[6]}`;
+
+    // Indice sessioni per (athlete, date)
+    const idx = {};
+    DB.sessions.forEach(s => {
+        const k = s.athlete + '|' + s.date;
+        if (!idx[k]) idx[k] = [];
+        idx[k].push(s);
+    });
+
+    // Header
+    let html = '<thead><tr><th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:12px;border-bottom:1px solid var(--border)">Atleta</th>';
+    dayLabels.forEach((lbl, i) => {
+        const isToday = dayKeys[i] === today.toISOString().slice(0, 10);
+        html += `<th style="padding:8px 6px;text-align:center;font-size:12px;color:${isToday ? 'var(--teal)' : 'var(--muted)'};border-bottom:1px solid var(--border)">${lbl}<br><span style="font-size:10px;font-weight:400">${dayKeys[i].slice(5)}</span></th>`;
+    });
+    html += '</tr></thead><tbody>';
+
+    DB.athletes.forEach(a => {
+        html += `<tr><td style="padding:8px 10px;font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border)">${escHtml(a.name)}</td>`;
+        dayKeys.forEach(dk => {
+            const sess = idx[a.id + '|' + dk] || [];
+            const isToday = dk === today.toISOString().slice(0, 10);
+            let cell = '';
+            if (sess.length) {
+                const titles = sess.map(s => escHtml(s.session)).join(', ');
+                cell = `<span title="${titles}" onclick="appState.selAthId='${a.id}';go('storico',document.querySelector('.nav-btn[onclick*=\\'storico\\']'))" style="cursor:pointer;display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--teal);vertical-align:middle"></span>`;
+            } else {
+                cell = `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--border);vertical-align:middle"></span>`;
+            }
+            html += `<td style="padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);${isToday ? 'background:rgba(16,185,129,.05)' : ''}">${cell}</td>`;
+        });
+        html += '</tr>';
+    });
+
+    html += '</tbody>';
+    table.innerHTML = html;
+}
 
 // ─────────────────────────────────────────────────────────────
 // ATLETI
