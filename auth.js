@@ -957,8 +957,14 @@ export function _showPushBanner(userId, userType, athleteId = null) {
 
     // Browser senza supporto Notification API
     if (!('Notification' in window)) return;
-    // Permesso già gestito (concesso o negato)
-    if (Notification.permission !== 'default') return;
+
+    // Permesso già concesso → ri-sottoscrivi silenziosamente (idempotente via upsert su endpoint)
+    if (Notification.permission === 'granted') {
+        subscribePush(userId, userType, athleteId, false);
+        return;
+    }
+    // Permesso negato → non possiamo fare nulla senza settings browser
+    if (Notification.permission === 'denied') return;
 
     document.body.insertAdjacentHTML('beforeend', `
         <div id="push-banner" style="
@@ -1000,7 +1006,7 @@ function _urlBase64ToUint8Array(base64String) {
     return Uint8Array.from([...rawData].map(c => c.charCodeAt(0)));
 }
 
-export async function subscribePush(userId, userType, athleteId = null) {
+export async function subscribePush(userId, userType, athleteId = null, showToast = true) {
     if (!('PushManager' in window) || !('serviceWorker' in navigator)) return;
     if (!('Notification' in window) || Notification.permission === 'denied') return;
     if (VAPID_PUBLIC_KEY.startsWith('SOSTITUISCI')) return;
@@ -1008,14 +1014,14 @@ export async function subscribePush(userId, userType, athleteId = null) {
     try {
         const permission = await Notification.requestPermission();
         if (permission !== 'granted') {
-            toast('Notifiche non autorizzate. Abilitale dalle impostazioni del browser.');
+            if (showToast) toast('Notifiche non autorizzate. Abilitale dalle impostazioni del browser.');
             return;
         }
 
-        const reg      = await navigator.serviceWorker.ready;
+        const reg = await navigator.serviceWorker.ready;
 
         if (!reg.pushManager) {
-            toast('Push non supportate su questo browser.');
+            if (showToast) toast('Push non supportate su questo browser.');
             return;
         }
 
@@ -1026,7 +1032,6 @@ export async function subscribePush(userId, userType, athleteId = null) {
         });
 
         if (window.mySupabase) {
-            // Fix D: salva come oggetto JSONB (sub.toJSON()), non come stringa
             const { error } = await window.mySupabase.from('push_subscriptions').upsert([{
                 user_id:      userId,
                 user_type:    userType,
@@ -1037,16 +1042,16 @@ export async function subscribePush(userId, userType, athleteId = null) {
 
             if (error) {
                 console.error('[Push] Errore salvataggio subscription:', error);
-                toast('Notifiche: errore di sincronizzazione. Riprova.');
+                if (showToast) toast('Notifiche: errore di sincronizzazione. Riprova.');
             } else {
-                toast('Notifiche abilitate!');
+                if (showToast) toast('Notifiche abilitate!');
             }
         } else {
-            toast('Notifiche abilitate (offline — sincronizza al prossimo accesso).');
+            if (showToast) toast('Notifiche abilitate (offline — sincronizza al prossimo accesso).');
         }
     } catch (e) {
         console.warn('[Push] Sottoscrizione fallita:', e);
-        toast('Notifiche non supportate su questo dispositivo.');
+        if (showToast) toast('Notifiche non supportate su questo dispositivo.');
     }
 }
 
