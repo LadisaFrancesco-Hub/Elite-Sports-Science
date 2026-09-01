@@ -721,6 +721,30 @@
   <div id="cr-list"></div>
 </div>
 
+<div class="panel" id="p-ath-progressi">
+  <div class="ph" id="ap-title">I miei progressi</div>
+  <div class="ps" id="ap-sub">Storico personale</div>
+  <div class="g4" id="ap-kpis" style="margin-bottom:14px"></div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-t">Questa settimana</div>
+    <div id="ap-week"></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-t">Volume — ultime 8 sessioni</div>
+    <div class="bc" id="ap-vol-bc"></div>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+    <div class="card-t">Andamento e1RM</div>
+    <div style="position:relative;height:180px" id="ap-e1rm-wrap">
+      <canvas id="ap-e1rm-chart"></canvas>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-t">Personal Records</div>
+    <div id="ap-records"></div>
+  </div>
+</div>
+
 <div class="panel" id="p-analytics">
   <div class="ph">Analytics & Trend Biomeccanici</div>
   <div class="ps" id="an-sub">Statistiche atleta</div>
@@ -903,7 +927,7 @@
     <div class="bb-item" onclick="go('wellness')"><div class="bb-icon">♡</div><div class="bb-lbl">Wellness</div></div>
     <div class="bb-item on" onclick="go('sessione')"><div class="bb-icon">▶</div><div class="bb-lbl">Sessione</div></div>
     <div class="bb-item" onclick="go('feedback')"><div class="bb-icon">✉</div><div class="bb-lbl">Post-WOD</div></div>
-    <div class="bb-item" onclick="go('analytics')"><div class="bb-icon">↗</div><div class="bb-lbl">Progressi</div></div>
+    <div class="bb-item" onclick="go('ath-progressi')"><div class="bb-icon">↗</div><div class="bb-lbl">Progressi</div></div>
     <div class="bb-item" onclick="go('coach-reply')"><div class="bb-icon">💬</div><div class="bb-lbl">Coach</div></div>
 </div>
 

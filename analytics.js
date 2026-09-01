@@ -1139,3 +1139,145 @@ export function getRollingHrvTrend(athId, days = 30) {
         return { ...point, rolling7d: parseFloat(avg7.toFixed(1)) };
     });
 }
+
+
+// ─────────────────────────────────────────────────────────────
+// 7. renderAthProgressi()
+//    Pannello "I miei progressi" — vista personale atleta.
+//    Legge window.mioIdLoggato (o appState.selAthId come fallback).
+// ─────────────────────────────────────────────────────────────
+let apE1rmChart = null;
+
+export function renderAthProgressi() {
+    const athId = window.mioIdLoggato || appState.selAthId;
+    const ath   = athById(athId);
+    const all   = [...DB.sessions]
+        .filter(s => s.athlete === athId)
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+    const titleEl = document.getElementById('ap-title');
+    const subEl   = document.getElementById('ap-sub');
+    if (titleEl) titleEl.textContent = ath ? `Ciao, ${ath.name.split(' ')[0]} 👋` : 'I miei progressi';
+    if (subEl)   subEl.textContent   = `${all.length} sessioni registrate`;
+
+    // ── KPI ─────────────────────────────────────────────────
+    const last5   = all.slice(-5);
+    const avgRpe  = last5.length
+        ? (last5.reduce((a, s) => a + (s.rpe || 0), 0) / last5.length).toFixed(1) : '—';
+    const bestE1rm = all.length ? Math.max(...all.map(s => s.maxE1rm || 0)) : 0;
+    const bestVol  = all.length ? Math.max(...all.map(s => s.vol || 0)) : 0;
+
+    const today    = new Date();
+    const monday   = new Date(today);
+    monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    const mondayStr = monday.toISOString().slice(0, 10);
+    const thisWeek  = all.filter(s => s.date >= mondayStr);
+    const freq      = (ath && ath.freq) ? ath.freq : 4;
+
+    const kpisEl = document.getElementById('ap-kpis');
+    if (kpisEl) kpisEl.innerHTML = `
+        <div class="kpi"><div class="kpi-l">Sessioni totali</div><div class="kpi-v">${all.length}</div></div>
+        <div class="kpi"><div class="kpi-l">Questa settimana</div>
+            <div class="kpi-v" style="color:${thisWeek.length >= freq ? 'var(--teal)' : 'var(--text)'}">
+                ${thisWeek.length}<span style="font-size:14px;font-weight:500;color:var(--muted)">/${freq}</span>
+            </div></div>
+        <div class="kpi"><div class="kpi-l">Miglior e1RM</div>
+            <div class="kpi-v" style="color:var(--amber)">${bestE1rm > 0 ? bestE1rm + ' kg' : '—'}</div></div>
+        <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>`;
+
+    // ── Questa settimana ─────────────────────────────────────
+    const lastSess      = all.length ? all[all.length - 1] : null;
+    const daysSinceLast = lastSess
+        ? Math.floor((today - new Date(lastSess.date)) / 86400000) : null;
+    const pct = Math.min(thisWeek.length / freq * 100, 100);
+
+    const weekEl = document.getElementById('ap-week');
+    if (weekEl) weekEl.innerHTML = `
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <div style="font-size:22px;font-weight:800;color:${thisWeek.length >= freq ? 'var(--teal)' : 'var(--text)'}">
+                ${thisWeek.length} / ${freq} sessioni
+            </div>
+            ${daysSinceLast !== null
+                ? `<div style="font-size:12px;color:var(--muted)">${daysSinceLast === 0 ? 'Allenato oggi ✓' : daysSinceLast === 1 ? 'Ultima sessione ieri' : `Ultima sessione ${daysSinceLast}gg fa`}</div>`
+                : ''}
+        </div>
+        <div style="height:8px;background:var(--s1);border-radius:4px;overflow:hidden">
+            <div style="height:100%;width:${pct}%;background:${pct >= 100 ? 'var(--teal)' : 'var(--amber)'};border-radius:4px"></div>
+        </div>
+        ${thisWeek.length > 0
+            ? `<div style="margin-top:10px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px">
+                ${thisWeek.map(s => `<span style="background:var(--s2);padding:3px 8px;border-radius:4px">${s.date.slice(5)} · ${escHtml(s.session)}</span>`).join('')}
+               </div>` : ''}`;
+
+    // ── Volume bar chart ─────────────────────────────────────
+    const last8  = all.slice(-8);
+    const maxVol = Math.max(...last8.map(s => s.vol || 0), 1);
+    const bcEl   = document.getElementById('ap-vol-bc');
+    if (bcEl) {
+        bcEl.innerHTML = '';
+        if (last8.length === 0) {
+            bcEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Nessuna sessione ancora</div>';
+        } else {
+            last8.forEach(s => {
+                const h   = Math.round((s.vol || 0) / maxVol * 85);
+                const col = document.createElement('div');
+                col.className = 'bc-col';
+                col.innerHTML = `<div class="bc-val">${((s.vol || 0) / 1000).toFixed(1)}k</div>
+                                 <div class="bc-bar" style="height:${h}px;background:var(--teal)"></div>
+                                 <div class="bc-lbl">${s.date.slice(5)}</div>`;
+                bcEl.appendChild(col);
+            });
+        }
+    }
+
+    // ── e1RM trend line chart ────────────────────────────────
+    const e1rmSess = all.filter(s => (s.maxE1rm || 0) > 0).slice(-12);
+    if (apE1rmChart) { apE1rmChart.destroy(); apE1rmChart = null; }
+    const wrapEl = document.getElementById('ap-e1rm-wrap');
+    if (wrapEl) {
+        if (e1rmSess.length === 0) {
+            wrapEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:40px">Nessun dato e1RM ancora registrato</div>';
+        } else {
+            wrapEl.innerHTML = '<canvas id="ap-e1rm-chart"></canvas>';
+            const ctx = document.getElementById('ap-e1rm-chart');
+            apE1rmChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: e1rmSess.map(s => s.date.slice(5)),
+                    datasets: [{
+                        data: e1rmSess.map(s => s.maxE1rm),
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245,158,11,0.08)',
+                        borderWidth: 2,
+                        pointBackgroundColor: '#f59e0b',
+                        pointBorderColor: '#05070A',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        tension: 0.3,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#9CA3AF', font: { size: 10 } } },
+                        y: { grid: { color: 'rgba(255,255,255,0.04)' }, ticks: { color: '#9CA3AF', font: { size: 10 }, callback: v => v + ' kg' } }
+                    }
+                }
+            });
+        }
+    }
+
+    // ── Personal Records ─────────────────────────────────────
+    const recEl = document.getElementById('ap-records');
+    if (recEl) recEl.innerHTML = [
+        { label: 'Miglior e1RM registrato',       value: bestE1rm > 0 ? `${bestE1rm} kg` : '—',             color: 'var(--amber)'  },
+        { label: 'Volume massimo in una sessione', value: bestVol > 0 ? `${(bestVol / 1000).toFixed(1)} t` : '—', color: 'var(--teal)'   },
+        { label: 'Sessioni totali completate',     value: all.length,                                         color: 'var(--purple)' },
+    ].map(r => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+            <span style="font-size:13px;color:var(--muted)">${r.label}</span>
+            <span style="font-size:16px;font-weight:800;color:${r.color}">${r.value}</span>
+        </div>`).join('');
+}

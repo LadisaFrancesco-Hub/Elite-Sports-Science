@@ -17,7 +17,7 @@ import { upW, setW, mkPips, renderInjuries,
          startCnsTest, registerCnsTap, endCnsTest, evaluateCnsTest,
          confermaWellnessLive, computeSessionModifiers } from './wellness.js';
 
-import { calculateACWR, renderAnalytics,
+import { calculateACWR, renderAnalytics, renderAthProgressi,
          renderE1rmChart, calculateEfficiencyIndex,
          calculateProgressionIndex, getRollingHrvTrend } from './analytics.js';
 
@@ -72,7 +72,7 @@ Object.assign(window, {
     startCnsTest, registerCnsTap, endCnsTest, evaluateCnsTest,
     confermaWellnessLive, computeSessionModifiers,
     // Analytics
-    renderAnalytics, renderE1rmChart,
+    renderAnalytics, renderAthProgressi, renderE1rmChart,
     calculateACWR, calculateEfficiencyIndex, calculateProgressionIndex, getRollingHrvTrend,
     // Workout
     loadLive, updateLiveTotals, openRealLog, saveRealLog,

@@ -19,7 +19,7 @@ import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStat
 // e app.js li chiama solo dentro funzioni (mai al top-level).
 import { upW, renderInjuries } from './wellness.js';
 import { loadLive, updateLiveTotals } from './workout.js';
-import { renderAnalytics, calculateACWR, renderE1rmChart } from './analytics.js';
+import { renderAnalytics, calculateACWR, renderE1rmChart, renderAthProgressi } from './analytics.js';
 
 // ─────────────────────────────────────────────────────────────
 // MODAL HELPERS — showConfirm, copyCodiceAtleta
@@ -343,7 +343,7 @@ export function openMesocycleArchive() {
 // ─────────────────────────────────────────────────────────────
 export function go(id, btn) {
     if (window.userRole === 'ATLETA') {
-        const allowed = ['wellness', 'sessione', 'feedback', 'coach-reply', 'analytics'];
+        const allowed = ['wellness', 'sessione', 'feedback', 'coach-reply', 'ath-progressi'];
         if (!allowed.includes(id)) return;
     }
 
@@ -360,9 +360,10 @@ export function go(id, btn) {
         editor:         renderEditor,
         wellness:       () => upW(),
         sessione:       loadLive,
-        'coach-reply':  renderCoachReply,
-        analytics:      renderAnalytics,
-        progressione:   renderProg
+        'coach-reply':    renderCoachReply,
+        analytics:        renderAnalytics,
+        progressione:     renderProg,
+        'ath-progressi':  renderAthProgressi
     };
     if (renders[id]) renders[id]();
 
