@@ -21,6 +21,30 @@ import { upW, renderInjuries } from './wellness.js';
 import { loadLive, updateLiveTotals } from './workout.js';
 import { renderAnalytics, calculateACWR, renderE1rmChart } from './analytics.js';
 
+// ─────────────────────────────────────────────────────────────
+// MODAL HELPERS — showConfirm, copyCodiceAtleta
+// ─────────────────────────────────────────────────────────────
+export function showConfirm(msg, callback, btnLabel = 'Elimina') {
+    window._confirmCallback = callback;
+    const msgEl = document.getElementById('mo-confirm-msg');
+    const okBtn = document.getElementById('mo-confirm-ok');
+    if (msgEl) msgEl.textContent = msg;
+    if (okBtn) okBtn.textContent = btnLabel;
+    openMo('mo-confirm');
+}
+window._confirmOk = function () {
+    closeMo('mo-confirm');
+    if (typeof window._confirmCallback === 'function') window._confirmCallback();
+    window._confirmCallback = null;
+};
+
+export function copyCodiceAtleta() {
+    const code = (document.getElementById('mac-code') || {}).textContent || '';
+    navigator.clipboard.writeText(code).then(() => {
+        const btn = document.getElementById('mac-copy-btn');
+        if (btn) { btn.textContent = '✓ Copiato!'; setTimeout(() => { btn.textContent = 'Copia codice'; }, 2000); }
+    }).catch(() => toast('Copia non supportata su questo browser'));
+}
 
 // ─────────────────────────────────────────────────────────────
 // PUSH — test manuale dalla sidebar coach
@@ -166,33 +190,41 @@ async function archiveMesocycle(athId) {
     return snapshot;
 }
 
-export async function archiveAndNewMeso() {
+export function archiveAndNewMeso() {
     const athId = document.getElementById('ed-ath').value || appState.selAthId;
     const sch   = DB.schedules[athId];
     if (!sch) return;
 
     const mesoCorrente = sch.meso || 'Meso corrente';
-    if (!confirm(
-        `Archiviare "${mesoCorrente}" e iniziare un nuovo mesociclo?\n\n` +
-        `La scheda attuale verrà conservata nello storico consultabile.`
-    )) return;
+    const archiviati   = (DB.mesocycles || []).filter(m => m.athlete === athId).length;
+    const nomeDefault  = `Meso ${archiviati + 1}`;
 
+    document.getElementById('mma-info').textContent =
+        `Archiviare "${mesoCorrente}" e iniziare un nuovo mesociclo? La scheda attuale verrà conservata nello storico.`;
+    document.getElementById('mma-name').value   = nomeDefault;
+    document.getElementById('mma-keep').checked = true;
+    window._mesoArchAthId        = athId;
+    window._mesoArchNomeCorrente = mesoCorrente;
+    openMo('mo-meso-arch');
+}
+
+export async function confirmMesoArchive() {
+    const athId = window._mesoArchAthId;
+    if (!athId) return;
+    const sch = DB.schedules[athId];
+    if (!sch) { closeMo('mo-meso-arch'); return; }
+
+    const newName = (document.getElementById('mma-name').value || '').trim();
+    if (!newName) { toast('Nome non valido.'); return; }
+    const keepTemplate = document.getElementById('mma-keep').checked;
+    const mesoCorrente = window._mesoArchNomeCorrente || sch.meso;
+
+    closeMo('mo-meso-arch');
     updateCloudStatus('saving');
     const snap = await archiveMesocycle(athId);
     if (!snap) return;
 
-    const archiviati  = (DB.mesocycles || []).filter(m => m.athlete === athId).length;
-    const nomeDefault = `Meso ${archiviati + 1}`;
-    const newName     = prompt('Nome del nuovo mesociclo:', nomeDefault);
-    if (!newName || !newName.trim()) { toast('Nome non valido. Operazione annullata.'); return; }
-
-    const keepTemplate = confirm(
-        'Vuoi usare le sessioni correnti come punto di partenza?\n\n' +
-        '"OK" → mantieni la struttura delle sessioni (progressioni azzerata)\n' +
-        '"Annulla" → parti da zero con una sessione vuota'
-    );
-
-    sch.meso = newName.trim(); sch.phase = 'Accumulo'; sch.duration = 4; sch.coachNote = ''; sch.objective = '';
+    sch.meso = newName; sch.phase = 'Accumulo'; sch.duration = 4; sch.coachNote = ''; sch.objective = '';
 
     if (!keepTemplate) {
         sch.sessions = [{ id: uid(), name: 'Seduta A', exercises: [] }];
@@ -596,7 +628,11 @@ export async function addAthlete() {
     renderAthletes(); closeMo('mo-ath');
     btn.textContent = 'Aggiungi'; btn.disabled = false;
 
-    alert(`Atleta aggiunto!\n\nNome: ${name}\nEmail: ${email}\nCodice di accesso: ${codiceGenerato}\n\nAl primo accesso l'atleta inserisce il codice, poi imposta\nemail e password definitivi. Comunicagli il codice.`);
+    document.getElementById('mac-info').innerHTML = `<strong>${escHtml(name)}</strong> &middot; ${escHtml(email)}`;
+    document.getElementById('mac-code').textContent = codiceGenerato;
+    const _cpBtn = document.getElementById('mac-copy-btn');
+    if (_cpBtn) _cpBtn.textContent = 'Copia codice';
+    openMo('mo-ath-code');
 }
 
 export function openNewAthleteModal() {
@@ -649,11 +685,10 @@ async function saveAthleteEdits() {
 }
 
 export function deleteSelectedAthlete() {
-    const modal = document.getElementById('custom-confirm-modal');
-    if (!modal) { if (confirm("Eliminare completamente l'atleta?")) eseguiCancellazioneRealeAtleta(); return; }
-    modal.style.display = 'flex';
-    document.getElementById('confirm-cancel-btn').onclick = () => { modal.style.display = 'none'; };
-    document.getElementById('confirm-delete-btn').onclick = () => { modal.style.display = 'none'; eseguiCancellazioneRealeAtleta(); };
+    showConfirm(
+        "Eliminare completamente l'atleta? Tutti i dati, i mesocicli e lo storico verranno cancellati per sempre.",
+        eseguiCancellazioneRealeAtleta
+    );
 }
 
 async function eseguiCancellazioneRealeAtleta() {
@@ -691,7 +726,7 @@ export function renderCoachReply() {
     list.innerHTML = sessions.map(s => `
         <div class="card" style="margin-bottom:12px">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                <span class="tag tg">${s.session}</span>
+                <span class="tag tg">${escHtml(s.session)}</span>
                 <span style="color:var(--muted);font-size:11px">${s.date}</span>
             </div>
             ${s.notes ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;padding:6px 10px;background:var(--s1);border-radius:6px;"><span style="font-weight:600;color:var(--text)">La tua nota:</span> ${escHtml(s.notes.replace('NOTE: ',''))}</div>` : ''}
@@ -741,6 +776,7 @@ export function renderStorico() {
             <td style="color:var(--muted);font-size:11px">${escHtml(sess.doms || '—')}</td>
             <td>${sess.flag ? `<span class="tag tc">${escHtml(sess.flag)}</span>` : '—'}</td>
             <td>${sess.reply ? '✓' : '—'}</td>
+            <td>${sess.variations ? '<span style="color:var(--amber)">⚡</span>' : '—'}</td>
             <td>
                 <button class="btn btn-g btn-xs" onclick="editReply('${sess.id}')">✎</button>
                 <button class="btn btn-d btn-xs" onclick="delSess('${sess.id}')">✕</button>
@@ -793,16 +829,17 @@ export async function saveReply() {
     } catch (e) { toast('⚠️ Errore di connessione.'); }
 }
 
-export async function delSess(id) {
-    if (!confirm('Eliminare definitivamente questa sessione?')) return;
-    DB.sessions = DB.sessions.filter(x => x.id !== id);
-    await saveDB(); renderStorico(); renderAnalytics();
-    try {
-        if (window.mySupabase) {
-            const { error } = await window.mySupabase.from('sessions').delete().eq('id', id);
-            toast(error ? '⚠️ Cancellata solo in locale.' : 'Sessione eliminata dal Cloud! ✓');
-        }
-    } catch (e) { toast('⚠️ Errore di connessione.'); }
+export function delSess(id) {
+    showConfirm('Eliminare definitivamente questa sessione?', async () => {
+        DB.sessions = DB.sessions.filter(x => x.id !== id);
+        await saveDB(); renderStorico(); renderAnalytics();
+        try {
+            if (window.mySupabase) {
+                const { error } = await window.mySupabase.from('sessions').delete().eq('id', id);
+                toast(error ? '⚠️ Cancellata solo in locale.' : 'Sessione eliminata dal Cloud! ✓');
+            }
+        } catch (e) { toast('⚠️ Errore di connessione.'); }
+    });
 }
 
 export async function saveSess() {
@@ -928,14 +965,15 @@ export function renameCurrentSession(newName) {
     }
 }
 
-export async function deleteCurrentSession() {
+export function deleteCurrentSession() {
     const athId = document.getElementById('ed-ath').value || appState.selAthId;
     const sch   = DB.schedules[athId];
     if (sch.sessions.length <= 1) { toast('Devi mantenere almeno una sessione.'); return; }
-    if (!confirm('Eliminare la sessione?')) return;
-    sch.sessions = sch.sessions.filter(x => x.id !== appState.edSessId);
-    appState.edSessId = sch.sessions[0].id;
-    await saveDB(); renderEditor();
+    showConfirm('Eliminare la sessione?', async () => {
+        sch.sessions = sch.sessions.filter(x => x.id !== appState.edSessId);
+        appState.edSessId = sch.sessions[0].id;
+        await saveDB(); renderEditor();
+    });
 }
 
 export function getEdExercises() {
@@ -1549,7 +1587,7 @@ export async function submitFB() {
                 max_e1rm: sessObj.maxE1rm, e1rm_dom: sessObj.e1rmDom, e1rm_ndom: sessObj.e1rmNDom,
                 doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: ''
             }]);
-            if (error) { alert('⚠️ Sync Cloud fallita. Dati salvati in locale.'); }
+            if (error) { toast('⚠️ Sync Cloud fallita. Dati salvati in locale.'); }
             else {
                 if (ath) await window.mySupabase.from('atleti').update({ anthropo_history: ath.anthropoHistory }).eq('id', appState.selAthId);
                 toast('Allenamento registrato e sincronizzato nel Cloud! ✓');
@@ -1603,7 +1641,11 @@ export function exportJSON() {
     URL.revokeObjectURL(u); toast('Backup Esportato! ✓');
 }
 
-export async function confirmReset() { if (confirm('Eliminare tutto?')) { await localforage.removeItem(KEY); location.reload(); } }
+export function confirmReset() {
+    showConfirm('Eliminare tutto? Tutti i dati locali verranno cancellati permanentemente.', async () => {
+        await localforage.removeItem(KEY); location.reload();
+    }, 'Elimina tutto');
+}
 
 
 // ─────────────────────────────────────────────────────────────

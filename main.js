@@ -43,9 +43,10 @@ import { saveDB, seed, go, toggleMobileMenu,
          handleExNameChange, syncEdDuration, syncEdCoachNote,
          addNewSessionToSchedule, renameCurrentSession, deleteCurrentSession,
          saveSchedule, updatePhaseStyle, updatePredictiveACWR,
-         openMesocycleArchive, archiveAndNewMeso,
+         openMesocycleArchive, archiveAndNewMeso, confirmMesoArchive,
          calcSrpe, initFB, submitFB, testPushNotification,
-         updateExpInfo, doExport, exportJSON, confirmReset } from './app.js';
+         updateExpInfo, doExport, exportJSON, confirmReset,
+         showConfirm, copyCodiceAtleta } from './app.js';
 
 import { uid, openMo, closeMo } from './utils.js';
 import { appState, DB } from './state.js';
@@ -92,7 +93,9 @@ Object.assign(window, {
     addNewSessionToSchedule, renameCurrentSession, deleteCurrentSession,
     saveSchedule, updatePhaseStyle,
     openProgressionModal, saveProgressionData, applySmartMicrocycle,
-    openMesocycleArchive, archiveAndNewMeso,
+    openMesocycleArchive, archiveAndNewMeso, confirmMesoArchive,
+    // Modal helpers
+    showConfirm, copyCodiceAtleta,
     // Feedback
     calcSrpe, initFB, submitFB,
     // Push test
