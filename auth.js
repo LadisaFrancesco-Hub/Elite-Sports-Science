@@ -1055,12 +1055,23 @@ export async function subscribePush(userId, userType, athleteId = null, showToas
             return;
         }
 
-        const existing = await reg.pushManager.getSubscription();
+        // Android: l'endpoint FCM può diventare stantio senza che il browser se ne accorga.
+        // Forziamo unsubscribe + re-subscribe ad ogni login per garantire un endpoint fresco.
+        const isAndroid = /android/i.test(navigator.userAgent);
+        const existing  = await reg.pushManager.getSubscription();
         console.log('[Push] Subscription esistente:', existing ? existing.endpoint.slice(0, 50) : 'nessuna');
-        const sub = existing || await reg.pushManager.subscribe({
-            userVisibleOnly:      true,
-            applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
-        });
+
+        if (existing && isAndroid) {
+            console.log('[Push] Android: forzo re-subscribe per endpoint fresco');
+            await existing.unsubscribe();
+        }
+
+        const sub = (existing && !isAndroid)
+            ? existing
+            : await reg.pushManager.subscribe({
+                userVisibleOnly:      true,
+                applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+            });
         console.log('[Push] Subscription endpoint:', sub.endpoint.slice(0, 60));
 
         if (window.mySupabase) {

@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.14';
+const APP_VERSION = 'v6.15';
 const SHELL_CACHE   = `coachos-shell-${APP_VERSION}`;
 const RUNTIME_CACHE = `coachos-runtime-${APP_VERSION}`;
 
@@ -105,14 +105,20 @@ async function networkFirst(request, cacheName) {
 // ── Push Notifications ────────────────────────────────────────────────────────
 
 self.addEventListener('push', event => {
-    const data    = event.data ? event.data.json() : {};
+    let data = {};
+    try {
+        data = event.data ? event.data.json() : {};
+    } catch (e) {
+        data = { title: 'Elite Sports Science', body: event.data ? event.data.text() : '' };
+    }
     const title   = data.title || 'Elite Sports Science';
     const options = {
-        body:    data.body  || '',
-        icon:    '/icona.png',
-        badge:   '/icona.png',
-        data:    { url: data.url || '/' },
-        vibrate: [200, 100, 200]
+        body:             data.body || '',
+        icon:             '/icona.png',
+        badge:            '/icona.png',
+        data:             { url: data.url || '/' },
+        vibrate:          [200, 100, 200],
+        requireInteraction: false
     };
     event.waitUntil(self.registration.showNotification(title, options));
 });

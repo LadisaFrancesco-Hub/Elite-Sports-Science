@@ -29,7 +29,7 @@ serve(async (req: Request) => {
         webpush.setVapidDetails(`mailto:${VAPID_EMAIL}`, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
         logs.push('VAPID configurato');
 
-        let query = supabase.from('push_subscriptions').select('subscription');
+        let query = supabase.from('push_subscriptions').select('endpoint, subscription');
         if (target_type === 'coach') {
             query = query.eq('user_type', 'coach');
         } else {
@@ -46,6 +46,8 @@ serve(async (req: Request) => {
             );
         }
 
+        const staleEndpoints: string[] = [];
+
         const results = await Promise.allSettled(
             subs.map(async (row) => {
                 // subscription è JSONB object — supporta anche vecchie righe stringa per retrocompatibilità
@@ -54,11 +56,28 @@ serve(async (req: Request) => {
                     : row.subscription;
                 if (!sub?.endpoint) { logs.push('Riga senza endpoint valido — saltata'); return; }
                 logs.push(`Invio a: ${sub.endpoint.slice(0, 60)}...`);
-                const r = await webpush.sendNotification(sub, JSON.stringify({ title, body, url: '/' }));
-                logs.push(`Risposta FCM: ${r.statusCode}`);
-                return r;
+                try {
+                    const r = await webpush.sendNotification(sub, JSON.stringify({ title, body, url: '/' }));
+                    logs.push(`OK FCM: ${r.statusCode}`);
+                    return r;
+                } catch (pushErr: any) {
+                    const sc = pushErr.statusCode ?? 0;
+                    logs.push(`FCM errore ${sc}: ${pushErr.message}`);
+                    // Subscription scaduta/invalida → segna per eliminazione
+                    if (sc === 410 || sc === 412 || sc === 404) {
+                        staleEndpoints.push(sub.endpoint);
+                        logs.push(`Subscription scaduta — rimossa: ${sub.endpoint.slice(0, 40)}`);
+                    }
+                    throw pushErr;
+                }
             })
         );
+
+        // Pulizia endpoint stantii — evita che i push futuri falliscano ancora
+        for (const ep of staleEndpoints) {
+            await supabase.from('push_subscriptions').delete().eq('endpoint', ep);
+        }
+        if (staleEndpoints.length) logs.push(`${staleEndpoints.length} subscription stantie eliminate dal DB`);
 
         const failures = results
             .filter(r => r.status === 'rejected')
