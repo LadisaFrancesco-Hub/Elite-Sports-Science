@@ -411,7 +411,7 @@ export function renderDashboard() {
     if (!ath) return;
 
     const acwrData = appState.selAthId ? calculateACWR(appState.selAthId) : null;
-    document.getElementById('dh-sub').textContent = `${ath.level} · ${ath.goal}`;
+    document.getElementById('dh-sub').textContent = `${ath.level || 'Livello n.d.'} · ${ath.goal || ''}`.replace(/ · $/, '');
 
     let alertCaricoHTML = '';
     if (acwrData && acwrData.field && acwrData.field.value !== null && acwrData.field.value !== 'N/A') {
@@ -480,9 +480,11 @@ export function getAthleteRiskScore(athId) {
     }
 
     if (acwr.field.value !== 'N/A' && parseFloat(acwr.field.value) > 1.5) score += 40;
-    if (DB.wellness.sore === 5)           score += 30;
-    if (DB.wellness.sleep === 1)          score += 20;
-    if (DB.wellness.readinessScore < 50)  score += 20;
+
+    const aw = DB.wellnessByAthlete?.[athId] || {};
+    if (aw.sore === 5)                        score += 30;
+    if (aw.sleep === 1)                       score += 20;
+    if (aw.readinessScore !== undefined && aw.readinessScore < 50) score += 20;
 
     if (!DB.injuries) DB.injuries = [];
     DB.injuries.filter(x => x.athlete === athId && x.status === 'Attivo').forEach(inj => {

@@ -633,6 +633,24 @@ export async function loadDB() {
             }));
         }
 
+        const { data: wellnessRows, error: errW } = await window.mySupabase
+            .from('wellness')
+            .select('athlete_id, date, sleep, sore, readiness_score')
+            .order('date', { ascending: false });
+        if (!errW && wellnessRows) {
+            DB.wellnessByAthlete = {};
+            wellnessRows.forEach(w => {
+                // Primo record per athlete_id = più recente (già ordinati per date DESC)
+                if (!DB.wellnessByAthlete[w.athlete_id]) {
+                    DB.wellnessByAthlete[w.athlete_id] = {
+                        sleep:          w.sleep,
+                        sore:           w.sore,
+                        readinessScore: w.readiness_score
+                    };
+                }
+            });
+        }
+
         console.log('Dati atomici caricati con successo dal Cloud! ☁️');
         await localforage.setItem(KEY, DB);
 

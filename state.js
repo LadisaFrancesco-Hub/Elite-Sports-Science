@@ -54,12 +54,13 @@ export const EXERCISE_LIBRARY = [
 // i dati caricati dal cloud/localStorage.
 // ─────────────────────────────────────────────────────────────
 export const DB = {
-    athletes:   [],
-    sessions:   [],
-    schedules:  {},
-    mesocycles: [],
-    injuries:   [],
-    wellness:   { sleep:4, stress:2, sore:2, motiv:4, cycle:'N/A', weight:'', bf:'' }
+    athletes:          [],
+    sessions:          [],
+    schedules:         {},
+    mesocycles:        [],
+    injuries:          [],
+    wellness:          { sleep:4, stress:2, sore:2, motiv:4, cycle:'N/A', weight:'', bf:'' },
+    wellnessByAthlete: {}   // { [athleteId]: { sleep, sore, readinessScore } } — ultimo check-in per atleta
 };
 
 export function replaceDB(data) {
@@ -68,7 +69,8 @@ export function replaceDB(data) {
     DB.schedules  = data.schedules  || {};
     DB.mesocycles = data.mesocycles || [];
     DB.injuries   = data.injuries   || [];
-    if (data.wellness) DB.wellness = data.wellness;
+    if (data.wellness)          DB.wellness          = data.wellness;
+    if (data.wellnessByAthlete) DB.wellnessByAthlete = data.wellnessByAthlete;
 }
 
 // Stato primitivo raccolto in un oggetto per permettere mutazioni
