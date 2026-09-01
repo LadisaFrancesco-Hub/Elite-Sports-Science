@@ -359,7 +359,7 @@ export function go(id, btn) {
         storico:        renderStorico,
         editor:         renderEditor,
         wellness:       () => upW(),
-        sessione:       loadLive,
+        sessione:       () => { renderWeekWidget(); loadLive(); },
         'coach-reply':    renderCoachReply,
         analytics:        renderAnalytics,
         progressione:     renderProg,
@@ -433,6 +433,63 @@ export function updateModalSessions() {
     }
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// WEEK WIDGET — vista settimanale per l'atleta (panel sessione)
+// ─────────────────────────────────────────────────────────────
+export function renderWeekWidget() {
+    const el = document.getElementById('week-widget');
+    if (!el) return;
+
+    const athId = window.mioIdLoggato || appState.selAthId;
+    const ath   = athById(athId);
+    if (!ath) { el.innerHTML = ''; return; }
+
+    const today    = new Date();
+    const monday   = new Date(today);
+    monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
+    const mondayStr = monday.toISOString().slice(0, 10);
+    const todayStr  = today.toISOString().slice(0, 10);
+
+    const thisWeek = DB.sessions
+        .filter(s => s.athlete === athId && s.date >= mondayStr)
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+    const freq  = ath.freq || 4;
+    const days  = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+
+    const dots = days.map((d, i) => {
+        const date    = new Date(monday);
+        date.setDate(monday.getDate() + i);
+        const dateStr = date.toISOString().slice(0, 10);
+        const isToday  = dateStr === todayStr;
+        const isFuture = dateStr > todayStr;
+        const sess     = thisWeek.find(s => s.date === dateStr);
+
+        const bg     = sess ? 'var(--teal)' : isToday ? 'rgba(16,185,129,0.15)' : 'var(--s1)';
+        const border = sess ? 'var(--teal)' : isToday ? 'var(--teal)' : 'var(--border)';
+        const color  = sess ? '#000' : isToday ? 'var(--teal)' : isFuture ? 'var(--border)' : 'var(--muted)';
+        const symbol = sess ? '✓' : isToday ? '●' : '·';
+        const label  = sess ? `<div style="font-size:8px;color:var(--teal);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:36px">${escHtml(sess.session.replace('Seduta ', ''))}</div>` : '<div style="height:12px"></div>';
+
+        return `<div style="flex:1;text-align:center;min-width:0">
+            <div style="font-size:9px;margin-bottom:4px;font-weight:${isToday ? '800' : '400'};color:${isToday ? 'var(--teal)' : 'var(--muted)'}">${d}</div>
+            <div style="width:32px;height:32px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:${sess ? '14px' : '11px'};background:${bg};border:2px solid ${border};color:${color};font-weight:800">${symbol}</div>
+            ${label}
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+        <div class="card" style="padding:12px 8px !important">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                <div style="font-size:12px;font-weight:700;color:var(--text)">Questa settimana</div>
+                <div style="font-size:11px;color:${thisWeek.length >= freq ? 'var(--teal)' : 'var(--muted)'}">
+                    ${thisWeek.length}/${freq} sessioni
+                </div>
+            </div>
+            <div style="display:flex;gap:4px;align-items:flex-start">${dots}</div>
+        </div>`;
+}
 
 // ─────────────────────────────────────────────────────────────
 // DASHBOARD

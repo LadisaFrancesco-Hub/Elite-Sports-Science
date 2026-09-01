@@ -28,7 +28,7 @@ import { loadLive, updateLiveTotals, toggleDot,
          saveLiveNextLoad,
          toggleIsometricTimer, abortIsometricTimer, saveTimerSet } from './workout.js';
 
-import { saveDB, seed, go, toggleMobileMenu,
+import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          populateSelects, onAthChange, updateModalSessions,
          renderDashboard, renderAthletes, renderStorico, renderCoachReply,
          renderEditor, renderEdExercises, renderProg,
@@ -59,7 +59,7 @@ import { appState, DB } from './state.js';
 // ─────────────────────────────────────────────────────────────
 Object.assign(window, {
     // Navigazione
-    go, toggleMobileMenu,
+    go, toggleMobileMenu, renderWeekWidget,
     // Selettori
     onAthChange, updateModalSessions, populateSelects,
     // Auth
