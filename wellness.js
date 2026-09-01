@@ -792,3 +792,106 @@ export function computeSessionModifiers() {
 
     return { kgMultiplier, setModifier, warningType, messages, readiness, cnsDropPct, cycle };
 }
+
+
+// ─────────────────────────────────────────────────────────────
+// QUICK WELLNESS CHECK-IN
+//   3 emoji-button rows (sonno, energia, dolori) × 5 livelli.
+//   Completato il check-in, chiama upW() e mostra il Readiness.
+//   Si nasconde automaticamente se il check-in è già stato fatto oggi.
+// ─────────────────────────────────────────────────────────────
+const _QW_EMOJIS = {
+    sleep:    ['😩','😴','😐','🙂','😁'],
+    energy:   ['😩','🥱','😐','🙂','⚡'],
+    soreness: ['💪','🙂','😐','😬','😰']
+};
+window._qwState = { sleep: 0, energy: 0, soreness: 0 };
+
+export function renderQuickWellness() {
+    const el = document.getElementById('quick-wellness-widget');
+    if (!el) return;
+
+    // Nasconde il widget se il check-in è già stato fatto oggi
+    const today = new Date().toISOString().slice(0, 10);
+    if (DB.wellness?.date === today && DB.wellness?.sleep) {
+        el.innerHTML = '';
+        return;
+    }
+
+    window._qwState = { sleep: 0, energy: 0, soreness: 0 };
+
+    const row = (metric, label) => {
+        const btns = _QW_EMOJIS[metric].map((emoji, i) =>
+            `<button class="qw-btn" id="qwb-${metric}-${i+1}" onclick="qwSet('${metric}',${i+1})">${emoji}</button>`
+        ).join('');
+        return `<div style="margin-bottom:10px">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">${label}</div>
+            <div style="display:flex;gap:5px">${btns}</div>
+        </div>`;
+    };
+
+    el.innerHTML = `
+        <div class="card" style="padding:14px !important">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                <div style="font-size:12px;font-weight:700;color:var(--text)">Check-in rapido</div>
+                <div style="font-size:10px;color:var(--muted)">15 secondi</div>
+            </div>
+            ${row('sleep',    'Sonno')}
+            ${row('energy',   'Energia / Umore')}
+            ${row('soreness', 'Dolori muscolari')}
+            <button class="btn btn-p" id="qw-submit" onclick="quickWellnessSubmit()" style="width:100%;display:none;margin-top:4px">Conferma check-in →</button>
+            <div id="qw-result" style="display:none;text-align:center;padding:10px 0 2px"></div>
+        </div>`;
+}
+
+export function qwSet(metric, val) {
+    window._qwState[metric] = val;
+
+    // Aggiorna stile bottoni
+    _QW_EMOJIS[metric].forEach((_, i) => {
+        const btn = document.getElementById(`qwb-${metric}-${i+1}`);
+        if (btn) btn.classList.toggle('on', i + 1 === val);
+    });
+
+    // Haptic feedback mobile
+    if (navigator.vibrate) navigator.vibrate(30);
+
+    // Mostra tasto conferma quando tutti e 3 sono selezionati
+    const { sleep, energy, soreness } = window._qwState;
+    const submitBtn = document.getElementById('qw-submit');
+    if (submitBtn) submitBtn.style.display = (sleep && energy && soreness) ? 'block' : 'none';
+}
+
+export async function quickWellnessSubmit() {
+    const { sleep, energy, soreness } = window._qwState || {};
+    if (!sleep || !energy || !soreness) return;
+
+    // Imposta i valori negli input nascosti letti da upW()
+    // sleep (1=peggio, 5=meglio) → w-sleep
+    // energy (1=peggio, 5=meglio) → w-motiv
+    // soreness (1=no dolore, 5=max dolore) → w-sore (Hooper: stesso senso)
+    const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.value = v; };
+    setVal('w-sleep', sleep);
+    setVal('w-motiv', energy);
+    setVal('w-sore',  soreness);
+    // Stress: default neutro se non compilato in precedenza
+    const stressEl = document.getElementById('w-stress');
+    if (stressEl && (+stressEl.value === 0 || !stressEl.value)) setVal('w-stress', 3);
+
+    // Ricalcola Readiness completo
+    upW();
+
+    // Leggi il risultato dal ring aggiornato
+    const readiness = parseInt(document.getElementById('ring-n')?.textContent || '0');
+    const col = readiness >= 75 ? 'var(--teal)' : readiness >= 50 ? 'var(--amber)' : '#ef4444';
+    const label = readiness >= 75 ? 'Pronto ✓' : readiness >= 50 ? 'Parziale' : 'Recupero';
+
+    const submitBtn = document.getElementById('qw-submit');
+    const resultEl  = document.getElementById('qw-result');
+    if (submitBtn) submitBtn.style.display = 'none';
+    if (resultEl) {
+        resultEl.style.display = 'block';
+        resultEl.innerHTML = `<span style="font-size:28px;font-weight:800;color:${col}">${readiness}</span> <span style="font-size:13px;color:${col};font-weight:700">${label}</span><div style="font-size:11px;color:var(--muted);margin-top:2px">Readiness · vai al Wellness per i dettagli</div>`;
+    }
+    if (navigator.vibrate) navigator.vibrate([50, 30, 80]);
+}

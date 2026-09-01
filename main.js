@@ -12,7 +12,7 @@ import { initApp, loadDB, startRealtime,
          toggleOtherSport, nextOnbStep, submitOnboarding,
          subscribePush, _showPushBanner, _showUpdateBanner } from './auth.js';
 
-import { upW, setW, mkPips, renderInjuries,
+import { upW, setW, mkPips, renderInjuries, renderQuickWellness, qwSet, quickWellnessSubmit,
          openInjuryMo, saveInjury, resolveInjury,
          startCnsTest, registerCnsTap, endCnsTest, evaluateCnsTest,
          confermaWellnessLive, computeSessionModifiers } from './wellness.js';
@@ -69,6 +69,7 @@ Object.assign(window, {
     toggleOtherSport, nextOnbStep, submitOnboarding,
     // Wellness
     setW, mkPips, upW, openInjuryMo, saveInjury, resolveInjury,
+    renderQuickWellness, qwSet, quickWellnessSubmit,
     startCnsTest, registerCnsTap, endCnsTest, evaluateCnsTest,
     confermaWellnessLive, computeSessionModifiers,
     // Analytics

@@ -17,7 +17,7 @@ import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStat
 
 // Importazioni circolari risolte: questi moduli importano da state+utils,
 // e app.js li chiama solo dentro funzioni (mai al top-level).
-import { upW, renderInjuries } from './wellness.js';
+import { upW, renderInjuries, renderQuickWellness } from './wellness.js';
 import { loadLive, updateLiveTotals } from './workout.js';
 import { renderAnalytics, calculateACWR, renderE1rmChart, renderAthProgressi } from './analytics.js';
 
@@ -359,7 +359,7 @@ export function go(id, btn) {
         storico:        renderStorico,
         editor:         renderEditor,
         wellness:       () => upW(),
-        sessione:       () => { renderWeekWidget(); loadLive(); },
+        sessione:       () => { renderWeekWidget(); renderQuickWellness(); loadLive(); },
         'coach-reply':    renderCoachReply,
         analytics:        renderAnalytics,
         progressione:     renderProg,
@@ -492,6 +492,44 @@ export function renderWeekWidget() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// SUGGERIMENTO SCARICO — analisi carico per il coach
+// ─────────────────────────────────────────────────────────────
+function _getScaricoSuggestion(athId) {
+    if (!athId) return '';
+    const sess = [...DB.sessions]
+        .filter(s => s.athlete === athId)
+        .sort((a, b) => a.date.localeCompare(b.date));
+    if (sess.length < 4) return '';
+
+    const last4 = sess.slice(-4);
+    const last3 = sess.slice(-3);
+
+    // Check 1: RPE ≥ 8 nelle ultime 3 sessioni consecutive
+    const highRpeStreak = last3.every(s => (s.rpe || 0) >= 8);
+    const avgRpe3 = (last3.reduce((sum, s) => sum + (s.rpe || 0), 0) / 3).toFixed(1);
+
+    // Check 2: sRPE cumulato ultime 4 sessioni > 1800 UA (soglia overreaching)
+    const totalSrpe4  = last4.reduce((sum, s) => sum + (s.sRPE || 0), 0);
+    const highSrpe    = totalSrpe4 > 1800;
+
+    // Check 3: nessuna fase di scarico nell'ultima settimana
+    const today    = new Date().toISOString().slice(0, 10);
+    const weekAgo  = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+    const recentScarico = sess.some(s => s.date >= weekAgo && (s.phase || '') === 'Scarico');
+
+    if ((!highRpeStreak && !highSrpe) || recentScarico) return '';
+
+    const reason = highRpeStreak
+        ? `RPE medio <strong>${avgRpe3}</strong> nelle ultime 3 sessioni`
+        : `sRPE accumulato <strong>${totalSrpe4.toLocaleString('it-IT')} UA</strong> nelle ultime 4 sessioni`;
+
+    return `<div style="background:rgba(245,158,11,.08);border:1px solid #f59e0b;color:#fbbf24;padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px;line-height:1.5;">
+        💤 <strong>Suggerimento Scarico:</strong> ${reason}.
+        Considera una settimana di scarico — volume −30/40%, intensità invariata.
+    </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
 // DASHBOARD
 // ─────────────────────────────────────────────────────────────
 export function renderDashboard() {
@@ -515,6 +553,7 @@ export function renderDashboard() {
         }
     }
 
+    const scaricoHTML = _getScaricoSuggestion(appState.selAthId);
     const emergenze = DB.athletes.filter(a => getAthleteRiskScore(a.id) > 0);
     let triageHTML = '';
     if (emergenze.length > 0) {
@@ -529,7 +568,7 @@ export function renderDashboard() {
     }
 
     const alertsDiv = document.getElementById('dh-alerts');
-    if (alertsDiv) alertsDiv.innerHTML = triageHTML + alertCaricoHTML;
+    if (alertsDiv) alertsDiv.innerHTML = triageHTML + scaricoHTML + alertCaricoHTML;
 
     const n      = sess.length;
     const avgRpe = n ? (sess.reduce((a, s) => a + s.rpe, 0) / n).toFixed(1) : '-';

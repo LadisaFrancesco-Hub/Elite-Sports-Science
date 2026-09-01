@@ -1261,3 +1261,21 @@ html body select:focus {
     opacity: 1;
   }
 }
+
+/* ── Quick Wellness Widget ─────────────────────────────────────── */
+.qw-btn {
+  flex: 1;
+  padding: 10px 4px;
+  font-size: 22px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  background: var(--s1);
+  cursor: pointer;
+  transition: all 0.15s;
+  line-height: 1;
+}
+.qw-btn.on {
+  border-color: var(--teal);
+  background: rgba(16, 185, 129, 0.15);
+  transform: scale(1.12);
+}
