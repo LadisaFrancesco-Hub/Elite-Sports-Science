@@ -414,6 +414,10 @@
     <select id="sf-sess" onchange="renderStorico()" style="width:auto;padding:6px 10px;font-size:11px"><option value="">Tutte le sessioni</option></select>
     <select id="sf-phase" onchange="renderStorico()" style="width:auto;padding:6px 10px;font-size:11px"><option value="">Tutte le fasi</option><option>Accumulo</option><option>Intensificazione</option><option>Scarico</option></select>
     <input type="text" id="sf-q" placeholder="Cerca..." oninput="renderStorico()" style="width:160px;padding:6px 10px;font-size:11px">
+    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--s1);white-space:nowrap">
+      <input type="checkbox" id="sf-unanswered" onchange="renderStorico()" style="accent-color:var(--amber)">
+      Da rispondere
+    </label>
     <button class="btn btn-p btn-sm" onclick="openMo('mo-sess')">+ Sessione</button>
   </div>
   <div class="tw"><table><thead><tr><th>Data</th><th>Sessione</th><th>Atleta</th><th>W</th><th>Fase</th><th>Read.</th><th>Vol kg</th><th>sRPE</th><th>RPE</th><th>e1RM</th><th>DOMS</th><th>Flag</th><th>Risposta</th><th>Var.</th><th></th></tr></thead><tbody id="sto-body"></tbody></table></div>

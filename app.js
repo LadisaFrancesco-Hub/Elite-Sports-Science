@@ -977,11 +977,13 @@ export function renderStorico() {
         });
     }
 
+    const funanswered = document.getElementById('sf-unanswered')?.checked;
     const rows = [...DB.sessions].reverse().filter(s => {
         if (fa && s.athlete !== fa) return false;
         if (fs && s.session !== fs) return false;
         if (fp && s.phase   !== fp) return false;
         if (fq && ![s.notes, s.doms, s.flag, s.reply, s.variations, athName(s.athlete)].some(x => (x || '').toLowerCase().includes(fq))) return false;
+        if (funanswered && !(s.notes && s.notes.trim() && (!s.reply || !s.reply.trim()))) return false;
         return true;
     });
 
