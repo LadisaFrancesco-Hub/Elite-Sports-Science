@@ -23,13 +23,30 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 //   supabase secrets set VAPID_PUBLIC_KEY=... VAPID_PRIVATE_KEY=... VAPID_EMAIL=tua@email.com
 const VAPID_PUBLIC_KEY = 'BOCUOjnvp-AMT2XtzjxHoKwUX_qXJsiLWC0cWzsCbRvhEos2Aa6BabBi8qeMlyup6bWXKMXMa-w-fL3C0hcYbB4';
 
-const checkSupabase = setInterval(() => {
-    if (typeof supabase !== 'undefined') {
-        clearInterval(checkSupabase);
-        window.mySupabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        console.log('Supabase pronto.');
+let _resolveSupabaseReady;
+const supabaseReady = new Promise(resolve => { _resolveSupabaseReady = resolve; });
+
+if (typeof supabase !== 'undefined') {
+    window.mySupabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    _resolveSupabaseReady(window.mySupabase);
+    console.log('Supabase pronto.');
+} else {
+    // CDN ancora in caricamento: attendi load/error invece di polling
+    const _sbScript = document.querySelector('script[src*="supabase"]');
+    if (_sbScript) {
+        _sbScript.addEventListener('load', () => {
+            window.mySupabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            _resolveSupabaseReady(window.mySupabase);
+            console.log('Supabase pronto (caricamento ritardato).');
+        });
+        _sbScript.addEventListener('error', () => {
+            console.warn('CDN Supabase non raggiungibile — modalità offline.');
+            _resolveSupabaseReady(null);
+        });
+    } else {
+        _resolveSupabaseReady(null);
     }
-}, 100);
+}
 
 
 // ─────────────────────────────────────────────────────────────
@@ -518,16 +535,11 @@ export async function initApp() {
         console.error('Errore nel caricamento dei dati locali:', e);
     }
 
-    setTimeout(async () => {
-        let attempts = 0;
-        while (!window.mySupabase && attempts < 10) {
-            await new Promise(r => setTimeout(r, 200));
-            attempts++;
-        }
-        if (window.mySupabase) {
-            console.log('Supabase agganciato in background!');
+    supabaseReady.then(async client => {
+        if (client) {
+            console.log('Supabase agganciato — verifica sessione...');
             try {
-                const { data: { session } } = await window.mySupabase.auth.getSession();
+                const { data: { session } } = await client.auth.getSession();
                 if (session?.user) await _autoRestoreSession(session.user);
             } catch (e) {
                 console.warn('Errore verifica sessione:', e);
@@ -535,7 +547,7 @@ export async function initApp() {
         } else {
             console.warn('Supabase non disponibile. Modalità offline locale attiva.');
         }
-    }, 500);
+    });
 
     return authPromise;
 }
