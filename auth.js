@@ -958,13 +958,34 @@ export function _showPushBanner(userId, userType, athleteId = null) {
     // Browser senza supporto Notification API
     if (!('Notification' in window)) return;
 
-    // Permesso già concesso → ri-sottoscrivi silenziosamente (idempotente via upsert su endpoint)
+    // Permesso già concesso → ri-sottoscrivi silenziosamente (solo successo muto, errori visibili)
     if (Notification.permission === 'granted') {
         subscribePush(userId, userType, athleteId, false);
         return;
     }
-    // Permesso negato → non possiamo fare nulla senza settings browser
-    if (Notification.permission === 'denied') return;
+    // Permesso negato → guida l'utente alle impostazioni
+    if (Notification.permission === 'denied') {
+        if (document.getElementById('push-banner')) return;
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="push-banner" style="
+                position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
+                background:#1e293b; border:1px solid #ef4444; border-radius:14px;
+                padding:14px 18px; z-index:99998; display:flex; align-items:center; gap:12px;
+                max-width:340px; width:90%; box-shadow:0 8px 24px rgba(0,0,0,0.5);
+                font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
+                <span style="font-size:22px;flex-shrink:0;">🔕</span>
+                <div style="flex:1;font-size:12px;color:#e2e8f0;line-height:1.4;">
+                    Notifiche bloccate. Abilitale nelle <strong>Impostazioni</strong> del browser per questo sito.
+                </div>
+                <button id="push-banner-no" style="
+                    background:none;border:none;color:#64748b;font-size:20px;
+                    cursor:pointer;padding:2px 6px;flex-shrink:0;touch-action:manipulation;">✕</button>
+            </div>`);
+        document.getElementById('push-banner-no').addEventListener('click', () => {
+            document.getElementById('push-banner')?.remove();
+        });
+        return;
+    }
 
     document.body.insertAdjacentHTML('beforeend', `
         <div id="push-banner" style="
@@ -1007,29 +1028,40 @@ function _urlBase64ToUint8Array(base64String) {
 }
 
 export async function subscribePush(userId, userType, athleteId = null, showToast = true) {
-    if (!('PushManager' in window) || !('serviceWorker' in navigator)) return;
-    if (!('Notification' in window) || Notification.permission === 'denied') return;
+    if (!('PushManager' in window) || !('serviceWorker' in navigator)) {
+        console.log('[Push] PushManager o serviceWorker non disponibili');
+        return;
+    }
+    if (!('Notification' in window) || Notification.permission === 'denied') {
+        console.log('[Push] Notification non disponibile o permesso negato:', Notification?.permission);
+        return;
+    }
     if (VAPID_PUBLIC_KEY.startsWith('SOSTITUISCI')) return;
 
     try {
+        console.log('[Push] Richiesta permesso, stato attuale:', Notification.permission);
         const permission = await Notification.requestPermission();
+        console.log('[Push] Permesso ottenuto:', permission);
         if (permission !== 'granted') {
-            if (showToast) toast('Notifiche non autorizzate. Abilitale dalle impostazioni del browser.');
+            toast('Notifiche non autorizzate. Abilitale dalle impostazioni del browser.');
             return;
         }
 
         const reg = await navigator.serviceWorker.ready;
+        console.log('[Push] SW pronto, scope:', reg.scope);
 
         if (!reg.pushManager) {
-            if (showToast) toast('Push non supportate su questo browser.');
+            toast('Push non supportate su questo browser.');
             return;
         }
 
         const existing = await reg.pushManager.getSubscription();
-        const sub      = existing || await reg.pushManager.subscribe({
+        console.log('[Push] Subscription esistente:', existing ? existing.endpoint.slice(0, 50) : 'nessuna');
+        const sub = existing || await reg.pushManager.subscribe({
             userVisibleOnly:      true,
             applicationServerKey: _urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
         });
+        console.log('[Push] Subscription endpoint:', sub.endpoint.slice(0, 60));
 
         if (window.mySupabase) {
             const { error } = await window.mySupabase.from('push_subscriptions').upsert([{
@@ -1041,17 +1073,19 @@ export async function subscribePush(userId, userType, athleteId = null, showToas
             }], { onConflict: 'endpoint' });
 
             if (error) {
-                console.error('[Push] Errore salvataggio subscription:', error);
-                if (showToast) toast('Notifiche: errore di sincronizzazione. Riprova.');
+                console.error('[Push] Errore upsert:', error);
+                toast('Notifiche: errore di sincronizzazione (' + error.message + ')');
             } else {
+                console.log('[Push] Subscription salvata nel DB');
                 if (showToast) toast('Notifiche abilitate!');
             }
         } else {
+            console.warn('[Push] mySupabase non disponibile, subscription non salvata');
             if (showToast) toast('Notifiche abilitate (offline — sincronizza al prossimo accesso).');
         }
     } catch (e) {
-        console.warn('[Push] Sottoscrizione fallita:', e);
-        if (showToast) toast('Notifiche non supportate su questo dispositivo.');
+        console.error('[Push] Sottoscrizione fallita:', e);
+        toast('Notifiche: errore — ' + e.message);
     }
 }
 
