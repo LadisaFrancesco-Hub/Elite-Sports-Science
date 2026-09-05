@@ -165,7 +165,14 @@ document.addEventListener('DOMContentLoaded', async () => {
                 go('sessione');
             }
         } else {
-            go('dashboard', document.querySelector('.nav-btn'));
+            // Deep linking: app aperta da tap su notifica → naviga al pannello specificato
+            const _notifPanel = new URLSearchParams(window.location.search).get('panel');
+            const _startPanel = _notifPanel || 'dashboard';
+            const _startBtn   = document.querySelector(_notifPanel
+                ? `.nav-btn[onclick*="'${_notifPanel}'"]`
+                : '.nav-btn');
+            go(_startPanel, _startBtn);
+            if (_notifPanel) window.history.replaceState({}, '', window.location.pathname);
         }
 
         populateSelects();

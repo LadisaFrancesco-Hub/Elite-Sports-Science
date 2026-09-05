@@ -1177,6 +1177,14 @@ if ('serviceWorker' in navigator) {
         });
     }).catch(err => console.log('SW Error:', err));
 
+    // Deep linking: tap su notifica → naviga al pannello corretto
+    navigator.serviceWorker.addEventListener('message', event => {
+        if (event.data?.type === 'NAVIGATE' && event.data.panel && typeof window.go === 'function') {
+            const btn = document.querySelector(`.nav-btn[onclick*="'${event.data.panel}'"]`);
+            window.go(event.data.panel, btn || null);
+        }
+    });
+
     let _swRefreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
         if (!_swRefreshing) { _swRefreshing = true; location.reload(); }

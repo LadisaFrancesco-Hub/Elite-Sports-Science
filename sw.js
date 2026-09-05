@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.29';
+const APP_VERSION = 'v6.30';
 const SHELL_CACHE   = `coachos-shell-${APP_VERSION}`;
 const RUNTIME_CACHE = `coachos-runtime-${APP_VERSION}`;
 
@@ -120,7 +120,7 @@ self.addEventListener('push', event => {
         tag:                data.tag  || 'ess-notification',
         renotify:           true,   // suona/vibra anche se c'è già una notifica con lo stesso tag
         silent:             false,  // forza vibrazione + suono su Android
-        data:               { url: data.url || '/' },
+        data:               { url: data.url || '/', panel: data.panel || '' },
         vibrate:            [300, 100, 300],
         requireInteraction: false
     };
@@ -129,15 +129,17 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
     event.notification.close();
-    const url = event.notification.data?.url || '/';
+    const panel = event.notification.data?.panel || '';
+    const urlToOpen = self.location.origin + (panel ? `/?panel=${panel}` : '/');
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
             for (const client of list) {
-                if (client.url.includes(self.location.origin) && 'focus' in client) {
+                if (client.url.startsWith(self.location.origin) && 'focus' in client) {
+                    if (panel) client.postMessage({ type: 'NAVIGATE', panel });
                     return client.focus();
                 }
             }
-            return clients.openWindow ? clients.openWindow(url) : null;
+            return clients.openWindow ? clients.openWindow(urlToOpen) : null;
         })
     );
 });

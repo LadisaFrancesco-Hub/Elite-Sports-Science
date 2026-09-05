@@ -18,7 +18,7 @@ serve(async (req: Request) => {
     const logs: string[] = [];
 
     try {
-        const { target_type, target_id, title, body } = await req.json();
+        const { target_type, target_id, title, body, panel } = await req.json();
         logs.push(`target_type=${target_type} target_id=${target_id}`);
 
         const supabase = createClient(
@@ -59,7 +59,7 @@ serve(async (req: Request) => {
                 try {
                     const r = await webpush.sendNotification(
                         sub,
-                        JSON.stringify({ title, body, url: '/', tag: `push-${Date.now()}` }),
+                        JSON.stringify({ title, body, url: '/', tag: `push-${Date.now()}`, panel: panel || '' }),
                         { urgency: 'high', TTL: 86400 }   // sveglia il dispositivo anche in battery saver
                     );
                     logs.push(`OK FCM: ${r.statusCode}`);
