@@ -561,7 +561,11 @@ export async function loadDB() {
         if (!window.mySupabase) throw new Error('Supabase non connesso');
 
         const { data: atletiData, error: errA } = await window.mySupabase.from('atleti').select('*');
-        if (!errA && atletiData) DB.athletes = atletiData;
+        if (!errA && atletiData) {
+            DB.athletes = atletiData;
+            DB.macroPlans = {};
+            atletiData.forEach(a => { if (a.macro_plan) DB.macroPlans[a.id] = a.macro_plan; });
+        }
 
         const { data: schedData, error: errSch } = await window.mySupabase.from('schedules').select('*');
         if (!errSch && schedData) {

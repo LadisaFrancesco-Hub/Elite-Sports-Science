@@ -50,7 +50,9 @@ import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          showConfirm, copyCodiceAtleta,
          exportProgramPDF,
          renderMessaggi, sendMessageCoach,
-         renderAthleteChat, sendMessageAthleta, updateMsgBadge } from './app.js';
+         renderAthleteChat, sendMessageAthleta, updateMsgBadge,
+         renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
+         applyMacroTemplate, saveMacroPlan } from './app.js';
 
 import { uid, openMo, closeMo } from './utils.js';
 import { appState, DB, replaceDB } from './state.js';
@@ -123,6 +125,9 @@ Object.assign(window, {
     // Messaggistica
     renderMessaggi, sendMessageCoach,
     renderAthleteChat, sendMessageAthleta, updateMsgBadge,
+    // Macro Periodizzazione
+    renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
+    applyMacroTemplate, saveMacroPlan,
 });
 
 

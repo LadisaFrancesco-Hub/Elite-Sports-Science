@@ -360,6 +360,7 @@
     <button class="nav-btn" onclick="go('messaggi',this)"><span class="ico">💬</span>Messaggi <span class="nav-badge" id="nb-msg" style="display:none">0</span></button>
     <button class="nav-btn" onclick="go('calendario',this)"><span class="ico">▦</span>Calendario</button>
     <button class="nav-btn" onclick="go('editor',this)"><span class="ico">✎</span>Editor schede</button>
+    <button class="nav-btn" onclick="go('macro',this)"><span class="ico">📅</span>Macro Periodiz.</button>
   </div>
   <div class="nav-group">
     <span class="nav-lbl">Atleta live</span>
@@ -853,6 +854,53 @@
   <div class="card" style="margin-bottom:10px"><div class="card-t">Andamento volume</div><div id="pr-bars"></div></div>
   <div class="card"><div class="card-t">Regola 5-10%</div><div style="font-size:12px;color:var(--muted);line-height:1.7">Incremento settimanale sostenibile: <span style="color:var(--teal);font-weight:700">5–10%</span>. Sopra il <span style="color:var(--coral);font-weight:700">10%</span> = rischio overreaching. Sotto il <span style="color:var(--amber);font-weight:700">2%</span> per 2 settimane = stagnazione.</div></div>
 </div>
+
+<div class="panel" id="p-macro">
+  <div class="ph">Macro Periodizzazione</div>
+  <div class="ps">Pianificazione multi-settimana — Accumulo → Intensificazione → Picco → Scarico</div>
+  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
+    <div class="fg" style="margin-bottom:0;min-width:140px">
+      <label class="fl">Atleta</label>
+      <select id="macro-ath" onchange="appState.selAthId=this.value;renderMacro()"></select>
+    </div>
+    <div class="fg" style="margin-bottom:0;min-width:110px">
+      <label class="fl">Durata</label>
+      <select id="macro-weeks" onchange="setMacroWeeks(+this.value)">
+        <option value="8">8 settimane</option>
+        <option value="10">10 settimane</option>
+        <option value="12" selected>12 settimane</option>
+        <option value="14">14 settimane</option>
+        <option value="16">16 settimane</option>
+      </select>
+    </div>
+    <div class="fg" style="margin-bottom:0;min-width:180px">
+      <label class="fl">Template rapido</label>
+      <select id="macro-tpl" onchange="applyMacroTemplate(this.value);this.value=''">
+        <option value="">Applica template...</option>
+        <option value="linear">📈 Lineare (Acc→Int→Pic→Sca)</option>
+        <option value="block">🧱 Block (Acc block + Int block + Pic)</option>
+        <option value="undulating">🌊 Ondulante (cicli 3+1 sett)</option>
+        <option value="competition">🏆 Gara (peak finale)</option>
+      </select>
+    </div>
+    <button class="btn btn-p btn-sm" onclick="saveMacroPlan()" style="align-self:flex-end;margin-bottom:2px">💾 Salva piano</button>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
+    <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--teal);display:inline-block"></span>Accumulo</span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--amber);display:inline-block"></span>Intensificazione</span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--coral);display:inline-block"></span>Picco</span>
+    <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--blue);display:inline-block"></span>Scarico</span>
+    <span style="font-size:11px;color:var(--muted);margin-left:8px">💡 Clicca sulla fase per cambiarla</span>
+  </div>
+
+  <div style="overflow-x:auto;padding-bottom:8px">
+    <div id="macro-grid"></div>
+  </div>
+
+  <div id="macro-summary" style="margin-top:16px"></div>
+</div>
+
 </main>
 </div>
 

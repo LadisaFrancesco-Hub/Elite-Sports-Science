@@ -61,7 +61,8 @@ export const DB = {
     injuries:          [],
     wellness:          { sleep:4, stress:2, sore:2, motiv:4, cycle:'N/A', weight:'', bf:'' },
     wellnessByAthlete: {},   // { [athleteId]: { sleep, sore, readinessScore } } — ultimo check-in per atleta
-    messages:          {}    // { [athleteId]: [msg, ...] } — messaggi diretti coach ↔ atleta
+    messages:          {},   // { [athleteId]: [msg, ...] } — messaggi diretti coach ↔ atleta
+    macroPlans:        {}    // { [athleteId]: { weeks, plan: [{week, phase, targetSessions, notes}] } }
 };
 
 export function replaceDB(data) {
@@ -73,6 +74,7 @@ export function replaceDB(data) {
     if (data.wellness)          DB.wellness          = data.wellness;
     if (data.wellnessByAthlete) DB.wellnessByAthlete = data.wellnessByAthlete;
     if (data.messages)          DB.messages          = data.messages;
+    if (data.macroPlans)        DB.macroPlans        = data.macroPlans;
 }
 
 // Stato primitivo raccolto in un oggetto per permettere mutazioni
