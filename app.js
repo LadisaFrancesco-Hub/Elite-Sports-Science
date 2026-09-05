@@ -1356,18 +1356,10 @@ export function renderEdExercises() {
                   </select></div>
                 <div><span class="fl">REST</span><input type="text" value="${ex.rest||"90''"}" oninput="updateEx(${i},'rest',this.value)"></div>
                 <div><span class="fl">T.U.T.</span><input type="text" value="${ex.tut||'-'}" oninput="updateEx(${i},'tut',this.value)"></div>
-                <div><span class="fl">ZONA</span>
-                  <select onchange="updateEx(${i},'anatomicalZone',this.value)">
-                    <option value="" ${!ex.anatomicalZone?'selected':''}>Nessuna</option>
-                    <option value="Spalla_SX" ${ex.anatomicalZone==='Spalla_SX'?'selected':''}>Spalla SX</option>
-                    <option value="Spalla_DX" ${ex.anatomicalZone==='Spalla_DX'?'selected':''}>Spalla DX</option>
-                    <option value="Gomito_SX" ${ex.anatomicalZone==='Gomito_SX'?'selected':''}>Gomito SX</option>
-                    <option value="Gomito_DX" ${ex.anatomicalZone==='Gomito_DX'?'selected':''}>Gomito DX</option>
-                    <option value="Zona_Lombare" ${ex.anatomicalZone==='Zona_Lombare'?'selected':''}>Z. Lombare</option>
-                    <option value="Ginocchio_SX" ${ex.anatomicalZone==='Ginocchio_SX'?'selected':''}>Ginocchio SX</option>
-                    <option value="Ginocchio_DX" ${ex.anatomicalZone==='Ginocchio_DX'?'selected':''}>Ginocchio DX</option>
-                    <option value="Caviglia_SX" ${ex.anatomicalZone==='Caviglia_SX'?'selected':''}>Caviglia SX</option>
-                    <option value="Caviglia_DX" ${ex.anatomicalZone==='Caviglia_DX'?'selected':''}>Caviglia DX</option>
+                <div><span class="fl">RPE</span>
+                  <select onchange="updateEx(${i},'rpe',this.value)">
+                    <option value="" ${!ex.rpe?'selected':''}>—</option>
+                    ${[1,2,3,4,5,6,7,8,9,10].map(v=>`<option value="${v}" ${ex.rpe==v?'selected':''}>${v}</option>`).join('')}
                   </select></div>
               </div>
               ${groupRowHtml}
@@ -1394,7 +1386,7 @@ export function addExType(type) {
         'tempo':          { set:3, rep:'6', rir:'2', rest:"90''",  tut:'4.0.X.0' }
     };
     const d = defaults[type] || { set:3, rep:'8', rir:'2', rest:"90''", tut:'-' };
-    const newEx = { name:`Focus ${type.toUpperCase()}`, type, arm:'Bi', wset:1, set:d.set, rep:d.rep, kg:0, rir:d.rir, rest:d.rest, tut:d.tut, note:'', ytUrl:'', anatomicalZone:'' };
+    const newEx = { name:`Focus ${type.toUpperCase()}`, type, arm:'Bi', wset:1, set:d.set, rep:d.rep, kg:0, rir:d.rir, rest:d.rest, tut:d.tut, note:'', ytUrl:'', rpe:'' };
     if (type === 'superset' || type === 'jump set') newEx.groupId = uid();
     getEdExercises().push(newEx);
     renderEdExercises(); updatePredictiveACWR();
