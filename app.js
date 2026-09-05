@@ -369,12 +369,13 @@ export function go(id, btn) {
         editor:         renderEditor,
         wellness:       () => upW(),
         sessione:       () => { renderWeekWidget(); loadLive(); },
-        'coach-reply':    renderCoachReply,
+        'coach-reply':    () => { renderCoachReply(); renderAthleteChat(); },
         analytics:        renderAnalytics,
         progressione:     renderProg,
         'ath-progressi':  renderAthProgressi,
         'ath-storico':    renderAthStorico,
-        'calendario':     renderCalendario
+        'calendario':     renderCalendario,
+        'messaggi':       renderMessaggi
     };
     if (renders[id]) renders[id]();
 
@@ -428,6 +429,7 @@ export function populateSelects() {
     document.getElementById('nb-ath').textContent = DB.athletes.length;
     document.getElementById('nb-sto').textContent = DB.sessions.length;
     updateReplyBadge();
+    updateMsgBadge();
     updateModalSessions();
 }
 
@@ -639,6 +641,58 @@ export function renderDashboard() {
                          <div class="bc-lbl">${s.date.slice(5)}</div>`;
         bc.appendChild(col);
     });
+
+    _renderComplianceCard();
+}
+
+function _renderComplianceCard() {
+    const container = document.getElementById('dh-compliance');
+    if (!container) return;
+
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const weeks = Array.from({ length: 4 }, (_, i) => {
+        const mon = new Date(today);
+        mon.setDate(today.getDate() - ((today.getDay() + 6) % 7) - (3 - i) * 7);
+        return mon;
+    });
+
+    const athletes = DB.athletes;
+    if (!athletes.length) { container.innerHTML = ''; return; }
+
+    const rows = athletes.map(ath => {
+        const freq = ath.freq || 3;
+        const weekData = weeks.map(mon => {
+            const monStr = mon.toISOString().slice(0, 10);
+            const sunDate = new Date(mon); sunDate.setDate(mon.getDate() + 6);
+            const sunStr = sunDate.toISOString().slice(0, 10);
+            const count = DB.sessions.filter(s => s.athlete === ath.id && s.date >= monStr && s.date <= sunStr).length;
+            return { count, pct: Math.min(100, Math.round(count / freq * 100)) };
+        });
+        const avgPct = Math.round(weekData.reduce((s, w) => s + w.pct, 0) / 4);
+        return { ath, weekData, avgPct };
+    });
+
+    const wLabels = ['W-3', 'W-2', 'W-1', 'W'];
+    const html = rows.map(({ ath, weekData, avgPct }) => {
+        const bars = weekData.map((w, i) => {
+            const col = w.pct >= 100 ? 'var(--teal)' : w.pct >= 75 ? 'var(--amber)' : w.pct > 0 ? 'var(--coral)' : 'var(--border)';
+            const h = Math.max(4, Math.round(w.pct * 0.48));
+            return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">
+                <div style="width:100%;max-width:28px;height:48px;display:flex;align-items:flex-end;justify-content:center">
+                    <div style="width:100%;height:${h}px;background:${col};border-radius:3px 3px 0 0;min-height:${w.pct>0?4:2}px"></div>
+                </div>
+                <div style="font-size:9px;color:var(--muted)">${wLabels[i]}</div>
+            </div>`;
+        }).join('');
+        const avgCol = avgPct >= 100 ? 'var(--teal)' : avgPct >= 75 ? 'var(--amber)' : avgPct > 0 ? 'var(--coral)' : 'var(--muted)';
+        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="flex:0 0 90px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(ath.name.split(' ')[0])}</div>
+            <div style="display:flex;gap:4px;flex:1;align-items:flex-end">${bars}</div>
+            <div style="flex:0 0 38px;text-align:right;font-size:13px;font-weight:800;color:${avgCol}">${avgPct}%</div>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = `<div class="card-t">📊 Compliance Atleti — Ultime 4 settimane</div>${html || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Nessun dato.</div>'}`;
 }
 
 export function getAthleteRiskScore(athId) {
@@ -1892,7 +1946,79 @@ export async function submitFB() {
 // ─────────────────────────────────────────────────────────────
 // ESPORTAZIONE
 // ─────────────────────────────────────────────────────────────
-export function updateExpInfo() {
+export function exportProgramPDF() {
+    const athId = appState.selAthId || (document.getElementById('ed-ath') && document.getElementById('ed-ath').value);
+    const ath   = athById(athId);
+    const sch   = DB.schedules[athId];
+    if (!ath || !sch) { toast('Seleziona un atleta con una scheda attiva.'); return; }
+
+    const sessionsHTML = (sch.sessions || []).map(s => {
+        const exRows = (s.exercises || []).map(ex => {
+            if (ex.type === 'circuit') {
+                const circEx = (ex.circuitExercises || []).map(ce => `<tr><td style="padding:4px 8px;color:#555">${escHtml(ce.name)}</td><td colspan="7" style="padding:4px 8px;color:#888;font-size:11px">${escHtml(ce.note || '')}</td></tr>`).join('');
+                return `<tr style="background:#f0fdf4"><td colspan="8" style="padding:6px 8px;font-weight:700;color:#065f46">⏱ Circuito: ${escHtml(ex.name)} — ${ex.circuitMeta ? `${ex.circuitMeta.rounds} round · ${ex.circuitMeta.workTime}s lavoro · ${ex.circuitMeta.restBetweenEx}s riposo` : ''}</td></tr>${circEx}`;
+            }
+            const progStr = ex.progression && Object.keys(ex.progression).length
+                ? Object.entries(ex.progression).sort(([a],[b]) => a.localeCompare(b, undefined, { numeric: true })).map(([w, v]) => `${w.toUpperCase()}: ${v.set}x${v.rep}@${v.kg}kg`).join(' | ')
+                : '';
+            return `<tr>
+                <td style="padding:5px 8px">${escHtml(ex.name || '')}</td>
+                <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.wset ?? ''))}</td>
+                <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.set ?? ''))}</td>
+                <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.rep ?? ''))}</td>
+                <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.kg ?? ''))}</td>
+                <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.rir ?? ''))}</td>
+                <td style="padding:5px 8px;text-align:center">${escHtml(ex.rest || '')}</td>
+                <td style="padding:5px 8px;font-size:11px;color:#555">${escHtml(ex.note || '')}${progStr ? `<br><em style="color:#888">${progStr}</em>` : ''}</td>
+            </tr>`;
+        }).join('');
+        return `<div style="margin-bottom:28px">
+            <h3 style="background:#065f46;color:#fff;padding:10px 14px;border-radius:6px;margin-bottom:0;font-size:14px">${escHtml(s.name)}</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+                <thead><tr style="background:#f1f5f9">
+                    <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0">Esercizio</th>
+                    <th style="padding:6px 8px">W-Set</th><th style="padding:6px 8px">Set</th>
+                    <th style="padding:6px 8px">Rep</th><th style="padding:6px 8px">Kg</th>
+                    <th style="padding:6px 8px">RIR</th><th style="padding:6px 8px">Rest</th>
+                    <th style="padding:6px 8px;text-align:left">Note</th>
+                </tr></thead>
+                <tbody>${exRows || '<tr><td colspan="8" style="padding:8px;color:#888;font-style:italic">Nessun esercizio</td></tr>'}</tbody>
+            </table>
+        </div>`;
+    }).join('');
+
+    const w = window.open('', '_blank');
+    if (!w) { toast('Popup bloccato — abilita i popup per esportare il PDF.'); return; }
+    w.document.write(`<!DOCTYPE html><html lang="it"><head>
+        <meta charset="UTF-8"><title>Scheda — ${escHtml(ath.name)}</title>
+        <style>
+            body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:28px;color:#1e293b;background:#fff}
+            h1{font-size:22px;font-weight:800;margin-bottom:4px}
+            h2{font-size:14px;color:#475569;font-weight:400;margin-top:0;margin-bottom:18px}
+            .meta{display:flex;gap:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin-bottom:24px;font-size:13px}
+            .meta div{display:flex;flex-direction:column;gap:2px}
+            .meta strong{font-size:12px;text-transform:uppercase;color:#94a3b8;letter-spacing:.04em}
+            table th,table td{border-bottom:1px solid #e2e8f0}
+            @media print{body{padding:10px}button{display:none}}
+        </style>
+    </head><body>
+        <h1>${escHtml(ath.name)}</h1>
+        <h2>${escHtml(ath.level || '')} · ${escHtml(ath.goal || '')}</h2>
+        <div class="meta">
+            <div><strong>Mesociclo</strong>${escHtml(sch.meso || '—')}</div>
+            <div><strong>Fase</strong>${escHtml(sch.phase || '—')}</div>
+            <div><strong>Durata</strong>${sch.duration || 4} settimane</div>
+            ${sch.objective ? `<div><strong>Obiettivo</strong>${escHtml(sch.objective)}</div>` : ''}
+        </div>
+        ${sch.coachNote ? `<div style="margin-bottom:20px;padding:10px 14px;background:#f0fdf4;border-left:3px solid #10b981;border-radius:0 6px 6px 0;font-size:13px;color:#065f46"><strong>Note Coach:</strong> ${escHtml(sch.coachNote)}</div>` : ''}
+        ${sessionsHTML}
+        <div style="margin-top:40px;text-align:center">
+            <button onclick="window.print()" style="padding:10px 24px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer">Stampa / Salva PDF</button>
+        </div>
+    </body></html>`);
+    w.document.close();
+    w.focus();
+}
     const athId = document.getElementById('exp-ath').value || appState.selAthId;
     const ath   = athById(athId);
     const sc    = DB.sessions.filter(x => x.athlete === athId).length;
@@ -1925,6 +2051,155 @@ export function confirmReset() {
     }, 'Elimina tutto');
 }
 
+
+// ─────────────────────────────────────────────────────────────
+// MESSAGGISTICA DIRETTA
+// ─────────────────────────────────────────────────────────────
+export function renderMessaggi() {
+    const athId = appState.selAthId;
+    const selEl = document.getElementById('msg-ath-select');
+    if (selEl) {
+        selEl.innerHTML = DB.athletes.map(a => `<option value="${escHtml(a.id)}"${a.id === athId ? ' selected' : ''}>${escHtml(a.name)}</option>`).join('');
+        selEl.onchange = () => { appState.selAthId = selEl.value; renderMessaggi(); };
+    }
+
+    const thread = document.getElementById('msg-thread');
+    if (!thread) return;
+    const msgs = (DB.messages && DB.messages[athId]) ? DB.messages[athId] : [];
+
+    if (!msgs.length) {
+        thread.innerHTML = `<div style="text-align:center;color:var(--muted);padding:30px 20px;font-size:13px">Nessun messaggio con questo atleta.</div>`;
+    } else {
+        thread.innerHTML = msgs.map(m => {
+            const isCoach = m.from_type === 'coach';
+            const time    = m.created_at ? new Date(m.created_at).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+            return `<div style="display:flex;flex-direction:column;align-items:${isCoach ? 'flex-end' : 'flex-start'};margin-bottom:10px">
+                <div style="max-width:78%;padding:10px 14px;border-radius:${isCoach ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isCoach ? 'var(--teal)' : 'rgba(139,92,246,0.15)'};color:${isCoach ? '#000' : 'var(--text)'};font-size:13px;line-height:1.5;word-break:break-word">${escHtml(m.content)}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px">${time}</div>
+            </div>`;
+        }).join('');
+        thread.scrollTop = thread.scrollHeight;
+    }
+
+    if (athId && window.mySupabase) {
+        const unread = msgs.filter(m => m.from_type === 'athlete' && !m.read_at);
+        if (unread.length) {
+            const ids = unread.map(m => m.id);
+            window.mySupabase.from('messages').update({ read_at: new Date().toISOString() }).in('id', ids).then(() => {
+                unread.forEach(m => { m.read_at = new Date().toISOString(); });
+                updateMsgBadge();
+            });
+        }
+    }
+}
+
+export async function sendMessageCoach() {
+    const input = document.getElementById('msg-input');
+    const content = (input ? input.value : '').trim();
+    if (!content) return;
+    const athId = appState.selAthId;
+    if (!athId) { toast('Seleziona un atleta.'); return; }
+
+    input.value = '';
+    input.disabled = true;
+
+    const msg = { athlete_id: athId, from_type: 'coach', content, created_at: new Date().toISOString(), read_at: new Date().toISOString() };
+
+    try {
+        if (window.mySupabase) {
+            const { data, error } = await window.mySupabase.from('messages').insert([{ athlete_id: athId, from_type: 'coach', content }]).select().single();
+            if (!error && data) { msg.id = data.id; msg.created_at = data.created_at; }
+            else if (error) { toast('Errore invio: ' + error.message); input.disabled = false; return; }
+        }
+    } catch (e) { toast('Errore connessione.'); input.disabled = false; return; }
+
+    if (!DB.messages) DB.messages = {};
+    if (!DB.messages[athId]) DB.messages[athId] = [];
+    DB.messages[athId].push(msg);
+    input.disabled = false;
+    renderMessaggi();
+}
+
+export function renderAthleteChat() {
+    const athId  = window.mioIdLoggato;
+    const thread = document.getElementById('athlete-chat-thread');
+    if (!thread) return;
+    const msgs = (DB.messages && DB.messages[athId]) ? DB.messages[athId] : [];
+
+    if (!msgs.length) {
+        thread.innerHTML = `<div style="text-align:center;color:var(--muted);padding:30px 20px;font-size:13px">Nessun messaggio con il tuo coach.</div>`;
+    } else {
+        thread.innerHTML = msgs.map(m => {
+            const isAth = m.from_type === 'athlete';
+            const time  = m.created_at ? new Date(m.created_at).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+            return `<div style="display:flex;flex-direction:column;align-items:${isAth ? 'flex-end' : 'flex-start'};margin-bottom:10px">
+                <div style="max-width:78%;padding:10px 14px;border-radius:${isAth ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isAth ? 'rgba(139,92,246,0.7)' : 'var(--teal)'};color:${isAth ? '#fff' : '#000'};font-size:13px;line-height:1.5;word-break:break-word">${escHtml(m.content)}</div>
+                <div style="font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px">${time}</div>
+            </div>`;
+        }).join('');
+        thread.scrollTop = thread.scrollHeight;
+    }
+
+    if (athId && window.mySupabase) {
+        const unread = msgs.filter(m => m.from_type === 'coach' && !m.read_at);
+        if (unread.length) {
+            const ids = unread.map(m => m.id);
+            window.mySupabase.from('messages').update({ read_at: new Date().toISOString() }).in('id', ids).then(() => {
+                unread.forEach(m => { m.read_at = new Date().toISOString(); });
+            });
+        }
+    }
+}
+
+export async function sendMessageAthleta() {
+    const input   = document.getElementById('athlete-chat-input');
+    const content = (input ? input.value : '').trim();
+    if (!content) return;
+    const athId = window.mioIdLoggato;
+    if (!athId) return;
+
+    input.value = '';
+    input.disabled = true;
+
+    const msg = { athlete_id: athId, from_type: 'athlete', content, created_at: new Date().toISOString() };
+
+    try {
+        if (window.mySupabase) {
+            const { data, error } = await window.mySupabase.from('messages').insert([{ athlete_id: athId, from_type: 'athlete', content }]).select().single();
+            if (!error && data) { msg.id = data.id; msg.created_at = data.created_at; }
+            else if (error) { toast('Errore invio: ' + error.message); input.disabled = false; return; }
+        }
+    } catch (e) { toast('Errore connessione.'); input.disabled = false; return; }
+
+    if (!DB.messages) DB.messages = {};
+    if (!DB.messages[athId]) DB.messages[athId] = [];
+    DB.messages[athId].push(msg);
+    input.disabled = false;
+    renderAthleteChat();
+}
+
+export function updateMsgBadge() {
+    // Coach badge (messages from athletes unread)
+    const coachEl = document.getElementById('nb-msg');
+    if (coachEl) {
+        let unread = 0;
+        if (DB.messages) {
+            Object.values(DB.messages).forEach(msgs => {
+                unread += msgs.filter(m => m.from_type === 'athlete' && !m.read_at).length;
+            });
+        }
+        coachEl.textContent = unread;
+        coachEl.style.display = unread > 0 ? '' : 'none';
+    }
+    // Athlete badge (messages from coach unread)
+    const athEl = document.getElementById('bb-msg-badge');
+    if (athEl && window.mioIdLoggato) {
+        const msgs = (DB.messages && DB.messages[window.mioIdLoggato]) || [];
+        const unreadAth = msgs.filter(m => m.from_type === 'coach' && !m.read_at).length;
+        athEl.textContent = unreadAth;
+        athEl.style.display = unreadAth > 0 ? '' : 'none';
+    }
+}
 
 // ─────────────────────────────────────────────────────────────
 // PROGRESSIONE

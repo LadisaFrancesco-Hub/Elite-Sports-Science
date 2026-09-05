@@ -664,6 +664,18 @@ export async function loadDB() {
             });
         }
 
+        const { data: msgRows, error: errMsg } = await window.mySupabase
+            .from('messages')
+            .select('*')
+            .order('created_at', { ascending: true });
+        if (!errMsg && msgRows) {
+            DB.messages = {};
+            msgRows.forEach(m => {
+                if (!DB.messages[m.athlete_id]) DB.messages[m.athlete_id] = [];
+                DB.messages[m.athlete_id].push(m);
+            });
+        }
+
         console.log('Dati atomici caricati con successo dal Cloud! ☁️');
         await localforage.setItem(KEY, DB);
 
@@ -753,6 +765,36 @@ export function startRealtime(role) {
     // ── Postgres Changes: sessions (coach riceve sessioni atleta) ──
     _sub('sessions',  'sessions',  payload => _onSessionChange(payload, role));
     if (role === 'ADMIN') _sub('atleti', 'atleti', _onAtletiChange);
+
+    // ── Postgres Changes: messages (messaggistica diretta) ──
+    _sub('messages', 'messages', payload => _onMessageChange(payload, role));
+}
+
+function _onMessageChange(payload, role) {
+    const msg = payload.eventType === 'DELETE' ? payload.old : payload.new;
+    if (!msg || !msg.athlete_id) return;
+    if (role === 'ATLETA' && msg.athlete_id !== window.mioIdLoggato) return;
+
+    if (!DB.messages) DB.messages = {};
+    if (!DB.messages[msg.athlete_id]) DB.messages[msg.athlete_id] = [];
+
+    if (payload.eventType === 'DELETE') {
+        DB.messages[msg.athlete_id] = DB.messages[msg.athlete_id].filter(m => m.id !== msg.id);
+    } else {
+        const idx = DB.messages[msg.athlete_id].findIndex(m => m.id === msg.id);
+        if (idx >= 0) DB.messages[msg.athlete_id][idx] = msg;
+        else DB.messages[msg.athlete_id].push(msg);
+        DB.messages[msg.athlete_id].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || ''));
+    }
+
+    if (role === 'ADMIN') {
+        if (typeof window.updateMsgBadge === 'function') window.updateMsgBadge();
+        if (appState.curPanel === 'messaggi' && typeof window.renderMessaggi === 'function') window.renderMessaggi();
+    } else if (role === 'ATLETA' && msg.from_type === 'coach') {
+        toast('💬 Nuovo messaggio dal coach!');
+        if (typeof window.updateMsgBadge === 'function') window.updateMsgBadge();
+        if (typeof window.renderAthleteChat === 'function') window.renderAthleteChat();
+    }
 }
 
 async function _reloadAthleteSchedule(athId) {

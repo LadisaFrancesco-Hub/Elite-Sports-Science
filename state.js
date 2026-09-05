@@ -60,7 +60,8 @@ export const DB = {
     mesocycles:        [],
     injuries:          [],
     wellness:          { sleep:4, stress:2, sore:2, motiv:4, cycle:'N/A', weight:'', bf:'' },
-    wellnessByAthlete: {}   // { [athleteId]: { sleep, sore, readinessScore } } — ultimo check-in per atleta
+    wellnessByAthlete: {},   // { [athleteId]: { sleep, sore, readinessScore } } — ultimo check-in per atleta
+    messages:          {}    // { [athleteId]: [msg, ...] } — messaggi diretti coach ↔ atleta
 };
 
 export function replaceDB(data) {
@@ -71,6 +72,7 @@ export function replaceDB(data) {
     DB.injuries   = data.injuries   || [];
     if (data.wellness)          DB.wellness          = data.wellness;
     if (data.wellnessByAthlete) DB.wellnessByAthlete = data.wellnessByAthlete;
+    if (data.messages)          DB.messages          = data.messages;
 }
 
 // Stato primitivo raccolto in un oggetto per permettere mutazioni

@@ -47,7 +47,10 @@ import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          openMesocycleArchive, archiveAndNewMeso, confirmMesoArchive,
          calcSrpe, initFB, submitFB, testPushNotification, activatePushCoach,
          updateExpInfo, doExport, exportJSON, confirmReset,
-         showConfirm, copyCodiceAtleta } from './app.js';
+         showConfirm, copyCodiceAtleta,
+         exportProgramPDF,
+         renderMessaggi, sendMessageCoach,
+         renderAthleteChat, sendMessageAthleta, updateMsgBadge } from './app.js';
 
 import { uid, openMo, closeMo } from './utils.js';
 import { appState, DB, replaceDB } from './state.js';
@@ -115,6 +118,11 @@ Object.assign(window, {
     // Render
     renderDashboard, renderProg,
     renderCalendario, renderAthStorico, calPrev, calNext, calToday,
+    // PDF Export
+    exportProgramPDF,
+    // Messaggistica
+    renderMessaggi, sendMessageCoach,
+    renderAthleteChat, sendMessageAthleta, updateMsgBadge,
 });
 
 
