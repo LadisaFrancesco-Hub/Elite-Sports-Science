@@ -2121,6 +2121,7 @@ export async function sendMessageCoach() {
     DB.messages[athId].push(msg);
     input.disabled = false;
     renderMessaggi();
+    _sendPushNotification('athlete', athId, '💬 Messaggio dal Coach', content.slice(0, 80));
 }
 
 export function renderAthleteChat() {
@@ -2179,6 +2180,7 @@ export async function sendMessageAthleta() {
     DB.messages[athId].push(msg);
     input.disabled = false;
     renderAthleteChat();
+    _sendPushNotification('coach', null, '💬 Messaggio da Atleta', content.slice(0, 80));
 }
 
 export function updateMsgBadge() {
