@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.28';
+const APP_VERSION = 'v6.29';
 const SHELL_CACHE   = `coachos-shell-${APP_VERSION}`;
 const RUNTIME_CACHE = `coachos-runtime-${APP_VERSION}`;
 
@@ -114,11 +114,14 @@ self.addEventListener('push', event => {
     }
     const title   = data.title || 'Elite Sports Science';
     const options = {
-        body:             data.body || '',
-        icon:             '/icona.png',
-        badge:            '/icona.png',
-        data:             { url: data.url || '/' },
-        vibrate:          [200, 100, 200],
+        body:               data.body || '',
+        icon:               '/icona.png',
+        badge:              '/icona.png',
+        tag:                data.tag  || 'ess-notification',
+        renotify:           true,   // suona/vibra anche se c'è già una notifica con lo stesso tag
+        silent:             false,  // forza vibrazione + suono su Android
+        data:               { url: data.url || '/' },
+        vibrate:            [300, 100, 300],
         requireInteraction: false
     };
     event.waitUntil(self.registration.showNotification(title, options));

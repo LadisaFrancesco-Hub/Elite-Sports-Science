@@ -57,7 +57,11 @@ serve(async (req: Request) => {
                 if (!sub?.endpoint) { logs.push('Riga senza endpoint valido — saltata'); return; }
                 logs.push(`Invio a: ${sub.endpoint.slice(0, 60)}...`);
                 try {
-                    const r = await webpush.sendNotification(sub, JSON.stringify({ title, body, url: '/' }));
+                    const r = await webpush.sendNotification(
+                        sub,
+                        JSON.stringify({ title, body, url: '/', tag: `push-${Date.now()}` }),
+                        { urgency: 'high', TTL: 86400 }   // sveglia il dispositivo anche in battery saver
+                    );
                     logs.push(`OK FCM: ${r.statusCode}`);
                     return r;
                 } catch (pushErr: any) {
