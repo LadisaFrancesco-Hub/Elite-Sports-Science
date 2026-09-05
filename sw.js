@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.26';
+const APP_VERSION = 'v6.27';
 const SHELL_CACHE   = `coachos-shell-${APP_VERSION}`;
 const RUNTIME_CACHE = `coachos-runtime-${APP_VERSION}`;
 
@@ -9,11 +9,12 @@ const SHELL_ASSETS = ['/', '/index.html', '/manifest.json', '/icona.png'];
 const STATIC_EXT = /\.(js|css|png|jpg|jpeg|svg|ico|woff2?|ttf|webp)(\?.*)?$/;
 
 // ── Install ───────────────────────────────────────────────────────────────────
-// Non si chiama skipWaiting: l'UI mostra un banner e aspetta il consenso utente.
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE).then(cache => cache.addAll(SHELL_ASSETS))
   );
+  // Attiva subito senza aspettare che l'utente clicchi "Ricarica"
+  self.skipWaiting();
 });
 
 // ── Activate ──────────────────────────────────────────────────────────────────
