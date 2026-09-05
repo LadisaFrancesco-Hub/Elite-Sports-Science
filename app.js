@@ -20,6 +20,7 @@ import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStat
 import { upW, renderInjuries, renderQuickWellness } from './wellness.js';
 import { loadLive, updateLiveTotals } from './workout.js';
 import { renderAnalytics, calculateACWR, renderE1rmChart, renderAthProgressi } from './analytics.js';
+import { subscribePush } from './auth.js';
 
 // ─────────────────────────────────────────────────────────────
 // MODAL HELPERS — showConfirm, copyCodiceAtleta
@@ -63,9 +64,9 @@ export async function testPushNotification() {
         }
         console.log('[Push test] Risposta:', JSON.stringify(data, null, 2));
         if (data?.ok) {
-            toast(`✅ Push inviata a ${data.sent} device — controlla il telefono!`);
+            toast(`✅ Push inviata a ${data.sent} device — controlla le notifiche!`);
         } else if (data?.reason === 'no_subscriptions') {
-            toast('⚠️ Nessuna subscription trovata — abilita le notifiche dal telefono prima');
+            toast('⚠️ Nessuna subscription trovata — clicca "Attiva notifiche" prima');
         } else {
             const detail = data?.failureReasons?.[0] || data?.error || JSON.stringify(data);
             toast('❌ ' + detail.slice(0, 80));
@@ -74,6 +75,14 @@ export async function testPushNotification() {
         console.error('[Push test] Eccezione:', e);
         toast('❌ Eccezione: ' + e.message);
     }
+}
+
+export async function activatePushCoach() {
+    const userId = window.mySupabase
+        ? (await window.mySupabase.auth.getUser()).data?.user?.id
+        : null;
+    if (!userId) { toast('❌ Sessione non trovata — riloggati'); return; }
+    await subscribePush(userId, 'coach', null, true);
 }
 
 

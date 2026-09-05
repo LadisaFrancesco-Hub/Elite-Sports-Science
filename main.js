@@ -45,7 +45,7 @@ import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          addNewSessionToSchedule, renameCurrentSession, deleteCurrentSession,
          saveSchedule, updatePhaseStyle, updatePredictiveACWR,
          openMesocycleArchive, archiveAndNewMeso, confirmMesoArchive,
-         calcSrpe, initFB, submitFB, testPushNotification,
+         calcSrpe, initFB, submitFB, testPushNotification, activatePushCoach,
          updateExpInfo, doExport, exportJSON, confirmReset,
          showConfirm, copyCodiceAtleta } from './app.js';
 
@@ -100,8 +100,8 @@ Object.assign(window, {
     showConfirm, copyCodiceAtleta,
     // Feedback
     calcSrpe, initFB, submitFB,
-    // Push test
-    testPushNotification,
+    // Push
+    testPushNotification, activatePushCoach,
     // Esportazione
     updateExpInfo, doExport, exportJSON, confirmReset,
     // Persistenza (usata da auth.js via window bridge)

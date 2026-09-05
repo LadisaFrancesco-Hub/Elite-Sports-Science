@@ -1028,12 +1028,23 @@ function _urlBase64ToUint8Array(base64String) {
 }
 
 export async function subscribePush(userId, userType, athleteId = null, showToast = true) {
-    if (!('PushManager' in window) || !('serviceWorker' in navigator)) {
-        console.log('[Push] PushManager o serviceWorker non disponibili');
+    if (!('serviceWorker' in navigator)) {
+        if (showToast) toast('⚠️ Service Worker non disponibile — usa Chrome, Firefox o Safari 16.4+');
+        console.log('[Push] serviceWorker non disponibile');
         return;
     }
-    if (!('Notification' in window) || Notification.permission === 'denied') {
-        console.log('[Push] Notification non disponibile o permesso negato:', Notification?.permission);
+    if (!('PushManager' in window)) {
+        if (showToast) toast('⚠️ Notifiche push non supportate — aggiorna il browser o usa Chrome/Firefox');
+        console.log('[Push] PushManager non disponibile');
+        return;
+    }
+    if (!('Notification' in window)) {
+        if (showToast) toast('⚠️ API Notification non disponibile in questo browser');
+        return;
+    }
+    if (Notification.permission === 'denied') {
+        if (showToast) toast('🔕 Notifiche bloccate — abilitale nelle Impostazioni del browser (o delle Preferenze di Sistema su Mac)');
+        console.log('[Push] Permesso notifiche negato');
         return;
     }
     if (VAPID_PUBLIC_KEY.startsWith('SOSTITUISCI')) return;
@@ -1075,16 +1086,19 @@ export async function subscribePush(userId, userType, athleteId = null, showToas
         console.log('[Push] Subscription endpoint:', sub.endpoint.slice(0, 60));
 
         if (window.mySupabase) {
-            const { error } = await window.mySupabase.from('push_subscriptions').upsert([{
+            // Elimina eventuali righe stantie per questo utente (endpoint diversi da login precedenti)
+            // poi inserisce quella nuova — garantisce una sola riga attiva per utente.
+            await window.mySupabase.from('push_subscriptions').delete().eq('user_id', userId);
+            const { error } = await window.mySupabase.from('push_subscriptions').insert([{
                 user_id:      userId,
                 user_type:    userType,
                 athlete_id:   athleteId,
                 endpoint:     sub.endpoint,
                 subscription: sub.toJSON()
-            }], { onConflict: 'endpoint' });
+            }]);
 
             if (error) {
-                console.error('[Push] Errore upsert:', error);
+                console.error('[Push] Errore salvataggio subscription:', error);
                 toast('Notifiche: errore di sincronizzazione (' + error.message + ')');
             } else {
                 console.log('[Push] Subscription salvata nel DB');
