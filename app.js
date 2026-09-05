@@ -1505,49 +1505,97 @@ export function applySmartMicrocycle(type) {
         let tSet = baseSet, tRep = baseRepStr, tKg = baseKg;
 
         if (type === 'hyper_block_dup') {
-            if (w === 1)      { tSet = baseSet;       tRep = baseRepNum;       tKg = baseKg * 0.70; }
-            else if (w === 2) { tSet = baseSet + 1;   tRep = baseRepNum;       tKg = baseKg * 0.75; }
-            else if (w === 3) { tSet = baseSet + 2;   tRep = baseRepNum;       tKg = baseKg * 0.80; }
-            else              { tSet = Math.max(1, baseSet - 1); tRep = Math.max(1, baseRepNum - 2); tKg = baseKg * 0.70; }
+            // BUG FIX: accumula linearmente fino all'ultima settimana, poi scarico
+            if (w === maxWeeks) {
+                tSet = Math.max(1, baseSet - 1); tRep = Math.max(1, baseRepNum - 2); tKg = baseKg * 0.65;
+            } else {
+                const acc = (w - 1) / Math.max(1, maxWeeks - 2);
+                tSet = baseSet + Math.round(acc * 2);
+                tKg  = baseKg * (0.70 + acc * 0.15);
+                tRep = baseRepNum;
+            }
         } else if (type === 'hyper_stretch') {
             tSet = baseSet; tKg = baseKg * (0.70 + 0.025 * (w - 1));
             if (w === maxWeeks && maxWeeks > 2) { tSet = Math.max(1, baseSet - 1); tRep = baseRepNum; }
             else { tRep = baseRepNum + ' (+ 4/5 Parziali in Allungamento)'; }
         } else if (type === 'hyper_metabolic') {
-            tSet = 1; tKg = baseKg * (0.65 + 0.02 * (w - 1));
-            if (w === maxWeeks && maxWeeks > 2) { tSet = baseSet; tRep = baseRepNum; tKg = baseKg * 0.60; }
+            // DUP Metabolico: Activation set + Myo-reps cluster, intensità cresce
+            tSet = 1; tKg = baseKg * (0.65 + 0.025 * (w - 1));
+            if (w === maxWeeks && maxWeeks > 2) { tSet = Math.max(1, baseSet - 1); tRep = baseRepNum; tKg = baseKg * 0.60; }
             else { const activation = Math.max(12, baseRepNum * 2); const cluster = Math.round(baseRepNum / 2) || 3; tRep = `${activation} + ${cluster} + ${cluster} + ${cluster} (15" rest)`; }
         } else if (type === 'block_period') {
+            // BUG FIX: fase realizzazione a 93% (peaking), non 60%
             const pct = w / maxWeeks;
             if (pct <= 0.50)      { tSet = baseSet; tRep = Math.max(8, baseRepNum); tKg = baseKg * (0.65 + 0.04 * (w - 1)); }
             else if (pct <= 0.80) { tSet = baseSet; tRep = Math.max(3, baseRepNum - 3); const lW = w - Math.floor(maxWeeks * 0.50); tKg = baseKg * (0.80 + 0.03 * (lW - 1)); }
-            else                  { tSet = Math.max(1, baseSet - 1); tRep = '2'; tKg = baseKg * 0.60; }
-        } else if (type === 'double_prog')    { tRep = w < maxWeeks ? baseRepNum + (w - 1) : baseRepNum; if (w === maxWeeks) tKg = baseKg * 1.05; }
-        else if (type === 'overreach')        { tSet = w < maxWeeks ? baseSet + (w - 1) : Math.max(1, baseSet - 1); }
-        else if (type === 'lin_taper')        { if (w > 1) { tRep = Math.max(1, baseRepNum - (w-1)); tKg = baseKg * (1 + 0.05 * (w-1)); if (w === maxWeeks) tSet = Math.max(1, baseSet - 1); } }
-        else if (type === 'step_load')        { tKg = baseKg * (1 + 0.05 * Math.floor((w - 1) / 2)); }
-        else if (type === 'wave_contrast')    { if (w % 2 === 0) { tKg = baseKg * 0.80; tRep = baseRepStr; } else { tKg = baseKg * (1 + 0.05 * Math.floor(w / 2)); } }
-        else if (type === 'french_contrast')  {
+            else                  { tSet = Math.max(1, baseSet - 1); tRep = '2'; tKg = baseKg * 0.93; }
+        } else if (type === 'double_prog') {
+            // Rep aumentano ogni settimana; ultima: reset rep, +5% kg
+            tRep = w < maxWeeks ? baseRepNum + (w - 1) : baseRepNum;
+            if (w === maxWeeks) tKg = baseKg * 1.05;
+        } else if (type === 'overreach') {
+            tSet = w < maxWeeks ? baseSet + (w - 1) : Math.max(1, baseSet - 1);
+        } else if (type === 'lin_taper') {
+            if (w > 1) { tRep = Math.max(1, baseRepNum - (w-1)); tKg = baseKg * (1 + 0.05 * (w-1)); if (w === maxWeeks) tSet = Math.max(1, baseSet - 1); }
+        } else if (type === 'step_load') {
+            tKg = baseKg * (1 + 0.05 * Math.floor((w - 1) / 2));
+        } else if (type === 'wave_contrast') {
+            // Settimane dispari: pesante; pari: esplosivo (80%, meno rep)
+            if (w % 2 === 0) { tKg = baseKg * 0.80; tRep = Math.max(3, Math.round(baseRepNum * 0.6)); }
+            else { tKg = baseKg * (1 + 0.05 * Math.floor(w / 2)); tRep = baseRepNum; }
+        } else if (type === 'french_contrast') {
             const ts = Math.min(4, Math.max(3, baseSet)); const tr = Math.min(4, baseRepNum);
-            if (w === 1)      { tSet = ts; tRep = tr;                    tKg = baseKg * 0.80; }
-            else if (w === 2) { tSet = ts; tRep = Math.max(1, tr - 1);  tKg = baseKg * 0.85; }
-            else if (w === 3) { tSet = Math.max(2, ts - 1); tRep = Math.max(1, tr - 2); tKg = baseKg * 0.90; }
-            else              { tSet = 2;  tRep = 2;                     tKg = baseKg * 0.70; }
-        } else if (type === 'cluster') { if (baseRepNum >= 4) { const m = Math.round(baseRepNum / 3) || 1; tRep = `${m}.${m}.${m}`; } if (w === maxWeeks && maxWeeks > 2) tKg = baseKg * 1.05; }
-        else if (type === 'wave_load') { tSet = Math.max(3, baseSet); tRep = '3, 2, 1'; tKg = baseKg * (0.80 + 0.025 * (w - 1)); }
-        else if (type === 'myo_reps') { tSet = 1; const act = baseRepNum * 2; const cl = Math.round(baseRepNum / 2) || 3; tRep = `${act} + ${cl} + ${cl} + ${cl}`; tKg = baseKg * (0.65 + 0.02 * (w - 1)); }
-        else if (type === 'wup') {
+            // BUG FIX: ciclo su 4 settimane ripetuto, non si blocca a W4
+            const fw = ((w - 1) % 4) + 1;
+            if (fw === 1)      { tSet = ts; tRep = tr;                    tKg = baseKg * 0.80; }
+            else if (fw === 2) { tSet = ts; tRep = Math.max(1, tr - 1);  tKg = baseKg * 0.85; }
+            else if (fw === 3) { tSet = Math.max(2, ts - 1); tRep = Math.max(1, tr - 2); tKg = baseKg * 0.90; }
+            else               { tSet = 2;  tRep = 2;                     tKg = baseKg * 0.70; }
+        } else if (type === 'cluster') {
+            // BUG FIX: kg progressivo ogni settimana (+2.5%)
+            tKg = baseKg * (1 + 0.025 * (w - 1));
+            if (baseRepNum >= 4) { const m = Math.round(baseRepNum / 3) || 1; tRep = `${m}.${m}.${m} (15" intra-serie)`; }
+        } else if (type === 'wave_load') {
+            tSet = Math.max(3, baseSet); tRep = '3, 2, 1'; tKg = baseKg * (0.80 + 0.025 * (w - 1));
+        } else if (type === 'myo_reps') {
+            // Myo-Reps: set di attivazione + mini-set a cedimento parziale (diverso da DUP metabolico)
+            tSet = 1; tKg = baseKg * (0.70 + 0.02 * (w - 1));
+            if (w === maxWeeks && maxWeeks > 2) { tSet = Math.max(1, baseSet - 1); tRep = baseRepNum; tKg = baseKg * 0.65; }
+            else { const act = Math.max(10, baseRepNum + 2); tRep = `${act} + 3 + 3 + 3 (20" rest)`; }
+        } else if (type === 'wup') {
             const ph = (w - 1) % 3;
             if (ph === 0) { tSet = Math.max(3, baseSet); tRep = 8; tKg = baseKg * 0.70; }
             else if (ph === 1) { tSet = Math.max(4, baseSet + 1); tRep = 3; tKg = baseKg * 0.88; }
             else { tSet = Math.max(5, baseSet + 2); tRep = 2; tKg = baseKg * 0.50; }
         } else if (type === 'triphasic') {
+            // BUG FIX: ciclo ecc/iso/conc ripetuto per tutte le settimane
             tSet = baseSet;
-            if (w === 1) tRep = baseRepNum + ' (Eccentrica 5s)';
-            else if (w === 2) tRep = baseRepNum + ' (Isometria 3s al parallelo)';
-            else if (w === 3) tRep = baseRepNum + ' (Super Esplosivo)';
-            else tRep = baseRepNum;
-            tKg = baseKg * (0.80 + 0.025 * (w - 1));
+            const tp = ((w - 1) % 3) + 1;
+            if (tp === 1) tRep = baseRepNum + ' (Eccentrica 5s)';
+            else if (tp === 2) tRep = baseRepNum + ' (Isometria 3s al parallelo)';
+            else tRep = baseRepNum + ' (Super Esplosivo)';
+            tKg = baseKg * (0.78 + 0.02 * (w - 1));
+        } else if (type === 'wendler_531') {
+            // 5/3/1 Wendler — ciclo 3+1 settimane
+            const wc = ((w - 1) % 4) + 1;
+            if (wc === 1) { tSet = 3; tRep = '5'; tKg = baseKg * 0.65; }
+            else if (wc === 2) { tSet = 3; tRep = '3'; tKg = baseKg * 0.75; }
+            else if (wc === 3) { tSet = 3; tRep = '1+ (AMRAP)'; tKg = baseKg * 0.85; }
+            else               { tSet = 3; tRep = '5 (deload)'; tKg = baseKg * 0.50; }
+        } else if (type === 'linear_classic') {
+            // Progressione Lineare Classica: +5% ogni settimana, ultimo scarico
+            if (w === maxWeeks) { tSet = Math.max(1, baseSet - 1); tRep = baseRepNum; tKg = baseKg * 0.60; }
+            else { tKg = baseKg * (1 + 0.05 * (w - 1)); tRep = baseRepNum; }
+        } else if (type === 'amrap_top') {
+            // AMRAP Top Set: top set a cedimento + back-off sets
+            if (w === maxWeeks) { tSet = Math.max(1, baseSet - 1); tRep = baseRepNum; tKg = baseKg * 0.65; }
+            else {
+                const topKg = baseKg * (0.85 + 0.025 * (w - 1));
+                const backOff = Math.round(topKg * 0.80 / 2.5) * 2.5;
+                tSet = baseSet;
+                tRep = `AMRAP @ ${Math.round(topKg / 2.5) * 2.5}kg + ${Math.max(1, baseSet - 1)}x${baseRepNum} @ ${backOff}kg`;
+                tKg  = topKg;
+            }
         }
 
         if (typeof tKg === 'number' && tKg > 0) tKg = Math.round(tKg / 2.5) * 2.5;
