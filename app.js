@@ -2019,6 +2019,8 @@ export function exportProgramPDF() {
     w.document.close();
     w.focus();
 }
+
+export function updateExpInfo() {
     const athId = document.getElementById('exp-ath').value || appState.selAthId;
     const ath   = athById(athId);
     const sc    = DB.sessions.filter(x => x.athlete === athId).length;
