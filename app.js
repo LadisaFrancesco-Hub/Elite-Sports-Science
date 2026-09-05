@@ -1433,6 +1433,24 @@ export function linkToGroup(exIdx, groupId) {
     exs[exIdx].groupId = groupId; renderEdExercises();
 }
 
+export function openCustomTypeModal() {
+    const existing = document.getElementById('mo-custom-type');
+    if (existing) existing.remove();
+    document.body.insertAdjacentHTML('beforeend', `
+        <div class="mo show" id="mo-custom-type" style="z-index:99999">
+            <div class="mo-box" style="max-width:360px;text-align:center">
+                <div class="mo-t" style="justify-content:center">Tipo personalizzato <button class="mo-x" onclick="document.getElementById('mo-custom-type').remove()">✕</button></div>
+                <input type="text" id="custom-type-input" placeholder="Es: Drop Set, Cluster, EMOM..." style="margin-bottom:16px" autofocus
+                    onkeydown="if(event.key==='Enter'){const v=document.getElementById('custom-type-input').value.trim();if(v){addExType(v);document.getElementById('mo-custom-type').remove();}}">
+                <div style="display:flex;gap:8px;justify-content:center">
+                    <button class="btn btn-g" onclick="document.getElementById('mo-custom-type').remove()">Annulla</button>
+                    <button class="btn btn-p" onclick="const v=document.getElementById('custom-type-input').value.trim();if(v){addExType(v);document.getElementById('mo-custom-type').remove();}">Aggiungi</button>
+                </div>
+            </div>
+        </div>`);
+    setTimeout(() => document.getElementById('custom-type-input')?.focus(), 50);
+}
+
 export function addExType(type) {
     const defaults = {
         'max effort':     { set:3, rep:'3', rir:'0', rest:"180''", tut:'-' },
