@@ -368,7 +368,7 @@ export function go(id, btn) {
         storico:        renderStorico,
         editor:         renderEditor,
         wellness:       () => upW(),
-        sessione:       () => { renderWeekWidget(); renderQuickWellness(); loadLive(); },
+        sessione:       () => { renderWeekWidget(); loadLive(); },
         'coach-reply':    renderCoachReply,
         analytics:        renderAnalytics,
         progressione:     renderProg,
