@@ -148,10 +148,10 @@ export function upW() {
     // Classificazione fisiologica della fase
     if (cycleDay > 0) {
         if      (cycleDay > 40)  { cycle = 'Ritardo/Irregolare'; cycleMsg = '🟣 Ciclo oltre i 40 giorni. Controlla il calendario.'; }
-        else if (cycleDay <= 5)  { cycle = 'Mestruazioni';        cycleMsg = '🩸 Infiammazione sistemica. Modula il volume.'; }
-        else if (cycleDay <= 13) { cycle = 'Fase Follicolare';    cycleMsg = '⚡ Picco estrogenico! Tolleranza al carico neurale ai massimi livelli.'; }
-        else if (cycleDay <= 15) { cycle = 'Fase Ovulatoria';     cycleMsg = '⚠️ Picco Relaxina: WARM-UP articolare imperativo!'; }
-        else                     { cycle = 'Fase Luteale';         cycleMsg = '🔥 Shift metabolico (Progesterone). Cura l\'idratazione.'; }
+        else if (cycleDay <= 5)  { cycle = 'Mestruazioni';        cycleMsg = 'Infiammazione sistemica. Modula il volume.'; }
+        else if (cycleDay <= 13) { cycle = 'Fase Follicolare';    cycleMsg = 'Picco estrogenico. Tolleranza al carico neurale ai massimi livelli.'; }
+        else if (cycleDay <= 15) { cycle = 'Fase Ovulatoria';     cycleMsg = 'Picco Relaxina: WARM-UP articolare imperativo.'; }
+        else                     { cycle = 'Fase Luteale';         cycleMsg = 'Shift metabolico (Progesterone). Cura l\'idratazione.'; }
     }
 
     // Aggiorna il badge visivo del ciclo nel pannello Wellness
@@ -562,7 +562,7 @@ export function renderInjuries() {
                     padding:10px; border-radius:8px;">
           <div>
             <div style="color:var(--text); font-weight:800; font-size:12px;">
-              📍 ${i.zone.replace('_', ' ')}
+              ${i.zone.replace('_', ' ')}
             </div>
             <div style="color:var(--coral); font-size:10px; text-transform:uppercase;">
               Tipo: ${i.type}
@@ -683,14 +683,14 @@ export function evaluateCnsTest() {
         // Nuovo Personal Best neurale
         ath.cnsRecord = cnsTaps;
         window.saveDB();
-        feedback.innerHTML = `<span style="color:var(--teal);">🏆 NUOVO RECORD SNC! Reattività neurale eccellente.</span>`;
+        feedback.innerHTML = `<span style="color:var(--teal);">NUOVO RECORD SNC — Reattività neurale eccellente.</span>`;
         status.innerHTML   = `<span style="color:var(--teal);">OTTIMO (${cnsTaps})</span>`;
     } else {
         const dropPercent = ((ath.cnsRecord - cnsTaps) / ath.cnsRecord) * 100;
 
         if (dropPercent >= 10) {
             // Affaticamento neurale rilevato
-            feedback.innerHTML = `<span style="color:var(--coral);">⚠️ FATICA NEURALE: Calo del ${dropPercent.toFixed(1)}% rispetto al tuo picco (${ath.cnsRecord}). Riduci le alzate pesanti.</span>`;
+            feedback.innerHTML = `<span style="color:var(--coral);">FATICA NEURALE — Calo del ${dropPercent.toFixed(1)}% rispetto al tuo picco (${ath.cnsRecord}). Riduci le alzate pesanti.</span>`;
             status.innerHTML   = `<span style="color:var(--coral);">FATICA (${cnsTaps})</span>`;
         } else {
             // Nella norma
@@ -716,7 +716,7 @@ export function confermaWellnessLive() {
     // Doppio haptic feedback di sblocco (pattern ritmico)
     if (navigator.vibrate) navigator.vibrate([40, 40]);
 
-    toast('💪 Stato Wellness salvato. Focus totale sulla prestazione!');
+    toast('Stato Wellness salvato.');
 
     // Naviga alla Sessione Live con un leggero ritardo per il toast
     setTimeout(() => {
@@ -781,11 +781,11 @@ export function computeSessionModifiers() {
     // 3. Ciclo mestruale → carico e note cliniche
     if (cycle === 'Fase Ovulatoria') {
         if (warningType === 'none') warningType = 'caution';
-        messages.push('⚠️ Picco Relaxina — warm-up articolare obbligatorio prima di ogni alzata pesante');
+        messages.push('Picco Relaxina — warm-up articolare obbligatorio prima di ogni alzata pesante.');
     } else if (cycle === 'Mestruazioni') {
         if (kgMultiplier === 1.0) kgMultiplier = 0.97; // riduzione lieve aggiuntiva
         if (warningType === 'none') warningType = 'caution';
-        messages.push('🩸 Fase mestruale — carico ridotto -3%');
+        messages.push('Fase mestruale — carico ridotto -3%.');
     } else if (cycle === 'Fase Follicolare') {
         messages.push('⚡ Fase follicolare — risposta anabolica ottimale, puoi spingere al massimo');
     }
