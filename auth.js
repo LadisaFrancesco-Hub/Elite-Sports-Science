@@ -1009,9 +1009,10 @@ export function _showPushBanner(userId, userType, athleteId = null) {
         subscribePush(userId, userType, athleteId, false);
         return;
     }
-    // Permesso negato → guida l'utente alle impostazioni
+    // Permesso negato → guida l'utente alle impostazioni (una volta sola per sessione)
     if (Notification.permission === 'denied') {
         if (document.getElementById('push-banner')) return;
+        if (sessionStorage.getItem('push-banner-dismissed')) return;
         document.body.insertAdjacentHTML('beforeend', `
             <div id="push-banner" style="
                 position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
@@ -1029,9 +1030,13 @@ export function _showPushBanner(userId, userType, athleteId = null) {
             </div>`);
         document.getElementById('push-banner-no').addEventListener('click', () => {
             document.getElementById('push-banner')?.remove();
+            sessionStorage.setItem('push-banner-dismissed', '1');
         });
         return;
     }
+
+    if (document.getElementById('push-banner')) return;
+    if (sessionStorage.getItem('push-banner-dismissed')) return;
 
     document.body.insertAdjacentHTML('beforeend', `
         <div id="push-banner" style="
@@ -1059,10 +1064,12 @@ export function _showPushBanner(userId, userType, athleteId = null) {
 
     document.getElementById('push-banner-yes').addEventListener('click', () => {
         document.getElementById('push-banner')?.remove();
+        sessionStorage.setItem('push-banner-dismissed', '1');
         subscribePush(userId, userType, athleteId);
     });
     document.getElementById('push-banner-no').addEventListener('click', () => {
         document.getElementById('push-banner')?.remove();
+        sessionStorage.setItem('push-banner-dismissed', '1');
     });
 }
 

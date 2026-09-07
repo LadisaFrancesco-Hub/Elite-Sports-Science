@@ -586,7 +586,7 @@ export function renderDashboard() {
     if (!ath) return;
 
     const acwrData = appState.selAthId ? calculateACWR(appState.selAthId) : null;
-    document.getElementById('dh-sub').textContent = `${ath.level || 'Livello n.d.'} · ${ath.goal || ''}`.replace(/ · $/, '');
+    document.getElementById('dh-sub').textContent = [ath.level, ath.goal].filter(Boolean).join(' · ');
 
     let alertCaricoHTML = '';
     if (acwrData && acwrData.field && acwrData.field.value !== null && acwrData.field.value !== 'N/A') {
@@ -615,7 +615,10 @@ export function renderDashboard() {
     }
 
     const alertsDiv = document.getElementById('dh-alerts');
-    if (alertsDiv) alertsDiv.innerHTML = triageHTML + scaricoHTML + alertCaricoHTML;
+    if (alertsDiv) {
+        const combined = triageHTML + scaricoHTML + alertCaricoHTML;
+        alertsDiv.innerHTML = combined || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px 0;">Nessun alert attivo</div>';
+    }
 
     const n      = sess.length;
     const avgRpe = n ? (sess.reduce((a, s) => a + s.rpe, 0) / n).toFixed(1) : '-';
@@ -623,25 +626,29 @@ export function renderDashboard() {
         <div class="kpi"><div class="kpi-l">Sessioni totali</div><div class="kpi-v">${n}</div></div>
         <div class="kpi"><div class="kpi-l">RPE medio</div><div class="kpi-v">${avgRpe}</div></div>
         <div class="kpi"><div class="kpi-l">ACWR Gym (Meccanico)</div>
-            <div class="kpi-v" style="color:${acwrData ? acwrData.gym.color : 'inherit'}">${acwrData ? acwrData.gym.value : '-'}</div>
+            <div class="kpi-v" style="color:${acwrData ? acwrData.gym.color : 'var(--muted)'}">${acwrData ? (acwrData.gym.value ?? '—') : '—'}</div>
             <div class="kpi-s">${acwrData ? acwrData.gym.text : ''}</div></div>
         <div class="kpi"><div class="kpi-l">ACWR Campo (Specifico)</div>
-            <div class="kpi-v" style="color:${acwrData ? acwrData.field.color : 'inherit'}">${acwrData ? acwrData.field.value : '-'}</div>
+            <div class="kpi-v" style="color:${acwrData ? acwrData.field.color : 'var(--muted)'}">${acwrData ? (acwrData.field.value ?? '—') : '—'}</div>
             <div class="kpi-s">${acwrData ? acwrData.field.text : ''}</div></div>`;
 
     const last8 = sess.slice(-8);
-    const maxV  = Math.max(...last8.map(s => s.vol), 1);
     const bc    = document.getElementById('dh-bc');
     bc.innerHTML = '';
-    last8.forEach(s => {
-        const h   = Math.round(s.vol / maxV * 85);
-        const col = document.createElement('div');
-        col.className = 'bc-col';
-        col.innerHTML = `<div class="bc-val">${(s.vol / 1000).toFixed(1)}k</div>
-                         <div class="bc-bar" style="height:${h}px;background:var(--teal)"></div>
-                         <div class="bc-lbl">${s.date.slice(5)}</div>`;
-        bc.appendChild(col);
-    });
+    if (!last8.length) {
+        bc.innerHTML = '<div style="width:100%;text-align:center;color:var(--muted);font-size:12px;padding:24px 0;">Nessuna sessione registrata</div>';
+    } else {
+        const maxV = Math.max(...last8.map(s => s.vol), 1);
+        last8.forEach(s => {
+            const h   = Math.round(s.vol / maxV * 85);
+            const col = document.createElement('div');
+            col.className = 'bc-col';
+            col.innerHTML = `<div class="bc-val">${(s.vol / 1000).toFixed(1)}k</div>
+                             <div class="bc-bar" style="height:${h}px;background:var(--teal)"></div>
+                             <div class="bc-lbl">${s.date.slice(5)}</div>`;
+            bc.appendChild(col);
+        });
+    }
 
     _renderComplianceCard();
 }
@@ -763,26 +770,27 @@ export function renderCalendario() {
     });
 
     // Header
-    let html = '<thead><tr><th style="padding:8px 10px;text-align:left;color:var(--muted);font-size:12px;border-bottom:1px solid var(--border)">Atleta</th>';
+    let html = '<thead><tr><th style="padding:6px 8px;text-align:left;color:var(--muted);font-size:11px;border-bottom:1px solid var(--border)">Atleta</th>';
     dayLabels.forEach((lbl, i) => {
         const isToday = dayKeys[i] === today.toISOString().slice(0, 10);
-        html += `<th style="padding:8px 6px;text-align:center;font-size:12px;color:${isToday ? 'var(--teal)' : 'var(--muted)'};border-bottom:1px solid var(--border)">${lbl}<br><span style="font-size:10px;font-weight:400">${dayKeys[i].slice(5)}</span></th>`;
+        html += `<th style="padding:6px 4px;text-align:center;font-size:11px;color:${isToday ? 'var(--teal)' : 'var(--muted)'};border-bottom:1px solid var(--border)">${lbl}<br><span style="font-size:9px;font-weight:400">${dayKeys[i].slice(5)}</span></th>`;
     });
     html += '</tr></thead><tbody>';
 
     DB.athletes.forEach(a => {
-        html += `<tr><td style="padding:8px 10px;font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border)">${escHtml(a.name)}</td>`;
+        const shortName = a.name.split(' ')[0];
+        html += `<tr><td style="padding:6px 8px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border)">${escHtml(shortName)}</td>`;
         dayKeys.forEach(dk => {
             const sess = idx[a.id + '|' + dk] || [];
             const isToday = dk === today.toISOString().slice(0, 10);
             let cell = '';
             if (sess.length) {
                 const titles = sess.map(s => escHtml(s.session)).join(', ');
-                cell = `<span title="${titles}" onclick="appState.selAthId='${a.id}';go('storico',document.querySelector('.nav-btn[onclick*=\\'storico\\']'))" style="cursor:pointer;display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--teal);vertical-align:middle"></span>`;
+                cell = `<span title="${titles}" onclick="appState.selAthId='${a.id}';go('storico',document.querySelector('.nav-btn[onclick*=\\'storico\\']'))" style="cursor:pointer;display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--teal);vertical-align:middle"></span>`;
             } else {
-                cell = `<span style="display:inline-block;width:16px;height:16px;border-radius:50%;background:var(--border);vertical-align:middle"></span>`;
+                cell = `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--border);vertical-align:middle"></span>`;
             }
-            html += `<td style="padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);${isToday ? 'background:rgba(16,185,129,.05)' : ''}">${cell}</td>`;
+            html += `<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--border);${isToday ? 'background:rgba(16,185,129,.05)' : ''}">${cell}</td>`;
         });
         html += '</tr>';
     });
