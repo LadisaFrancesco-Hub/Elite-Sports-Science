@@ -278,7 +278,8 @@ body {
   transition: all 0.2s ease;
 }
 .bb-item.on { color: var(--teal); transform: translateY(-2px); }
-.bb-icon { font-size: 20px; margin-bottom: 4px; }
+.bb-item.on .bb-icon { filter: drop-shadow(0 0 6px var(--teal)); }
+.bb-icon { font-size: 20px; margin-bottom: 4px; transition: filter 0.2s; }
 .bb-lbl  { font-size: 9px; font-family: var(--fm); font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
 
 /* ══════════════════════════════════════════════════════════════

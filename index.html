@@ -707,6 +707,10 @@
   </div>
 </div>
 
+<div class="panel" id="p-ath-home">
+  <div id="ath-home-content"></div>
+</div>
+
 <div class="panel" id="p-sessione">
   <div class="ph">Sessione Live</div>
   <div class="ps">Traccia i set in tempo reale</div>
@@ -1033,12 +1037,11 @@
 </div>
 
 <div id="athlete-bottom-bar" class="bottom-bar">
-    <div class="bb-item" onclick="go('wellness')"><div class="bb-icon">♡</div><div class="bb-lbl">Wellness</div></div>
-    <div class="bb-item on" onclick="go('sessione')"><div class="bb-icon">▶</div><div class="bb-lbl">Sessione</div></div>
-    <div class="bb-item" onclick="go('feedback')"><div class="bb-icon">✉</div><div class="bb-lbl">Post-WOD</div></div>
-    <div class="bb-item" onclick="go('ath-progressi')"><div class="bb-icon">↗</div><div class="bb-lbl">Progressi</div></div>
-    <div class="bb-item" onclick="go('ath-storico')"><div class="bb-icon">≡</div><div class="bb-lbl">Storico</div></div>
-    <div class="bb-item" onclick="go('coach-reply')" style="position:relative"><div class="bb-icon">💬</div><div class="bb-lbl">Coach</div><span id="bb-msg-badge" style="display:none;position:absolute;top:4px;right:8px;background:var(--coral);color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:1px 5px;line-height:1.4">0</span></div>
+    <div class="bb-item on" id="bb-oggi" onclick="go('ath-home')"><div class="bb-icon">⊙</div><div class="bb-lbl">Oggi</div></div>
+    <div class="bb-item" id="bb-sess" onclick="go('sessione')"><div class="bb-icon">▶</div><div class="bb-lbl">Sessione</div></div>
+    <div class="bb-item" id="bb-well" onclick="go('wellness')"><div class="bb-icon">♡</div><div class="bb-lbl">Wellness</div></div>
+    <div class="bb-item" id="bb-prog" onclick="go('ath-progressi')"><div class="bb-icon">↗</div><div class="bb-lbl">Progressi</div></div>
+    <div class="bb-item" id="bb-coach" onclick="go('coach-reply')" style="position:relative"><div class="bb-icon">💬</div><div class="bb-lbl">Coach</div><span id="bb-msg-badge" style="display:none;position:absolute;top:4px;right:8px;background:var(--coral);color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:1px 5px;line-height:1.4">0</span></div>
 </div>
 
 <script type="module" src="main.js"></script>

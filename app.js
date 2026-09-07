@@ -352,8 +352,13 @@ export function openMesocycleArchive() {
 // ─────────────────────────────────────────────────────────────
 export function go(id, btn) {
     if (window.userRole === 'ATLETA') {
-        const allowed = ['wellness', 'sessione', 'feedback', 'coach-reply', 'ath-progressi', 'ath-storico'];
+        const allowed = ['ath-home', 'wellness', 'sessione', 'feedback', 'coach-reply', 'ath-progressi', 'ath-storico'];
         if (!allowed.includes(id)) return;
+        // sync bottom bar active state
+        const bbMap = { 'ath-home':'bb-oggi', sessione:'bb-sess', wellness:'bb-well', feedback:'bb-sess', 'ath-progressi':'bb-prog', 'ath-storico':'bb-prog', 'coach-reply':'bb-coach' };
+        document.querySelectorAll('.bb-item').forEach(b => b.classList.remove('on'));
+        const activeId = bbMap[id];
+        if (activeId) document.getElementById(activeId)?.classList.add('on');
     }
 
     document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
@@ -372,6 +377,7 @@ export function go(id, btn) {
         'coach-reply':    () => { renderCoachReply(); renderAthleteChat(); },
         analytics:        renderAnalytics,
         progressione:     renderProg,
+        'ath-home':       renderAthHome,
         'ath-progressi':  renderAthProgressi,
         'ath-storico':    renderAthStorico,
         'calendario':     renderCalendario,
@@ -1018,6 +1024,131 @@ export function renderCoachReply() {
             ${s.notes ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;padding:6px 10px;background:var(--s1);border-radius:6px;"><span style="font-weight:600;color:var(--text)">La tua nota:</span> ${escHtml(s.notes.replace('NOTE: ',''))}</div>` : ''}
             <div style="font-size:13px;color:var(--purple);line-height:1.6;white-space:pre-wrap;padding:8px 10px;background:var(--s2);border-left:3px solid var(--purple);border-radius:0 6px 6px 0;">${escHtml(s.reply)}</div>
         </div>`).join('');
+}
+
+export function renderAthHome() {
+    const el = document.getElementById('ath-home-content');
+    if (!el) return;
+
+    const ath      = athById(appState.selAthId);
+    const today    = new Date();
+    const todayKey = today.toISOString().slice(0, 10);
+    const days     = ['Domenica','Lunedì','Martedì','Mercoledì','Giovedì','Venerdì','Sabato'];
+    const months   = ['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+    const dateStr  = `${days[today.getDay()]} ${today.getDate()} ${months[today.getMonth()]}`;
+
+    // ── Wellness status ──────────────────────────────────────
+    const welldone  = localStorage.getItem(`qw_done_${appState.selAthId}`) === todayKey;
+    const readiness = DB.wellness?.readinessScore ?? null;
+    const readColor = readiness >= 75 ? 'var(--teal)' : readiness >= 50 ? 'var(--amber)' : 'var(--coral)';
+    const readLabel = readiness >= 75 ? 'Pronto' : readiness >= 50 ? 'Moderato' : 'Affaticato';
+
+    // ── Sessioni settimana corrente ──────────────────────────
+    const mon = new Date(today); mon.setDate(today.getDate() - ((today.getDay()+6)%7));
+    const weekSess = DB.sessions.filter(s => {
+        const d = new Date(s.date); return d >= mon && d <= today;
+    });
+
+    // ── Scheda disponibile ───────────────────────────────────
+    const sch      = DB.schedules[appState.selAthId];
+    const sessions = sch?.sessions || [];
+    const nextSess = sessions[0];
+
+    // ── Ultimo messaggio coach non letto ─────────────────────
+    const msgs      = DB.messages?.[appState.selAthId] || [];
+    const coachMsgs = msgs.filter(m => m.from_type === 'coach').sort((a,b) => new Date(b.created_at)-new Date(a.created_at));
+    const lastMsg   = coachMsgs[0];
+    const unreadCount = coachMsgs.filter(m => !m.read_at).length;
+
+    // ── Streak sessioni consecutive ──────────────────────────
+    const allSess = [...DB.sessions].sort((a,b) => b.date.localeCompare(a.date));
+    let streak = 0;
+    if (allSess.length) {
+        const last = new Date(allSess[0].date); last.setHours(0,0,0,0);
+        const diff = Math.floor((today - last) / 86400000);
+        if (diff <= 1) {
+            streak = 1;
+            for (let i=1; i<allSess.length; i++) {
+                const prev = new Date(allSess[i].date); prev.setHours(0,0,0,0);
+                const cur  = new Date(allSess[i-1].date); cur.setHours(0,0,0,0);
+                if (Math.floor((cur-prev)/86400000) <= 2) streak++; else break;
+            }
+        }
+    }
+
+    const hour = today.getHours();
+    const greeting = hour < 12 ? 'Buongiorno' : hour < 18 ? 'Buon pomeriggio' : 'Buonasera';
+
+    el.innerHTML = `
+    <div style="padding-bottom:100px">
+
+      <!-- Greeting -->
+      <div style="margin-bottom:24px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">${dateStr}</div>
+        <div style="font-size:26px;font-weight:800;color:var(--text);letter-spacing:-0.5px">${greeting},<br><span style="color:var(--teal)">${escHtml(ath?.name?.split(' ')[0] || 'Atleta')}</span> 💪</div>
+      </div>
+
+      <!-- Allenamento di oggi -->
+      <div class="card" style="margin-bottom:14px;border:1px solid var(--border)">
+        <div class="card-t">Allenamento</div>
+        ${nextSess ? `
+          <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">${escHtml(nextSess.name)}</div>
+          <div style="font-size:12px;color:var(--muted);margin-bottom:16px">${nextSess.exercises?.length || 0} esercizi · ${escHtml(sch?.phase || 'Accumulo')}</div>
+          <button onclick="go('sessione')" style="width:100%;padding:14px;background:var(--teal);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;letter-spacing:0.3px;">
+            Inizia allenamento →
+          </button>
+        ` : `
+          <div style="color:var(--muted);font-size:13px;text-align:center;padding:20px 0">
+            Nessuna scheda assegnata.<br>Contatta il tuo coach.
+          </div>
+        `}
+      </div>
+
+      <!-- Wellness -->
+      <div class="card" style="margin-bottom:14px;border:1px solid var(--border);cursor:pointer" onclick="go('wellness')">
+        <div class="card-t">Wellness Check-in</div>
+        ${welldone && readiness !== null ? `
+          <div style="display:flex;align-items:center;gap:14px">
+            <div style="width:52px;height:52px;border-radius:50%;border:3px solid ${readColor};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+              <span style="font-size:16px;font-weight:800;color:${readColor}">${readiness}</span>
+            </div>
+            <div>
+              <div style="font-size:15px;font-weight:700;color:${readColor}">${readLabel}</div>
+              <div style="font-size:12px;color:var(--muted)">Check-in completato oggi ✓</div>
+            </div>
+          </div>
+        ` : `
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-size:14px;font-weight:700;color:var(--text)">Non ancora fatto</div>
+              <div style="font-size:12px;color:var(--muted)">Come ti senti oggi?</div>
+            </div>
+            <div style="background:var(--teal);color:#fff;border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700">Fai ora →</div>
+          </div>
+        `}
+      </div>
+
+      <!-- Stats rapide -->
+      <div class="g4" style="margin-bottom:14px">
+        <div class="kpi"><div class="kpi-l">Sessioni tot.</div><div class="kpi-v">${DB.sessions.length}</div></div>
+        <div class="kpi"><div class="kpi-l">Questa sett.</div><div class="kpi-v" style="color:var(--teal)">${weekSess.length}</div></div>
+        <div class="kpi"><div class="kpi-l">Streak</div><div class="kpi-v" style="color:var(--amber)">${streak}🔥</div></div>
+        <div class="kpi"><div class="kpi-l">RPE medio</div><div class="kpi-v">${DB.sessions.length ? (DB.sessions.reduce((a,s)=>a+(s.rpe||0),0)/DB.sessions.length).toFixed(1) : '—'}</div></div>
+      </div>
+
+      <!-- Messaggio coach -->
+      <div class="card" style="border:1px solid var(--border);cursor:pointer" onclick="go('coach-reply')">
+        <div class="card-t" style="display:flex;justify-content:space-between;align-items:center">
+          <span>Messaggio Coach</span>
+          ${unreadCount ? `<span style="background:var(--coral);color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:2px 7px">${unreadCount} nuovi</span>` : ''}
+        </div>
+        ${lastMsg ? `
+          <div style="font-size:13px;color:var(--text);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">"${escHtml(lastMsg.content)}"</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px">${new Date(lastMsg.created_at).toLocaleDateString('it-IT')}</div>
+        ` : `<div style="font-size:13px;color:var(--muted)">Nessun messaggio dal coach</div>`}
+      </div>
+
+    </div>`;
 }
 
 export function renderAthStorico() {

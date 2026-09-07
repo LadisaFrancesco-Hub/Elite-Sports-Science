@@ -162,7 +162,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const athPill = document.querySelector('.ath-pill');
                 if (athPill) athPill.style.setProperty('display', 'none', 'important');
                 document.getElementById('athlete-bottom-bar').classList.add('show');
-                go('sessione');
+                go('ath-home');
             }
         } else {
             // Deep linking: app aperta da tap su notifica → naviga al pannello specificato
