@@ -757,7 +757,7 @@ export function renderCalendario() {
         return d;
     });
     const dayKeys = days.map(d => d.toISOString().slice(0, 10));
-    const dayLabels = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
+    const dayLabels = ['L', 'M', 'M', 'G', 'V', 'S', 'D'];
 
     rangeEl.textContent = `${dayKeys[0]} — ${dayKeys[6]}`;
 
