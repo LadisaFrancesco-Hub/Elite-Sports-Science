@@ -550,7 +550,7 @@ export function renderInjuries() {
     if (!act.length) {
         wrap.innerHTML = `
             <div style="font-size:11px; color:var(--teal); text-align:center;
-                        padding:10px; background:rgba(16, 185, 129, 0.1); border-radius:8px;">
+                        padding:10px; background:rgba(249, 115, 22, 0.1); border-radius:8px;">
               Nessun infortunio attivo registrato.
             </div>`;
         return;

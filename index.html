@@ -22,7 +22,7 @@
 <body>
 
 <div id="splash-screen">
-    <div style="font-size:24px; font-weight:800; color:#10b981; letter-spacing:1px; animation: splashPulse 1.5s infinite alternate; font-family:sans-serif;">
+    <div style="font-size:24px; font-weight:800; color:#f97316; letter-spacing:1px; animation: splashPulse 1.5s infinite alternate; font-family:sans-serif;">
         ELITE SPORTS SCIENCE
     </div>
     <div style="font-size:11px; color:#64748b; margin-top:10px; font-family:monospace;">
@@ -43,14 +43,14 @@
 
 <button class="menu-toggle" onclick="toggleMobileMenu()">☰ Menu</button>
 
-<div id="login-screen" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:radial-gradient(ellipse at 50% 0%, rgba(16,185,129,0.12) 0%, #0a0f1d 60%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; z-index:99999; font-family:inherit;">
+<div id="login-screen" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:radial-gradient(ellipse at 50% 0%, rgba(249,115,22,0.12) 0%, #0a0f1d 60%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; z-index:99999; font-family:inherit;">
     <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-        <img src="/icons/icon-192.png" alt="Elite Sports Science" style="width:64px; height:64px; border-radius:16px; box-shadow:0 8px 24px rgba(16,185,129,0.3);">
-        <div style="font-size:11px; color:#10b981; letter-spacing:0.2em; text-transform:uppercase; font-weight:600;">Elite Sports Science</div>
+        <img src="/icons/icon-192.png" alt="Elite Sports Science" style="width:64px; height:64px; border-radius:16px; box-shadow:0 8px 24px rgba(249,115,22,0.3);">
+        <div style="font-size:11px; color:#f97316; letter-spacing:0.2em; text-transform:uppercase; font-weight:600;">Elite Sports Science</div>
     </div>
     <div id="login-card" style="position:relative; background:#111827; border: 1px solid rgba(255,255,255,0.08); padding: 36px 40px; border-radius: 16px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6); transition: all 0.3s ease;">
         <div style="position:absolute; top:15px; right:20px; display:flex; gap:8px; font-size:12px;">
-            <span id="lang-it" onclick="setLoginLanguage('it')" style="color:#10b981; cursor:pointer; font-weight:700; transition:color 0.2s;">IT</span>
+            <span id="lang-it" onclick="setLoginLanguage('it')" style="color:#f97316; cursor:pointer; font-weight:700; transition:color 0.2s;">IT</span>
             <span style="color:rgba(255,255,255,0.2);">|</span>
             <span id="lang-en" onclick="setLoginLanguage('en')" style="color:#6b7280; cursor:pointer; font-weight:500; transition:color 0.2s;">EN</span>
         </div>
@@ -61,7 +61,7 @@
         <div id="login-step-code">
             <label id="lbl-login-code" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Codice Accesso Atleta</label>
             <input type="text" id="input-login-code" placeholder="Inserisci il tuo codice" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 20px; outline:none; box-sizing:border-box;" onkeydown="if(event.key==='Enter')handleLoginStepCode()">
-            <button id="btn-login-code" onclick="handleLoginStepCode()" style="width:100%; padding:14px; background:#10b981; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer; transition:background 0.2s;">Accedi</button>
+            <button id="btn-login-code" onclick="handleLoginStepCode()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer; transition:background 0.2s;">Accedi</button>
             <div style="margin-top:20px; text-align:center;">
                 <span onclick="showCoachLogin()" style="font-size:12px; color:#4b5563; cursor:pointer; text-decoration:underline; letter-spacing:0.3px;">Accesso Coach</span>
             </div>
@@ -74,7 +74,7 @@
             <div style="font-size:12px; color:#6b7280; margin-bottom:20px; text-align:left;">Inserisci la tua password per accedere</div>
             <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Password</label>
             <input type="password" id="input-ath-password" name="password" autocomplete="current-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:20px; outline:none; box-sizing:border-box;" onkeydown="if(event.key==='Enter')handleAthletePasswordLogin()">
-            <button onclick="handleAthletePasswordLogin()" style="width:100%; padding:14px; background:#10b981; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Accedi</button>
+            <button onclick="handleAthletePasswordLogin()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Accedi</button>
             <button onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">← Torna indietro</button>
         </div>
         <div id="login-step-athlete-setup" style="display:none;">
@@ -88,7 +88,7 @@
             <input type="password" id="input-ath-setup-password" name="password" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:15px; outline:none; box-sizing:border-box;">
             <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Conferma password</label>
             <input type="password" id="input-ath-setup-confirm" name="password-confirm" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:20px; outline:none; box-sizing:border-box;">
-            <button onclick="handleAthleteFirstTimeSetup()" style="width:100%; padding:14px; background:#10b981; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Crea account e accedi</button>
+            <button onclick="handleAthleteFirstTimeSetup()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Crea account e accedi</button>
             <button onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">← Torna indietro</button>
         </div>
         <div id="login-step-admin" style="display:none;">
@@ -96,7 +96,7 @@
             <input type="email" id="input-admin-email" placeholder="coach@elitesport.com" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 15px; outline:none; box-sizing:border-box;">
             <label id="lbl-admin-pass" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Password</label>
             <input type="password" id="input-admin-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 20px; outline:none; box-sizing:border-box;">
-            <button id="btn-login-admin" onclick="handleLoginAdmin()" style="width:100%; padding:14px; background:#10b981; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer; transition:background 0.2s;">Accedi come Coach</button>
+            <button id="btn-login-admin" onclick="handleLoginAdmin()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer; transition:background 0.2s;">Accedi come Coach</button>
             <button id="btn-admin-back" onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">Torna indietro</button>
         </div>
     </div>
@@ -694,14 +694,14 @@
     <div class="card-t">Mappa Topografica Infortuni</div>
     <div class="ps" style="margin-bottom:10px;">Seleziona l'articolazione per registrare un dolore (VAS).</div>
     <div style="position: relative; width: 100%; max-width: 300px; margin: 0 auto 20px auto; background: var(--s2); border-radius: 16px; padding: 20px; border: 1px solid var(--border);">
-    <svg viewBox="0 0 100 200" style="width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(16,185,129,0.1));">
+    <svg viewBox="0 0 100 200" style="width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(249,115,22,0.1));">
         <path d="M40 20 C40 10, 60 10, 60 20 C60 30, 40 30, 40 20 Z" fill="#2A3040" /> <path d="M30 35 Q50 30 70 35 L75 80 L60 80 L50 120 L40 80 L25 80 Z" fill="#2A3040" /> <path d="M40 120 L35 190 L45 190 L50 120 Z" fill="#2A3040" /> <path d="M60 120 L65 190 L55 190 L50 120 Z" fill="#2A3040" /> <path d="M25 35 L10 80 L18 80 L30 50 Z" fill="#2A3040" /> <path d="M75 35 L90 80 L82 80 L70 50 Z" fill="#2A3040" /> <circle cx="28" cy="38" r="6" fill="rgba(239,68,68,0.5)" cursor="pointer" onclick="openInjuryMo('Spalla_SX')" /> <circle cx="72" cy="38" r="6" fill="rgba(239,68,68,0.5)" cursor="pointer" onclick="openInjuryMo('Spalla_DX')" /> <circle cx="15" cy="60" r="5" fill="rgba(245,158,11,0.5)" cursor="pointer" onclick="openInjuryMo('Gomito_SX')" /> <circle cx="85" cy="60" r="5" fill="rgba(245,158,11,0.5)" cursor="pointer" onclick="openInjuryMo('Gomito_DX')" /> <ellipse cx="50" cy="95" rx="12" ry="8" fill="rgba(139,92,246,0.5)" cursor="pointer" onclick="openInjuryMo('Zona_Lombare')" /> <circle cx="38" cy="150" r="6" fill="rgba(59,130,246,0.5)" cursor="pointer" onclick="openInjuryMo('Ginocchio_SX')" /> <circle cx="62" cy="150" r="6" fill="rgba(59,130,246,0.5)" cursor="pointer" onclick="openInjuryMo('Ginocchio_DX')" /> <circle cx="36" cy="185" r="5" fill="rgba(16,185,129,0.5)" cursor="pointer" onclick="openInjuryMo('Caviglia_SX')" /> <circle cx="64" cy="185" r="5" fill="rgba(16,185,129,0.5)" cursor="pointer" onclick="openInjuryMo('Caviglia_DX')" /> </svg>
     <div style="font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;">Tocca un'articolazione per mappare il dolore</div>
 </div>
     <div id="active-injuries-list" style="margin-top:14px; display:flex; flex-direction:column; gap:6px;"></div>
   </div>
     <div style="margin-top: 24px; padding: 0 4px;">
-     <button class="btn btn-p" style="width:100%; height:54px; font-size:16px; background:linear-gradient(135deg, var(--teal) 0%, var(--teal-m) 100%); color:var(--bg); font-weight:850; letter-spacing:0.5px; box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);" onclick="confermaWellnessLive()">
+     <button class="btn btn-p" style="width:100%; height:54px; font-size:16px; background:linear-gradient(135deg, var(--teal) 0%, var(--teal-m) 100%); color:var(--bg); font-weight:850; letter-spacing:0.5px; box-shadow: 0 8px 24px rgba(249, 115, 22, 0.25);" onclick="confermaWellnessLive()">
         CONFERMA STATO & INIZIA ALLENAMENTO →
      </button>
   </div>

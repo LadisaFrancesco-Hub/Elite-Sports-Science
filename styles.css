@@ -17,9 +17,9 @@
   --s3:     #2A3040;
 
   /* Brand */
-  --teal:    #10B981;
-  --teal-d:  rgba(16, 185, 129, 0.12);
-  --teal-m:  #059669;
+  --teal:    #F97316;
+  --teal-d:  rgba(249, 115, 22, 0.12);
+  --teal-m:  #ea6c0a;
   --amber:   #F59E0B;
   --amber-d: rgba(245, 158, 11, 0.12);
   --coral:   #EF4444;
@@ -51,7 +51,7 @@
   --transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --transition-snap:   cubic-bezier(0.22, 1, 0.36, 1);
   --transition-base:   0.15s ease;
-  --focus-ring: 0 0 0 3px rgba(16, 185, 129, 0.15);
+  --focus-ring: 0 0 0 3px rgba(249, 115, 22, 0.15);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -364,8 +364,8 @@ html body input:focus,
 html body select:focus,
 html body textarea:focus {
   border-color: var(--teal) !important;
-  background: rgba(16, 185, 129, 0.06) !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15) !important;
+  background: rgba(249, 115, 22, 0.06) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
   outline: none;
 }
 
@@ -499,7 +499,7 @@ tr:hover td { background: var(--s2); }
 }
 .dot:hover        { border-color: var(--teal); }
 .dot.warm         { border-color: var(--teal); color: var(--teal); background: var(--teal-d); }
-.dot.done         { background: var(--teal); border-color: var(--teal); color: var(--bg); animation: pop-bounce 0.3s forwards; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); }
+.dot.done         { background: var(--teal); border-color: var(--teal); color: var(--bg); animation: pop-bounce 0.3s forwards; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
 .set-completed    { background-color: var(--teal-d) !important; border-left: 4px solid var(--teal) !important; }
 
 /* ══════════════════════════════════════════════════════════════
@@ -658,7 +658,7 @@ tr:hover td { background: var(--s2); }
   z-index: 30000;
   transform: translateY(80px); transition: transform .25s;
   pointer-events: none;
-  box-shadow: 0 10px 25px rgba(16, 185, 129, 0.4);
+  box-shadow: 0 10px 25px rgba(249, 115, 22, 0.4);
 }
 .toast.show { transform: translateY(0); }
 
@@ -763,9 +763,9 @@ tr:hover td { background: var(--s2); }
   to   { transform: scaleY(1); opacity: 1; }
 }
 @keyframes pulse-timer {
-  0%   { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.2); }
-  70%  { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+  0%   { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0.2); }
+  70%  { box-shadow: 0 0 0 6px rgba(249, 115, 22, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(249, 115, 22, 0); }
 }
 @keyframes pulse-iso {
   0%   { box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
@@ -1164,8 +1164,8 @@ html body input:not([type="range"]):not([type="hidden"]):not([type="color"]):foc
 html body select:focus,
 html body textarea:focus {
   border-color: var(--teal) !important;
-  background: rgba(16, 185, 129, 0.07) !important;
-  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15),
+  background: rgba(249, 115, 22, 0.07) !important;
+  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15),
               inset 0 1px 3px rgba(0, 0, 0, 0.10) !important;
   outline: none !important;
 }
@@ -1302,7 +1302,7 @@ html body select:focus {
 .qw-btn:nth-child(5) { border-bottom-color: #10b981; }
 .qw-btn.on {
   border-color: var(--teal);
-  background: rgba(16, 185, 129, 0.15);
+  background: rgba(249, 115, 22, 0.15);
   transform: scale(1.12);
 }
 .qw-btn:nth-child(1).on { border-color: #ef4444; background: rgba(239,68,68,.15); }

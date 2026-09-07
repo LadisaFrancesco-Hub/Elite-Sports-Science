@@ -114,10 +114,10 @@ export function setLoginLanguage(lang) {
     const enEl = document.getElementById('lang-en');
 
     if (lang === 'it') {
-        itEl.style.color = '#10b981'; itEl.style.fontWeight = '700';
+        itEl.style.color = '#f97316'; itEl.style.fontWeight = '700';
         enEl.style.color = '#6b7280'; enEl.style.fontWeight = '500';
     } else {
-        enEl.style.color = '#10b981'; enEl.style.fontWeight = '700';
+        enEl.style.color = '#f97316'; enEl.style.fontWeight = '700';
         itEl.style.color = '#6b7280'; itEl.style.fontWeight = '500';
     }
 }
@@ -330,7 +330,7 @@ async function _completeAthleteLogin() {
 export function showCoachLogin() {
     document.getElementById('login-step-code').style.display  = 'none';
     document.getElementById('login-step-admin').style.display = 'block';
-    document.getElementById('login-card').style.borderLeft    = '4px solid #10b981';
+    document.getElementById('login-card').style.borderLeft    = '4px solid #f97316';
 }
 
 
@@ -1041,7 +1041,7 @@ export function _showPushBanner(userId, userType, athleteId = null) {
     document.body.insertAdjacentHTML('beforeend', `
         <div id="push-banner" style="
             position:fixed; bottom:90px; left:50%; transform:translateX(-50%);
-            background:#1e293b; border:1px solid var(--teal,#10b981); border-radius:14px;
+            background:#1e293b; border:1px solid var(--teal,#f97316); border-radius:14px;
             padding:14px 18px; z-index:99998; display:flex; align-items:center; gap:12px;
             max-width:340px; width:90%; box-shadow:0 8px 24px rgba(0,0,0,0.5);
             font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
@@ -1050,7 +1050,7 @@ export function _showPushBanner(userId, userType, athleteId = null) {
                 Abilita le notifiche per ricevere aggiornamenti in tempo reale
             </div>
             <button id="push-banner-yes" style="
-                background:#10b981;color:#000;border:none;border-radius:8px;
+                background:#f97316;color:#000;border:none;border-radius:8px;
                 padding:9px 14px;font-size:12px;font-weight:800;cursor:pointer;
                 white-space:nowrap;flex-shrink:0;touch-action:manipulation;">
                 Abilita

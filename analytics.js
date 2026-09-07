@@ -190,8 +190,8 @@ export function renderE1rmChart(sessionFilter, exerciseFilter) {
     if (e1rmChartInstance) e1rmChartInstance.destroy();
 
     const gradient = ctxE1rm.getContext('2d').createLinearGradient(0, 0, 0, 220);
-    gradient.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
-    gradient.addColorStop(1, 'rgba(16, 185, 129, 0.0)');
+    gradient.addColorStop(0, 'rgba(249, 115, 22, 0.4)');
+    gradient.addColorStop(1, 'rgba(249, 115, 22, 0.0)');
 
     e1rmChartInstance = new Chart(ctxE1rm, {
         type: 'line',
@@ -200,10 +200,10 @@ export function renderE1rmChart(sessionFilter, exerciseFilter) {
             datasets: [{
                 label:                datasetLabel,
                 data:                 chartDataValues,
-                borderColor:          '#10B981',
+                borderColor:          '#F97316',
                 backgroundColor:      gradient,
                 borderWidth:          3,
-                pointBackgroundColor: '#10B981',
+                pointBackgroundColor: '#F97316',
                 pointBorderColor:     '#05070A',
                 pointBorderWidth:     2,
                 pointRadius:          4,
@@ -375,7 +375,7 @@ export function renderAnalytics() {
 
         let alertColor = 'var(--teal)';
         let lsiStatus  = 'Simmetria Ottimale (Deficit < 10%)';
-        let lsiBg      = 'rgba(16, 185, 129, 0.1)';
+        let lsiBg      = 'rgba(249, 115, 22, 0.1)';
 
         if (deficitPerc > 15) {
             alertColor = 'var(--coral)';
@@ -472,7 +472,7 @@ export function renderAnalytics() {
 
             let mColor  = 'var(--teal)';
             let mStatus = 'Variazione Ottimale (DUP Efficace)';
-            let mBg     = 'rgba(16, 185, 129, 0.1)';
+            let mBg     = 'rgba(249, 115, 22, 0.1)';
 
             if (monotony >= 2.0) {
                 mColor  = 'var(--coral)';
@@ -557,8 +557,8 @@ export function renderAnalytics() {
                         {
                             label:           'HRV vs e1RM',
                             data:            scatterData,
-                            backgroundColor: 'rgba(16,185,129,0.75)',
-                            borderColor:     '#059669',
+                            backgroundColor: 'rgba(249,115,22,0.75)',
+                            borderColor:     '#ea6c0a',
                             pointRadius:     6,
                             pointHoverRadius:8
                         },
@@ -684,9 +684,9 @@ export function renderAnalytics() {
                     datasets: [{
                         label:                'Recupero',
                         data:                 [scoreReadiness, scoreHRV, scoreCNS],
-                        backgroundColor:      'rgba(16, 185, 129, 0.2)',
-                        borderColor:          '#10B981',
-                        pointBackgroundColor: '#10B981',
+                        backgroundColor:      'rgba(249, 115, 22, 0.2)',
+                        borderColor:          '#F97316',
+                        pointBackgroundColor: '#F97316',
                         pointBorderColor:     '#fff',
                         pointRadius:          5,
                         borderWidth:          3
@@ -790,7 +790,7 @@ export function renderAnalytics() {
 
                 if (lastVol < prevVol && lastInt >= prevInt && lastInt > 0) {
                     badge.textContent           = '✅ Peaking Ottimale';
-                    badge.style.backgroundColor = 'rgba(16, 185, 129, 0.2)';
+                    badge.style.backgroundColor = 'rgba(249, 115, 22, 0.2)';
                     badge.style.color           = 'var(--teal)';
                 } else if (lastVol > prevVol) {
                     badge.textContent           = '🧱 Fase Accumulo';
@@ -926,11 +926,11 @@ export function renderAnalytics() {
                             {
                                 label:           'HRV giornaliera (ms)',
                                 data:            dailyVals,
-                                borderColor:     '#10B981',
-                                backgroundColor: 'rgba(16,185,129,0.06)',
+                                borderColor:     '#F97316',
+                                backgroundColor: 'rgba(249,115,22,0.06)',
                                 borderWidth:     1.5,
                                 pointRadius:     3,
-                                pointBackgroundColor: '#10B981',
+                                pointBackgroundColor: '#F97316',
                                 tension:         0.3,
                                 fill:            true
                             },

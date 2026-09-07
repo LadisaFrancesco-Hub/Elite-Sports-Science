@@ -232,7 +232,7 @@ export function loadLive() {
     // ── Fasi della sessione (scompartimenti clinici) ─────────
     const fasiAtleta = [
         { id: 'warmup',   label: '🔥 FASE 1: WARM-UP & ATTIVAZIONE',         color: '#A78BFA' },
-        { id: 'centrale', label: '🏋️‍♂️ FASE 2: PARTE CENTRALE / PERFORMANCE', color: '#10B981' },
+        { id: 'centrale', label: '🏋️‍♂️ FASE 2: PARTE CENTRALE / PERFORMANCE', color: '#F97316' },
         { id: 'cooldown', label: '🧊 FASE 3: COOL-DOWN & RECUPERO',            color: '#3B82F6' }
     ];
 
@@ -450,7 +450,7 @@ for (let l = 0; l < actualSet; l++) {
                 <div class="timer-container" id="timer-container-${i}"
                      style="display:flex; align-items:center; gap:8px; background-color:#161E2E;
                             border:1px solid #1A2235; border-radius:8px; padding:4px 10px; margin-top:0;">
-                  <span style="font-size:10px; color:#10B981; font-weight:800; margin-right:4px;">REST</span>
+                  <span style="font-size:10px; color:#F97316; font-weight:800; margin-right:4px;">REST</span>
                   <span class="timer-display" id="timer-display-${i}"
                         style="color:#E2DDD4; font-size:12px; font-weight:600; font-variant-numeric:tabular-nums;">
                     ${formatTime(totalSeconds)}

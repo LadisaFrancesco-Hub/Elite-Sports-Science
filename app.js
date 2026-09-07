@@ -305,7 +305,7 @@ export function openMesocycleArchive() {
             return `<div style="margin-bottom:14px;">
                 <div style="font-size:11px; font-weight:800; color:var(--teal); text-transform:uppercase;
                             letter-spacing:0.5px; margin-bottom:8px; padding-bottom:4px;
-                            border-bottom:1px solid rgba(16,185,129,0.2);">${s.name}</div>
+                            border-bottom:1px solid rgba(249,115,22,0.2);">${s.name}</div>
                 ${exRows || '<div style="font-size:11px; color:var(--muted); font-style:italic; padding:6px 0;">Nessun esercizio</div>'}
             </div>`;
         }).join('');
@@ -334,7 +334,7 @@ export function openMesocycleArchive() {
             </div>
             <div id="meso-body-${idx}" style="display:none; padding:16px;">
                 ${m.coachNote ? `<div style="margin-bottom:12px; font-size:12px; padding:10px; border-radius:8px;
-                    background:rgba(16,185,129,0.05); border-left:3px solid var(--teal); color:var(--muted);">
+                    background:rgba(249,115,22,0.05); border-left:3px solid var(--teal); color:var(--muted);">
                     <strong style="color:var(--teal);">Note Coach:</strong> ${m.coachNote}</div>` : ''}
                 ${m.objective ? `<div style="margin-bottom:12px; font-size:12px; color:var(--muted);">
                     <strong style="color:var(--text);">Obiettivo:</strong> ${m.objective}</div>` : ''}
@@ -489,7 +489,7 @@ export function renderWeekWidget() {
         const isFuture = dateStr > todayStr;
         const sess     = thisWeek.find(s => s.date === dateStr);
 
-        const bg     = sess ? 'var(--teal)' : isToday ? 'rgba(16,185,129,0.15)' : 'var(--s1)';
+        const bg     = sess ? 'var(--teal)' : isToday ? 'rgba(249,115,22,0.15)' : 'var(--s1)';
         const border = sess ? 'var(--teal)' : isToday ? 'var(--teal)' : 'var(--border)';
         const color  = sess ? '#000' : isToday ? 'var(--teal)' : isFuture ? 'var(--border)' : 'var(--muted)';
         const symbol = sess ? '✓' : isToday ? '●' : '·';
@@ -790,7 +790,7 @@ export function renderCalendario() {
             } else {
                 cell = `<span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--border);vertical-align:middle"></span>`;
             }
-            html += `<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--border);${isToday ? 'background:rgba(16,185,129,.05)' : ''}">${cell}</td>`;
+            html += `<td style="padding:6px 4px;text-align:center;border-bottom:1px solid var(--border);${isToday ? 'background:rgba(249,115,22,.05)' : ''}">${cell}</td>`;
         });
         html += '</tr>';
     });
@@ -803,7 +803,7 @@ export function renderCalendario() {
 // ATLETI
 // ─────────────────────────────────────────────────────────────
 const _ATH_PALETTE = [
-    { bg:'rgba(16,185,129,.18)',  border:'#10b981', text:'#10b981' },
+    { bg:'rgba(249,115,22,.18)',  border:'#f97316', text:'#f97316' },
     { bg:'rgba(245,158,11,.18)',  border:'#f59e0b', text:'#f59e0b' },
     { bg:'rgba(139,92,246,.18)', border:'#8b5cf6', text:'#8b5cf6' },
     { bg:'rgba(59,130,246,.18)', border:'#3b82f6', text:'#3b82f6' },
@@ -1724,7 +1724,7 @@ export function updatePredictiveACWR() {
     ewmaC = αC * projectedVol + (1-αC) * ewmaC;
     const ratio = ewmaA / ewmaC;
 
-    let color='var(--teal)', text='Ottimale', bg='rgba(16,185,129,.15)';
+    let color='var(--teal)', text='Ottimale', bg='rgba(249,115,22,.15)';
     if (ratio > 1.5)      { color='var(--coral)'; text='DANGER ZONE: Riduci Carico'; bg='rgba(239,68,68,.15)'; }
     else if (ratio > 1.3) { color='var(--amber)'; text='Rischio Moderato';            bg='rgba(245,158,11,.15)'; }
     else if (ratio < 0.8) { color='var(--amber)'; text='Scarico / Sotto-allenamento'; bg='rgba(245,158,11,.15)'; }
@@ -2055,7 +2055,7 @@ export function exportProgramPDF() {
         ${sch.coachNote ? `<div style="margin-bottom:20px;padding:10px 14px;background:#f0fdf4;border-left:3px solid #10b981;border-radius:0 6px 6px 0;font-size:13px;color:#065f46"><strong>Note Coach:</strong> ${escHtml(sch.coachNote)}</div>` : ''}
         ${sessionsHTML}
         <div style="margin-top:40px;text-align:center">
-            <button onclick="window.print()" style="padding:10px 24px;background:#10b981;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer">Stampa / Salva PDF</button>
+            <button onclick="window.print()" style="padding:10px 24px;background:#f97316;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer">Stampa / Salva PDF</button>
         </div>
     </body></html>`);
     w.document.close();
