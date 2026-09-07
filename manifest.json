@@ -11,6 +11,22 @@
   "background_color": "#0e0a06",
   "theme_color": "#f97316",
   "categories": ["sports", "health", "fitness"],
+  "shortcuts": [
+    {
+      "name": "Sessione Live",
+      "short_name": "Sessione",
+      "description": "Avvia il tracker della sessione",
+      "url": "/?panel=sessione",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Wellness Check-in",
+      "short_name": "Wellness",
+      "description": "Fai il check-in del giorno",
+      "url": "/?panel=wellness",
+      "icons": [{ "src": "/icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ],
   "icons": [
     {
       "src": "/icons/icon-192.png",

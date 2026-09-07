@@ -1974,7 +1974,7 @@ export function initFB() {
     if (!rw) return;
     rw.innerHTML = '';
     [6,7,8,9,10].forEach(v => {
-        const b = document.createElement('button'); b.className = 'rpe-b'; b.textContent = v;
+        const b = document.createElement('button'); b.className = 'rpe-b'; b.textContent = v; b.dataset.v = v;
         b.onclick = () => {
             appState.pwRpe = v;
             document.querySelectorAll('.rpe-b').forEach(x => x.className = 'rpe-b');
