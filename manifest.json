@@ -1,15 +1,40 @@
 {
+  "id": "/",
   "name": "Elite Sports Science",
   "short_name": "Elite",
-  "start_url": "/", 
+  "description": "Piattaforma di gestione atletica per coach e atleti: allenamenti, wellness e prevenzione infortuni.",
+  "lang": "it",
+  "start_url": "/",
+  "scope": "/",
   "display": "fullscreen",
+  "orientation": "portrait",
   "background_color": "#0a0f1d",
   "theme_color": "#0a0f1d",
+  "categories": ["sports", "health", "fitness"],
   "icons": [
     {
-      "src": "icona.png",
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

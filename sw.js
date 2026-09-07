@@ -1,9 +1,14 @@
-const APP_VERSION = 'v6.30';
+const APP_VERSION = 'v6.31';
 const SHELL_CACHE   = `coachos-shell-${APP_VERSION}`;
 const RUNTIME_CACHE = `coachos-runtime-${APP_VERSION}`;
 
 // App shell: sempre offline-ready
-const SHELL_ASSETS = ['/', '/index.html', '/manifest.json', '/icona.png'];
+const SHELL_ASSETS = [
+  '/', '/index.html', '/manifest.json',
+  '/icons/icon-192.png', '/icons/icon-512.png',
+  '/icons/icon-maskable-192.png', '/icons/icon-maskable-512.png',
+  '/icons/apple-touch-icon.png',
+];
 
 // Asset statici: stale-while-revalidate (serve veloce, aggiorna in background)
 const STATIC_EXT = /\.(js|css|png|jpg|jpeg|svg|ico|woff2?|ttf|webp)(\?.*)?$/;
