@@ -284,22 +284,22 @@ export function renderAnalytics() {
           <div class="card-t" style="text-align:center;">
             Profilo Biologico (Stato Attuale vs Picco Storico)
           </div>
-          <div id="radar-charts-area" style="display:flex; gap:8px; justify-content:space-around;">
-            <div style="flex:1; text-align:center; min-width:0;">
+          <div id="radar-charts-area" style="display:flex; gap:8px; justify-content:space-around; flex-wrap:wrap;">
+            <div style="flex:1; text-align:center; min-width:150px;">
               <div style="font-size:9px; color:var(--teal); font-weight:800;
                           text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
                 Recupero &amp; SNC
               </div>
-              <div style="position:relative; height:200px;">
+              <div style="position:relative; height:220px;">
                 <canvas id="chart-radar-recovery"></canvas>
               </div>
             </div>
-            <div style="flex:1; text-align:center; min-width:0;">
+            <div style="flex:1; text-align:center; min-width:150px;">
               <div style="font-size:9px; color:var(--amber); font-weight:800;
                           text-transform:uppercase; letter-spacing:1px; margin-bottom:4px;">
                 Performance
               </div>
-              <div style="position:relative; height:200px;">
+              <div style="position:relative; height:220px;">
                 <canvas id="chart-radar-performance"></canvas>
               </div>
             </div>
@@ -667,9 +667,9 @@ export function renderAnalytics() {
                 maintainAspectRatio: false,
                 scales: {
                     r: {
-                        angleLines:  { color: 'rgba(255,255,255,0.1)' },
-                        grid:        { color: 'rgba(255,255,255,0.1)' },
-                        pointLabels: { color: '#9CA3AF', font: { size: 9, family: '-apple-system', weight: '700' } },
+                        angleLines:  { color: 'rgba(255,255,255,0.14)' },
+                        grid:        { color: 'rgba(255,255,255,0.14)' },
+                        pointLabels: { color: '#CBD5E1', font: { size: 10, family: '-apple-system', weight: '700' } },
                         ticks:       { display: false, min: 0, max: 100 }
                     }
                 },
@@ -688,7 +688,8 @@ export function renderAnalytics() {
                         borderColor:          '#10B981',
                         pointBackgroundColor: '#10B981',
                         pointBorderColor:     '#fff',
-                        borderWidth:          2
+                        pointRadius:          5,
+                        borderWidth:          3
                     }]
                 },
                 options: sharedRadarOpts
@@ -706,7 +707,8 @@ export function renderAnalytics() {
                         borderColor:          '#F59E0B',
                         pointBackgroundColor: '#F59E0B',
                         pointBorderColor:     '#fff',
-                        borderWidth:          2
+                        pointRadius:          5,
+                        borderWidth:          3
                     }]
                 },
                 options: sharedRadarOpts

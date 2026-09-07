@@ -802,6 +802,20 @@ export function renderCalendario() {
 // ─────────────────────────────────────────────────────────────
 // ATLETI
 // ─────────────────────────────────────────────────────────────
+const _ATH_PALETTE = [
+    { bg:'rgba(16,185,129,.18)',  border:'#10b981', text:'#10b981' },
+    { bg:'rgba(245,158,11,.18)',  border:'#f59e0b', text:'#f59e0b' },
+    { bg:'rgba(139,92,246,.18)', border:'#8b5cf6', text:'#8b5cf6' },
+    { bg:'rgba(59,130,246,.18)', border:'#3b82f6', text:'#3b82f6' },
+    { bg:'rgba(236,72,153,.18)', border:'#ec4899', text:'#ec4899' },
+    { bg:'rgba(20,184,166,.18)', border:'#14b8a6', text:'#14b8a6' },
+];
+function _athColor(id) {
+    let h = 0;
+    for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
+    return _ATH_PALETTE[h % _ATH_PALETTE.length];
+}
+
 export function renderAthletes() {
     const grid = document.getElementById('ath-grid');
     grid.innerHTML = '';
@@ -812,13 +826,14 @@ export function renderAthletes() {
         const borderStyle = riskScore >= 50 ? '3px solid var(--coral)' : riskScore >= 20 ? '2px solid var(--amber)' : '1px solid var(--border)';
         const sc   = DB.sessions.filter(s => s.athlete === a.id).length;
         const init = a.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+        const col  = _athColor(a.id);
 
         const div = document.createElement('div');
         div.className = 'ac' + (a.id === appState.selAthId ? ' sel' : '');
         div.style.border = borderStyle;
         div.onclick = () => { appState.selAthId = a.id; renderAthletes(); renderDashboard(); renderStorico(); };
         div.innerHTML = `
-            <div class="ac-av">${init}</div>
+            <div class="ac-av" style="background:${col.bg};border-color:${col.border};color:${col.text}">${init}</div>
             <div class="ac-n">${escHtml(a.name)} ${riskScore > 0 ? '⚠️' : ''}</div>
             <div class="ac-m">${escHtml(a.level)} · ${escHtml(a.goal)}</div>
             <div class="ac-st">
@@ -2249,7 +2264,7 @@ export function renderProg() {
     const maxV = Math.max(...sess.map(s => s.vol), 1);
     sess.forEach((s, i) => {
         const prev = i > 0 ? sess[i-1] : null;
-        const d    = prev ? ((s.vol - prev.vol) / prev.vol * 100) : null;
+        const d    = (prev && prev.vol > 0) ? ((s.vol - prev.vol) / prev.vol * 100) : null;
         const ds   = d === null ? '—' : (d >= 0 ? '+' : '') + d.toFixed(1) + '%';
         const div  = document.createElement('div'); div.className = 'pb-row';
         div.innerHTML = `<div class="pb-week">W${s.week}</div><div class="pb-phase">${escHtml(s.phase)}</div>

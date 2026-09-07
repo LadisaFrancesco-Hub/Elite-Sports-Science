@@ -409,6 +409,8 @@ input[type=range]::-webkit-slider-thumb {
 .btn-g:hover { border-color: var(--teal); color: var(--teal); }
 .btn-d { background: none; border: 1px solid var(--coral-d); color: var(--coral); }
 .btn-d:hover { background: var(--coral-d); }
+.btn-del-soft { background: none; border: 1px solid transparent; color: var(--muted); }
+.btn-del-soft:hover { border-color: var(--coral-d); color: var(--coral); background: var(--coral-d); }
 .btn-a { background: none; border: 1px solid var(--amber-d); color: var(--amber); }
 .btn-a:hover { background: var(--amber-d); }
 .btn-sm { padding: 4px 10px; font-size: 11px; }
@@ -881,8 +883,9 @@ tr:hover td { background: var(--s2); }
     appearance: none !important;
   }
 
-  /* 9. KPI: griglia 2×2 */
+  /* 9. KPI: griglia 2×2; dashboard cards in colonna */
   .g4 { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .g2 { grid-template-columns: 1fr !important; }
 
   /* 10. Wellness: campi in colonna singola */
   .fr3 { grid-template-columns: 1fr !important; gap: 12px !important; }
