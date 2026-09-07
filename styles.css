@@ -219,8 +219,8 @@ body {
 .logo-sub { font-size: 10px; color: var(--muted); letter-spacing: .15em; text-transform: uppercase; }
 .top-spacer { flex: 1; }
 
-.ath-pill { display: flex; align-items: center; gap: 8px; background: var(--s2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; cursor: pointer; }
-.ath-pill select { background: none; border: none; color: var(--text); font-family: var(--fm); font-size: 12px; cursor: pointer; outline: none; }
+.ath-pill { display: flex; align-items: center; gap: 8px; background: var(--s2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px; cursor: pointer; max-width: 160px; min-width: 0; }
+.ath-pill select { background: none; border: none; color: var(--text); font-family: var(--fm); font-size: 12px; cursor: pointer; outline: none; max-width: 110px; overflow: hidden; text-overflow: ellipsis; }
 
 .save-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--teal); animation: blink 3s infinite; }
 @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .2; } }
@@ -343,6 +343,7 @@ input, select, textarea {
 }
 input:focus, select:focus, textarea:focus { border-color: var(--teal); }
 textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
+input::placeholder, textarea::placeholder { color: #5a6170; opacity: 1; }
 
 /* Override specificità alta (Apple HIG — fix blindato 0-0-4) */
 html body input,
@@ -429,6 +430,11 @@ input[type=range]::-webkit-slider-thumb {
    TABELLE
    ══════════════════════════════════════════════════════════════ */
 .tw { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); }
+/* Storico: su mobile mostra solo Data, Sessione, Atleta, RPE, Azioni */
+@media (max-width: 768px) {
+  #p-storico .tw table th:nth-child(n+4):not(:nth-child(9)):not(:nth-child(15)),
+  #p-storico .tw table td:nth-child(n+4):not(:nth-child(9)):not(:nth-child(15)) { display: none; }
+}
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
 th {
   font-size: 9px; color: var(--muted); letter-spacing: .1em; text-transform: uppercase;
@@ -1274,9 +1280,29 @@ html body select:focus {
   cursor: pointer;
   transition: all 0.15s;
   line-height: 1;
+  position: relative;
 }
+.qw-btn::after {
+  content: attr(data-val);
+  display: block;
+  font-size: 9px;
+  color: var(--muted);
+  margin-top: 3px;
+  font-family: var(--fm);
+  letter-spacing: .05em;
+}
+.qw-btn:nth-child(1) { border-bottom-color: #ef4444; }
+.qw-btn:nth-child(2) { border-bottom-color: #f97316; }
+.qw-btn:nth-child(3) { border-bottom-color: #f59e0b; }
+.qw-btn:nth-child(4) { border-bottom-color: #84cc16; }
+.qw-btn:nth-child(5) { border-bottom-color: #10b981; }
 .qw-btn.on {
   border-color: var(--teal);
   background: rgba(16, 185, 129, 0.15);
   transform: scale(1.12);
 }
+.qw-btn:nth-child(1).on { border-color: #ef4444; background: rgba(239,68,68,.15); }
+.qw-btn:nth-child(2).on { border-color: #f97316; background: rgba(249,115,22,.15); }
+.qw-btn:nth-child(3).on { border-color: #f59e0b; background: rgba(245,158,11,.15); }
+.qw-btn:nth-child(4).on { border-color: #84cc16; background: rgba(132,204,22,.15); }
+.qw-btn:nth-child(5).on { border-color: #10b981; background: rgba(16,185,129,.15); }
