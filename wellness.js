@@ -823,7 +823,7 @@ export function renderQuickWellness() {
 
     const row = (metric, label) => {
         const btns = _QW_EMOJIS[metric].map((emoji, i) =>
-            `<button class="qw-btn" id="qwb-${metric}-${i+1}" onclick="qwSet('${metric}',${i+1})">${emoji}</button>`
+            `<button class="qw-btn" id="qwb-${metric}-${i+1}" data-val="${i+1}" onclick="qwSet('${metric}',${i+1})">${emoji}</button>`
         ).join('');
         return `<div style="margin-bottom:10px">
             <div style="font-size:10px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">${label}</div>

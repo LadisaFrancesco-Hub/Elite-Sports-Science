@@ -1065,7 +1065,7 @@ export function renderStorico() {
         tr.innerHTML = `
             <td style="color:var(--muted)">${sess.date}</td>
             <td><span class="tag tg">${sess.session}</span></td>
-            <td style="font-weight:700">${escHtml(athName(sess.athlete))}</td>
+            <td style="font-weight:700;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(athName(sess.athlete))}</td>
             <td style="color:var(--muted)">W${sess.week || '—'}</td>
             <td><span class="tag tg" style="font-size:10px">${sess.phase || '—'}</span></td>
             <td style="color:var(--teal);font-weight:700">${sess.readiness || '—'}</td>

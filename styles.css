@@ -434,6 +434,7 @@ input[type=range]::-webkit-slider-thumb {
 @media (max-width: 768px) {
   #p-storico .tw table th:nth-child(n+4):not(:nth-child(9)):not(:nth-child(15)),
   #p-storico .tw table td:nth-child(n+4):not(:nth-child(9)):not(:nth-child(15)) { display: none; }
+  #sto-table td:nth-child(3) { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 }
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
 th {
