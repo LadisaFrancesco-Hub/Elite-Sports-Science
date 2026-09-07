@@ -401,10 +401,11 @@ for (let l = 0; l < actualSet; l++) {
 
             // ── Badge video ───────────────────────────────────
             const videoBadge = ex.ytUrl
-                ? `<a href="${ex.ytUrl}" target="_blank" style="display:inline-flex; align-items:center;
-                    background-color:#1e3a5f; border:none; border-radius:6px; padding:4px 8px;
-                    text-decoration:none; flex-shrink:0;">
-                    <span style="color:#3B82F6; font-size:11px; font-weight:700;">▶ Video</span></a>`
+                ? `<a href="${ex.ytUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;
+                    background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:6px;
+                    padding:5px 10px;text-decoration:none;flex-shrink:0;touch-action:manipulation;">
+                    <span style="font-size:12px;">▶</span>
+                    <span style="color:#f97316;font-size:11px;font-weight:700;">Video</span></a>`
                 : '';
 
             // ── Composizione display carico (usa actualKg post-autoregolazione) ─
@@ -1437,10 +1438,12 @@ export function _buildCircuitCard(ex, i) {
 
     const exListHtml = circExs.map((ce, idx) => {
         // Controllo se esiste il link video e genero il badge
-        const videoBadge = (ce.video && ce.video.trim() !== '') 
-            ? `<a href="${ce.video}" target="_blank" style="display:inline-flex; align-items:center; background-color:#1e3a5f; border-radius:5px; padding:3px 6px; text-decoration:none; flex-shrink:0; margin-left:4px;">
-                 <span style="color:#3B82F6; font-size:10px; font-weight:700;">▶ Video</span>
-               </a>` 
+        const videoBadge = (ce.video && ce.video.trim() !== '')
+            ? `<a href="${ce.video}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;
+                background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;
+                padding:3px 8px;text-decoration:none;flex-shrink:0;margin-left:4px;">
+                <span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span>
+               </a>`
             : '';
 
         return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;

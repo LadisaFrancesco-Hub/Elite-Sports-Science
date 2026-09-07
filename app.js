@@ -1136,6 +1136,14 @@ export function renderAthHome() {
         <div class="kpi"><div class="kpi-l">RPE medio</div><div class="kpi-v">${DB.sessions.length ? (DB.sessions.reduce((a,s)=>a+(s.rpe||0),0)/DB.sessions.length).toFixed(1) : '—'}</div></div>
       </div>
 
+      <!-- Scarica scheda -->
+      ${nextSess ? `
+      <div style="margin-bottom:14px">
+        <button onclick="exportProgramPDF()" style="width:100%;padding:12px;background:var(--s1);border:1px solid var(--border);border-radius:10px;color:var(--teal);font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+          <span>📄</span> Scarica scheda PDF
+        </button>
+      </div>` : ''}
+
       <!-- Messaggio coach -->
       <div class="card" style="border:1px solid var(--border);cursor:pointer" onclick="go('coach-reply')">
         <div class="card-t" style="display:flex;justify-content:space-between;align-items:center">
@@ -2128,14 +2136,18 @@ export function exportProgramPDF() {
     const sessionsHTML = (sch.sessions || []).map(s => {
         const exRows = (s.exercises || []).map(ex => {
             if (ex.type === 'circuit') {
-                const circEx = (ex.circuitExercises || []).map(ce => `<tr><td style="padding:4px 8px;color:#555">${escHtml(ce.name)}</td><td colspan="7" style="padding:4px 8px;color:#888;font-size:11px">${escHtml(ce.note || '')}</td></tr>`).join('');
-                return `<tr style="background:#f0fdf4"><td colspan="8" style="padding:6px 8px;font-weight:700;color:#065f46">⏱ Circuito: ${escHtml(ex.name)} — ${ex.circuitMeta ? `${ex.circuitMeta.rounds} round · ${ex.circuitMeta.workTime}s lavoro · ${ex.circuitMeta.restBetweenEx}s riposo` : ''}</td></tr>${circEx}`;
+                const circEx = (ex.circuitExercises || []).map(ce => {
+                    const vLink = ce.video ? `<a href="${ce.video}" target="_blank" style="color:#f97316;font-size:10px;font-weight:700;text-decoration:none;margin-left:6px">▶ Video</a>` : '';
+                    return `<tr><td style="padding:4px 8px;color:#555">${escHtml(ce.name)}${vLink}</td><td colspan="7" style="padding:4px 8px;color:#888;font-size:11px">${escHtml(ce.note || '')}</td></tr>`;
+                }).join('');
+                return `<tr style="background:#fff7ed"><td colspan="8" style="padding:6px 8px;font-weight:700;color:#9a3412">⏱ Circuito: ${escHtml(ex.name)} — ${ex.circuitMeta ? `${ex.circuitMeta.rounds} round · ${ex.circuitMeta.workTime}s lavoro · ${ex.circuitMeta.restBetweenEx}s riposo` : ''}</td></tr>${circEx}`;
             }
             const progStr = ex.progression && Object.keys(ex.progression).length
                 ? Object.entries(ex.progression).sort(([a],[b]) => a.localeCompare(b, undefined, { numeric: true })).map(([w, v]) => `${w.toUpperCase()}: ${v.set}x${v.rep}@${v.kg}kg`).join(' | ')
                 : '';
+            const vLink = ex.ytUrl ? `<a href="${ex.ytUrl}" target="_blank" style="color:#f97316;font-size:10px;font-weight:700;text-decoration:none;margin-left:6px">▶ Video</a>` : '';
             return `<tr>
-                <td style="padding:5px 8px">${escHtml(ex.name || '')}</td>
+                <td style="padding:5px 8px">${escHtml(ex.name || '')}${vLink}</td>
                 <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.wset ?? ''))}</td>
                 <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.set ?? ''))}</td>
                 <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.rep ?? ''))}</td>
@@ -2145,8 +2157,8 @@ export function exportProgramPDF() {
                 <td style="padding:5px 8px;font-size:11px;color:#555">${escHtml(ex.note || '')}${progStr ? `<br><em style="color:#888">${progStr}</em>` : ''}</td>
             </tr>`;
         }).join('');
-        return `<div style="margin-bottom:28px">
-            <h3 style="background:#065f46;color:#fff;padding:10px 14px;border-radius:6px;margin-bottom:0;font-size:14px">${escHtml(s.name)}</h3>
+        return `<div style="margin-bottom:28px;page-break-inside:avoid">
+            <h3 style="background:#431407;color:#fff;padding:10px 14px;border-radius:6px;margin-bottom:0;font-size:14px">${escHtml(s.name)}</h3>
             <table style="width:100%;border-collapse:collapse;font-size:13px">
                 <thead><tr style="background:#f1f5f9">
                     <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0">Esercizio</th>
@@ -2168,25 +2180,37 @@ export function exportProgramPDF() {
             body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:28px;color:#1e293b;background:#fff}
             h1{font-size:22px;font-weight:800;margin-bottom:4px}
             h2{font-size:14px;color:#475569;font-weight:400;margin-top:0;margin-bottom:18px}
-            .meta{display:flex;gap:20px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:14px 18px;margin-bottom:24px;font-size:13px}
+            .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #f97316}
+            .brand{font-size:11px;font-weight:800;color:#f97316;letter-spacing:.15em;text-transform:uppercase}
+            .meta{display:flex;gap:16px;flex-wrap:wrap;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px 18px;margin-bottom:24px;font-size:13px}
             .meta div{display:flex;flex-direction:column;gap:2px}
-            .meta strong{font-size:12px;text-transform:uppercase;color:#94a3b8;letter-spacing:.04em}
+            .meta strong{font-size:11px;text-transform:uppercase;color:#ea580c;letter-spacing:.04em}
             table th,table td{border-bottom:1px solid #e2e8f0}
-            @media print{body{padding:10px}button{display:none}}
+            @media print{body{padding:10px}button{display:none!important}.no-print{display:none!important}}
         </style>
     </head><body>
-        <h1>${escHtml(ath.name)}</h1>
-        <h2>${escHtml(ath.level || '')} · ${escHtml(ath.goal || '')}</h2>
+        <div class="header">
+          <div>
+            <h1 style="margin:0">${escHtml(ath.name)}</h1>
+            <h2 style="margin:4px 0 0">${escHtml(ath.level || '')}${ath.goal ? ' · ' + escHtml(ath.goal) : ''}</h2>
+          </div>
+          <div class="brand">Elite Sports Science</div>
+        </div>
         <div class="meta">
             <div><strong>Mesociclo</strong>${escHtml(sch.meso || '—')}</div>
             <div><strong>Fase</strong>${escHtml(sch.phase || '—')}</div>
             <div><strong>Durata</strong>${sch.duration || 4} settimane</div>
             ${sch.objective ? `<div><strong>Obiettivo</strong>${escHtml(sch.objective)}</div>` : ''}
         </div>
-        ${sch.coachNote ? `<div style="margin-bottom:20px;padding:10px 14px;background:#f0fdf4;border-left:3px solid #10b981;border-radius:0 6px 6px 0;font-size:13px;color:#065f46"><strong>Note Coach:</strong> ${escHtml(sch.coachNote)}</div>` : ''}
+        ${sch.coachNote ? `<div style="margin-bottom:20px;padding:10px 14px;background:#fff7ed;border-left:3px solid #f97316;border-radius:0 6px 6px 0;font-size:13px;color:#9a3412"><strong>Note Coach:</strong> ${escHtml(sch.coachNote)}</div>` : ''}
         ${sessionsHTML}
-        <div style="margin-top:40px;text-align:center">
-            <button onclick="window.print()" style="padding:10px 24px;background:#f97316;color:#fff;border:none;border-radius:6px;font-size:14px;font-weight:700;cursor:pointer">Stampa / Salva PDF</button>
+        <div style="margin-top:40px;text-align:center;padding-top:20px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8">
+            Generato da Elite Sports Science · ${new Date().toLocaleDateString('it-IT')}
+        </div>
+        <div class="no-print" style="margin-top:20px;text-align:center">
+            <button onclick="window.print()" style="padding:12px 32px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(249,115,22,0.3)">
+                📄 Stampa / Salva PDF
+            </button>
         </div>
     </body></html>`);
     w.document.close();
