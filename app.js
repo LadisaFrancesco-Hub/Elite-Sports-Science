@@ -646,16 +646,21 @@ export function renderDashboard() {
     if (!last8.length) {
         bc.innerHTML = '<div style="width:100%;text-align:center;color:var(--muted);font-size:12px;padding:24px 0;">Nessuna sessione registrata</div>';
     } else {
-        const maxV = Math.max(...last8.map(s => s.vol), 1);
-        last8.forEach(s => {
-            const h   = Math.round(s.vol / maxV * 85);
-            const col = document.createElement('div');
-            col.className = 'bc-col';
-            col.innerHTML = `<div class="bc-val">${(s.vol / 1000).toFixed(1)}k</div>
-                             <div class="bc-bar" style="height:${h}px;background:var(--teal)"></div>
-                             <div class="bc-lbl">${s.date.slice(5)}</div>`;
-            bc.appendChild(col);
-        });
+        const totalVol = last8.reduce((s, x) => s + (x.vol || 0), 0);
+        if (totalVol === 0) {
+            bc.innerHTML = '<div style="width:100%;text-align:center;color:var(--muted);font-size:12px;padding:24px 0;">Volume non registrato per queste sessioni</div>';
+        } else {
+            const maxV = Math.max(...last8.map(s => s.vol), 1);
+            last8.forEach(s => {
+                const h   = Math.round(s.vol / maxV * 85);
+                const col = document.createElement('div');
+                col.className = 'bc-col';
+                col.innerHTML = `<div class="bc-val">${(s.vol / 1000).toFixed(1)}k</div>
+                                 <div class="bc-bar" style="height:${h}px;background:var(--teal)"></div>
+                                 <div class="bc-lbl">${s.date.slice(5)}</div>`;
+                bc.appendChild(col);
+            });
+        }
     }
 
     _renderComplianceCard();
@@ -872,7 +877,7 @@ export function renderAthletes() {
         div.innerHTML = `
             <div class="ac-av" style="background:${col.bg};border-color:${col.border};color:${col.text}">${init}</div>
             <div class="ac-n">${escHtml(a.name)} ${riskScore > 0 ? '⚠️' : ''}</div>
-            <div class="ac-m">${escHtml(a.level)} · ${escHtml(a.goal)}</div>
+            <div class="ac-m">${[a.level, a.goal].filter(Boolean).map(escHtml).join(' · ')}</div>
             <div class="ac-st">
                 <div class="ac-stat"><div class="ac-sv">${sc}</div><div class="ac-sl">Sess.</div></div>
                 <div class="ac-stat"><div class="ac-sv">${riskScore > 0 ? 'ALTO' : 'OK'}</div><div class="ac-sl">Stato</div></div>
