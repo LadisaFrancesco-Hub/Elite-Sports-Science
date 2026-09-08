@@ -139,7 +139,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const authResult = await initApp();
     window.userRole  = authResult;
 
-    await loadDB();
+    // Timeout 8s: se Supabase non risponde, prosegui con la cache IndexedDB
+    const _loadTimeout = new Promise(resolve => setTimeout(() => {
+        resolve('timeout');
+    }, 8000));
+    const _loadResult = await Promise.race([loadDB().then(() => 'ok'), _loadTimeout]);
+    if (_loadResult === 'timeout') {
+        console.warn('[CoachOS] loadDB timeout — modalità offline con cache locale');
+        // Banner non bloccante
+        const banner = document.createElement('div');
+        banner.id = 'offline-banner';
+        banner.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:99999;background:#431407;color:#fed7aa;font-size:12px;font-weight:700;text-align:center;padding:8px 16px;letter-spacing:.03em';
+        banner.textContent = '⚡ Modalità offline — dati dalla cache locale';
+        document.body.prepend(banner);
+        // Rimuovi banner quando torna la connessione
+        window.addEventListener('online', () => banner.remove(), { once: true });
+    }
     startRealtime(authResult);
 
     try {

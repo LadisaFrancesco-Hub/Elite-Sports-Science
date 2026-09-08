@@ -11,6 +11,29 @@
   "background_color": "#0e0a06",
   "theme_color": "#f97316",
   "categories": ["sports", "health", "fitness"],
+  "screenshots": [
+    {
+      "src": "/screenshots/screen-coach-dashboard.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Dashboard coach con analytics atleta"
+    },
+    {
+      "src": "/screenshots/screen-storico.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Storico sessioni con filtri"
+    },
+    {
+      "src": "/screenshots/screen-analytics.png",
+      "sizes": "780x1688",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "Analytics e profilo biomeccanico"
+    }
+  ],
   "shortcuts": [
     {
       "name": "Sessione Live",
