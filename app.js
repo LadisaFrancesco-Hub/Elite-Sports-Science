@@ -352,10 +352,10 @@ export function openMesocycleArchive() {
 // ─────────────────────────────────────────────────────────────
 export function go(id, btn) {
     if (window.userRole === 'ATLETA') {
-        const allowed = ['ath-home', 'wellness', 'sessione', 'feedback', 'coach-reply', 'ath-progressi', 'ath-storico'];
+        const allowed = ['ath-home', 'ath-week', 'ath-summary', 'wellness', 'sessione', 'feedback', 'coach-reply', 'ath-progressi', 'ath-storico'];
         if (!allowed.includes(id)) return;
         // sync bottom bar active state
-        const bbMap = { 'ath-home':'bb-oggi', sessione:'bb-sess', wellness:'bb-well', feedback:'bb-sess', 'ath-progressi':'bb-prog', 'ath-storico':'bb-prog', 'coach-reply':'bb-coach' };
+        const bbMap = { 'ath-home':'bb-oggi', 'ath-week':'bb-week', 'ath-summary':'bb-sess', sessione:'bb-sess', wellness:'bb-well', feedback:'bb-sess', 'ath-progressi':'bb-well', 'ath-storico':'bb-well', 'coach-reply':'bb-coach' };
         document.querySelectorAll('.bb-item').forEach(b => b.classList.remove('on'));
         const activeId = bbMap[id];
         if (activeId) document.getElementById(activeId)?.classList.add('on');
@@ -378,6 +378,8 @@ export function go(id, btn) {
         analytics:        renderAnalytics,
         progressione:     renderProg,
         'ath-home':       renderAthHome,
+        'ath-week':       renderAthWeek,
+        'ath-summary':    () => {},
         'ath-progressi':  renderAthProgressi,
         'ath-storico':    renderAthStorico,
         'calendario':     renderCalendario,
@@ -673,40 +675,69 @@ function _renderComplianceCard() {
     const athletes = DB.athletes;
     if (!athletes.length) { container.innerHTML = ''; return; }
 
+    // Settimana corrente: lunedì → domenica
+    const curMon = new Date(today);
+    curMon.setDate(today.getDate() - ((today.getDay()+6)%7));
+    const curDays = Array.from({length:7}, (_,i) => {
+        const d = new Date(curMon); d.setDate(curMon.getDate()+i);
+        return d.toISOString().slice(0,10);
+    });
+    const dayLabels = ['L','M','M','G','V','S','D'];
+
     const rows = athletes.map(ath => {
         const freq = ath.freq || 3;
+        // Dots settimana corrente
+        const curDots = curDays.map(dk => ({
+            dk,
+            done: DB.sessions.some(s => s.athlete === ath.id && s.date === dk),
+            future: dk > today.toISOString().slice(0,10)
+        }));
+        // Compliance 4 settimane
         const weekData = weeks.map(mon => {
-            const monStr = mon.toISOString().slice(0, 10);
-            const sunDate = new Date(mon); sunDate.setDate(mon.getDate() + 6);
-            const sunStr = sunDate.toISOString().slice(0, 10);
+            const monStr = mon.toISOString().slice(0,10);
+            const sunDate = new Date(mon); sunDate.setDate(mon.getDate()+6);
+            const sunStr = sunDate.toISOString().slice(0,10);
             const count = DB.sessions.filter(s => s.athlete === ath.id && s.date >= monStr && s.date <= sunStr).length;
-            return { count, pct: Math.min(100, Math.round(count / freq * 100)) };
+            return Math.min(100, Math.round(count/freq*100));
         });
-        const avgPct = Math.round(weekData.reduce((s, w) => s + w.pct, 0) / 4);
-        return { ath, weekData, avgPct };
-    });
+        const avgPct = Math.round(weekData.reduce((s,p) => s+p, 0)/4);
+        const curCount = curDots.filter(d => d.done).length;
+        return { ath, curDots, curCount, avgPct };
+    }).sort((a,b) => a.avgPct - b.avgPct); // peggiori compliance prima
 
-    const wLabels = ['W-3', 'W-2', 'W-1', 'W'];
-    const html = rows.map(({ ath, weekData, avgPct }) => {
-        const bars = weekData.map((w, i) => {
-            const col = w.pct >= 100 ? 'var(--teal)' : w.pct >= 75 ? 'var(--amber)' : w.pct > 0 ? 'var(--coral)' : 'var(--border)';
-            const h = Math.max(4, Math.round(w.pct * 0.48));
-            return `<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">
-                <div style="width:100%;max-width:28px;height:48px;display:flex;align-items:flex-end;justify-content:center">
-                    <div style="width:100%;height:${h}px;background:${col};border-radius:3px 3px 0 0;min-height:${w.pct>0?4:2}px"></div>
-                </div>
-                <div style="font-size:9px;color:var(--muted)">${wLabels[i]}</div>
+    const html = rows.map(({ ath, curDots, curCount, avgPct }) => {
+        const avgCol = avgPct >= 90 ? 'var(--teal)' : avgPct >= 65 ? 'var(--amber)' : avgPct > 0 ? 'var(--coral)' : 'var(--muted)';
+        const dots = curDots.map((d,i) => {
+            const bg = d.done ? 'var(--teal)' : d.future ? 'var(--s2)' : 'var(--border)';
+            const border = d.future ? '1px dashed var(--border)' : 'none';
+            return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
+                <div style="width:14px;height:14px;border-radius:50%;background:${bg};border:${border}"></div>
+                <div style="font-size:8px;color:var(--muted)">${dayLabels[i]}</div>
             </div>`;
         }).join('');
-        const avgCol = avgPct >= 100 ? 'var(--teal)' : avgPct >= 75 ? 'var(--amber)' : avgPct > 0 ? 'var(--coral)' : 'var(--muted)';
-        return `<div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
-            <div style="flex:0 0 90px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(ath.name.split(' ')[0])}</div>
-            <div style="display:flex;gap:4px;flex:1;align-items:flex-end">${bars}</div>
-            <div style="flex:0 0 38px;text-align:right;font-size:13px;font-weight:800;color:${avgCol}">${avgPct}%</div>
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+            <div style="flex:0 0 72px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(ath.name.split(' ')[0])}</div>
+            <div style="display:flex;gap:2px;flex:1;align-items:center">${dots}</div>
+            <div style="flex:0 0 22px;text-align:center;font-size:11px;color:var(--muted)">${curCount}/${ath.freq||3}</div>
+            <div style="flex:0 0 36px;text-align:right;font-size:13px;font-weight:800;color:${avgCol}">${avgPct}%</div>
         </div>`;
     }).join('');
 
-    container.innerHTML = `<div class="card-t">📊 Compliance Atleti — Ultime 4 settimane</div>${html || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Nessun dato.</div>'}`;
+    const headerDots = dayLabels.map(l => `<div style="flex:1;text-align:center;font-size:9px;color:var(--muted);font-weight:700">${l}</div>`).join('');
+
+    container.innerHTML = `
+        <div class="card-t" style="display:flex;justify-content:space-between">
+            <span>Compliance — Settimana corrente</span>
+            <span style="color:var(--muted);font-weight:400">4W avg</span>
+        </div>
+        <div style="display:flex;gap:10px;padding:4px 0 6px;border-bottom:1px solid var(--border)">
+            <div style="flex:0 0 72px"></div>
+            <div style="display:flex;flex:1;gap:2px">${headerDots}</div>
+            <div style="flex:0 0 22px"></div>
+            <div style="flex:0 0 36px"></div>
+        </div>
+        ${html || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Nessun dato.</div>'}
+    `;
 }
 
 export function getAthleteRiskScore(athId) {
@@ -1024,6 +1055,165 @@ export function renderCoachReply() {
             ${s.notes ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px;padding:6px 10px;background:var(--s1);border-radius:6px;"><span style="font-weight:600;color:var(--text)">La tua nota:</span> ${escHtml(s.notes.replace('NOTE: ',''))}</div>` : ''}
             <div style="font-size:13px;color:var(--purple);line-height:1.6;white-space:pre-wrap;padding:8px 10px;background:var(--s2);border-left:3px solid var(--purple);border-radius:0 6px 6px 0;">${escHtml(s.reply)}</div>
         </div>`).join('');
+}
+
+export function renderAthWeek() {
+    const el = document.getElementById('ath-week-content');
+    if (!el) return;
+
+    const today    = new Date(); today.setHours(0,0,0,0);
+    const dayNames = ['Dom','Lun','Mar','Mer','Gio','Ven','Sab'];
+    const mon = new Date(today);
+    mon.setDate(today.getDate() - ((today.getDay()+6)%7));
+
+    const days = Array.from({length:7}, (_,i) => {
+        const d = new Date(mon); d.setDate(mon.getDate()+i);
+        return d;
+    });
+
+    const sch      = DB.schedules[appState.selAthId];
+    const sessions = sch?.sessions || [];
+
+    // sessioni registrate questa settimana
+    const weekSessions = DB.sessions.filter(s => {
+        const sd = new Date(s.date); sd.setHours(0,0,0,0);
+        return sd >= mon && sd <= days[6];
+    });
+
+    // stats settimana
+    const weekCount = weekSessions.length;
+    const targetFreq = athById(appState.selAthId)?.freq || 3;
+    const pct = Math.min(100, Math.round(weekCount/targetFreq*100));
+    const pctColor = pct >= 100 ? 'var(--teal)' : pct >= 60 ? 'var(--amber)' : 'var(--coral)';
+
+    // mappa data → sessioni fatte
+    const doneByDate = {};
+    weekSessions.forEach(s => {
+        if (!doneByDate[s.date]) doneByDate[s.date] = [];
+        doneByDate[s.date].push(s);
+    });
+
+    const dayCards = days.map(d => {
+        const dk     = d.toISOString().slice(0,10);
+        const isToday = dk === today.toISOString().slice(0,10);
+        const isPast  = d < today;
+        const done    = doneByDate[dk] || [];
+        const dayNum  = d.getDate();
+        const dayName = dayNames[d.getDay()];
+
+        let content = '';
+        if (done.length) {
+            content = done.map(s => `
+                <div style="margin-top:6px;padding:6px 8px;background:rgba(249,115,22,.12);border-left:3px solid var(--teal);border-radius:0 6px 6px 0">
+                    <div style="font-size:11px;font-weight:700;color:var(--teal)">${escHtml(s.session)}</div>
+                    <div style="font-size:10px;color:var(--muted)">RPE ${s.rpe} · ${s.vol ? (s.vol/1000).toFixed(1)+'t' : '—'}</div>
+                </div>`).join('');
+        } else if (!isPast && sessions.length) {
+            const nextIdx = weekCount % sessions.length;
+            const sug = sessions[nextIdx];
+            content = `<div style="margin-top:6px;font-size:11px;color:var(--muted);font-style:italic">${sug ? escHtml(sug.name) : 'Riposo'}</div>`;
+        } else if (isPast && !done.length) {
+            content = `<div style="margin-top:6px;font-size:11px;color:var(--border)">Riposo</div>`;
+        }
+
+        return `<div style="padding:12px;background:${isToday ? 'rgba(249,115,22,.08)' : 'var(--s1)'};border:1px solid ${isToday ? 'var(--teal)' : 'var(--border)'};border-radius:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between">
+                <div style="font-size:11px;font-weight:700;color:${isToday ? 'var(--teal)' : 'var(--muted)'}">
+                    ${dayName}${isToday ? ' · Oggi' : ''}
+                </div>
+                <div style="font-size:16px;font-weight:800;color:${done.length ? 'var(--teal)' : isToday ? 'var(--text)' : 'var(--muted)'}">${dayNum}</div>
+            </div>
+            ${done.length ? `<span style="font-size:9px;font-weight:800;color:var(--teal)">✓ COMPLETATO</span>` : ''}
+            ${content}
+        </div>`;
+    }).join('');
+
+    el.innerHTML = `
+    <div style="padding-bottom:100px">
+      <div style="margin-bottom:20px">
+        <div style="font-size:28px;font-weight:800;color:var(--text);letter-spacing:-0.5px">La mia settimana</div>
+        <div style="font-size:13px;color:var(--muted);margin-top:2px">
+            ${mon.toLocaleDateString('it-IT',{day:'numeric',month:'long'})} — ${days[6].toLocaleDateString('it-IT',{day:'numeric',month:'long'})}
+        </div>
+      </div>
+
+      <!-- Progress bar settimana -->
+      <div class="card" style="margin-bottom:16px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">Compliance settimana</div>
+          <div style="font-size:16px;font-weight:800;color:${pctColor}">${weekCount}/${targetFreq} sessioni</div>
+        </div>
+        <div style="background:var(--s2);border-radius:4px;height:6px;overflow:hidden">
+          <div style="width:${pct}%;height:100%;background:${pctColor};border-radius:4px;transition:width .5s"></div>
+        </div>
+      </div>
+
+      <!-- Giorni -->
+      <div style="display:flex;flex-direction:column;gap:8px">${dayCards}</div>
+    </div>`;
+}
+
+export function showAthSummary(sessObj) {
+    const el = document.getElementById('ath-summary-content');
+    if (!el) return;
+
+    // Trova sessione precedente dello stesso tipo
+    const prevSess = [...DB.sessions]
+        .filter(s => s.session === sessObj.session && s.id !== sessObj.id)
+        .sort((a,b) => b.date.localeCompare(a.date))[0];
+
+    const volDiff  = prevSess ? sessObj.vol - prevSess.vol : null;
+    const volColor = volDiff === null ? 'var(--muted)' : volDiff >= 0 ? 'var(--teal)' : 'var(--coral)';
+    const volSign  = volDiff !== null ? (volDiff >= 0 ? '+' : '') : '';
+
+    const isPR = sessObj.maxE1rm > 0 && (!prevSess || sessObj.maxE1rm > (prevSess.maxE1rm || 0));
+
+    el.innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;padding:24px;text-align:center;padding-bottom:100px">
+
+      <!-- Trophy moment -->
+      <div style="font-size:64px;margin-bottom:12px">${isPR ? '🏆' : '💪'}</div>
+      <div style="font-size:26px;font-weight:800;color:var(--text);margin-bottom:4px">
+          ${isPR ? 'Personal Record!' : 'Allenamento completato!'}
+      </div>
+      <div style="font-size:14px;color:var(--muted);margin-bottom:32px">${escHtml(sessObj.session)}</div>
+
+      <!-- Stats grid -->
+      <div class="g4" style="width:100%;margin-bottom:24px">
+        <div class="kpi">
+            <div class="kpi-l">Volume</div>
+            <div class="kpi-v" style="color:var(--teal)">${(sessObj.vol/1000).toFixed(1)}t</div>
+            ${volDiff !== null ? `<div style="font-size:10px;color:${volColor}">${volSign}${(Math.abs(volDiff)/1000).toFixed(1)}t</div>` : ''}
+        </div>
+        <div class="kpi">
+            <div class="kpi-l">RPE</div>
+            <div class="kpi-v" style="color:${sessObj.rpe >= 9 ? 'var(--coral)' : sessObj.rpe >= 7 ? 'var(--amber)' : 'var(--teal)'}">${sessObj.rpe}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-l">e1RM Max</div>
+            <div class="kpi-v" style="color:var(--amber)">${sessObj.maxE1rm > 0 ? sessObj.maxE1rm+'kg' : '—'}</div>
+        </div>
+        <div class="kpi">
+            <div class="kpi-l">Durata</div>
+            <div class="kpi-v">${sessObj.dur || '—'}${sessObj.dur ? 'min' : ''}</div>
+        </div>
+      </div>
+
+      ${isPR && sessObj.maxE1rm > 0 ? `
+      <div style="background:rgba(249,115,22,.12);border:1px solid var(--teal);border-radius:12px;padding:14px 20px;margin-bottom:24px;width:100%">
+          <div style="font-size:12px;font-weight:800;color:var(--teal);letter-spacing:.08em">NUOVO PERSONAL RECORD</div>
+          <div style="font-size:22px;font-weight:800;color:var(--text);margin-top:4px">${sessObj.maxE1rm} kg e1RM</div>
+      </div>` : ''}
+
+      <button onclick="go('ath-home')" style="width:100%;padding:14px;background:var(--teal);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:15px;cursor:pointer">
+          Torna alla home →
+      </button>
+      <button onclick="go('feedback')" style="width:100%;margin-top:10px;padding:12px;background:none;border:1px solid var(--border);border-radius:10px;color:var(--muted);font-size:13px;cursor:pointer">
+          Compila post-workout log
+      </button>
+    </div>`;
+
+    go('ath-summary');
 }
 
 export function renderAthHome() {
@@ -2112,6 +2302,7 @@ export async function submitFB() {
     } catch (err) { console.error(err); }
 
     initFB(); loadLive(); renderDashboard();
+    if (window.userRole === 'ATLETA') showAthSummary(sessObj);
     window.liveE1rmDom = 0; window.liveE1rmNDom = 0; window.liveMaxE1rm = 0;
     appState.pwRpe = 0; appState.pwStars = 0;
     ['pw-notes','pw-vars'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
