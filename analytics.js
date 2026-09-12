@@ -33,6 +33,8 @@ import { uid, escHtml, toast, athName, athById } from './utils.js';
 // Istanze Chart.js — distrutte e ricreate ad ogni render
 let e1rmChartInstance = null;
 let hrvPerfChart      = null;
+let bodyCompChart     = null;
+let testChartInstance = null;
 
 
 // ─────────────────────────────────────────────────────────────
@@ -81,9 +83,9 @@ export function calculateACWR(athId) {
 
     // Iterazione cronologica — i due binari si aggiornano indipendentemente
     s.forEach(session => {
-        const isCampo = session.sessionType === 'Campo';
+        const isGym = session.sessionType === 'Palestra';
 
-        if (!isCampo) {
+        if (isGym) {
             // ── Binario GYM: tonnellaggio meccanico ──────────
             const vol = session.vol || 0;
             if (!hasGym) {
@@ -93,7 +95,7 @@ export function calculateACWR(athId) {
                 ewmaChronicVol = (alphaChronic * vol) + ((1 - alphaChronic) * ewmaChronicVol);
             }
         } else {
-            // ── Binario CAMPO: carico specifico sRPE ─────────
+            // ── Binario CAMPO: Campo, Corsa, Sprint, Condizionamento → sRPE ─
             const srpe = session.sRPE || 0;
             if (!hasField) {
                 ewmaAcuteRpe = srpe; ewmaChronicRpe = srpe; hasField = true;
@@ -262,18 +264,12 @@ export function renderAnalytics() {
     const ath  = athById(appState.selAthId);
     const sess = DB.sessions.filter(s => s.athlete === appState.selAthId);
 
-    // ── a) Sottotitolo + storico antropometrico ──────────────
+    // ── a) Sottotitolo + body composition + test DB ─────────
     document.getElementById('an-sub').textContent =
         ath ? `${ath.name} · ${sess.length} sessioni` : '';
 
-    const antDiv = document.getElementById('an-antropo-history');
-    if (antDiv && ath && ath.anthropoHistory) {
-        antDiv.innerHTML = ath.anthropoHistory.map(h =>
-            `<div>🗓️ <strong>${h.date}</strong> — `
-            + `Peso: <span style="color:var(--teal)">${h.weight} kg</span> | `
-            + `BF: <span style="color:var(--purple)">${h.bf}%</span></div>`
-        ).join('');
-    }
+    renderBodyComp(ath);
+    renderTestDB(ath);
 
     // ── b) Inietta il wrapper del Radar (DOM dinamico) ───────
     const radarWrapper = document.getElementById('radar-wrapper');
@@ -1016,7 +1012,7 @@ export function calculateEfficiencyIndex(athId) {
     const result = [];
     weeks.forEach(w => {
         const wSess        = sess.filter(s => s.week === w);
-        const gymSess      = wSess.filter(s => s.sessionType !== 'Campo' && s.vol > 0);
+        const gymSess      = wSess.filter(s => s.sessionType === 'Palestra' && s.vol > 0);
         const tonnellaggio = gymSess.reduce((sum, s) => sum + s.vol, 0);
 
         const srpeSess     = wSess.filter(s => s.sRPE > 0);
@@ -1162,6 +1158,49 @@ export function renderAthProgressi() {
     if (titleEl) titleEl.textContent = ath ? `Ciao, ${ath.name.split(' ')[0]} 👋` : 'I miei progressi';
     if (subEl)   subEl.textContent   = `${all.length} sessioni registrate`;
 
+    // ── Il mio miglior mese ──────────────────────────────────
+    const now          = new Date();
+    const thisMoKey    = now.toISOString().slice(0, 7);
+    const lastMoDate   = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const lastMoKey    = lastMoDate.toISOString().slice(0, 7);
+    const thisMonthSess = all.filter(s => s.date.startsWith(thisMoKey));
+    const lastMonthSess = all.filter(s => s.date.startsWith(lastMoKey));
+    const monthEl = document.getElementById('ap-month');
+    if (monthEl && (thisMonthSess.length || lastMonthSess.length)) {
+        const freq       = (ath && ath.freq) ? ath.freq : 4;
+        const sch        = DB.schedules?.[athId];
+        const schWeeks   = sch?.duration || 4;
+        const thisVol    = thisMonthSess.reduce((a, s) => a + (s.vol||0), 0);
+        const lastVol    = lastMonthSess.reduce((a, s) => a + (s.vol||0), 0);
+        const volDelta   = lastVol > 0 ? Math.round((thisVol-lastVol)/lastVol*100) : null;
+        const volColor   = volDelta === null ? 'var(--muted)' : volDelta >= 0 ? 'var(--teal)' : 'var(--coral)';
+        const thisE1rm   = thisMonthSess.length ? Math.max(...thisMonthSess.map(s => s.maxE1rm||0)) : 0;
+        const targetSess = freq * schWeeks;
+        const compliance = targetSess > 0 ? Math.min(100, Math.round(thisMonthSess.length / targetSess * 100)) : null;
+        monthEl.innerHTML = `
+        <div class="card" style="border:1px solid var(--border)">
+          <div class="card-t">Il mio mese — ${now.toLocaleDateString('it-IT',{month:'long'})}</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div>
+              <div style="font-size:11px;color:var(--muted)">Volume totale</div>
+              <div style="font-size:16px;font-weight:800;color:var(--teal)">${(thisVol/1000).toFixed(1)}t</div>
+              ${volDelta !== null ? `<div style="font-size:10px;color:${volColor}">${volDelta>=0?'+':''}${volDelta}% vs mese prec.</div>` : ''}
+            </div>
+            <div>
+              <div style="font-size:11px;color:var(--muted)">Sessioni</div>
+              <div style="font-size:16px;font-weight:800;color:var(--text)">${thisMonthSess.length}${compliance !== null ? `<span style="font-size:12px;font-weight:500;color:${compliance>=100?'var(--teal)':'var(--muted)'}"> (${compliance}%)</span>` : ''}</div>
+            </div>
+            ${thisE1rm > 0 ? `
+            <div>
+              <div style="font-size:11px;color:var(--muted)">Miglior e1RM mese</div>
+              <div style="font-size:16px;font-weight:800;color:var(--amber)">${thisE1rm} kg</div>
+            </div>` : ''}
+          </div>
+        </div>`;
+    } else if (monthEl) {
+        monthEl.innerHTML = '';
+    }
+
     // ── KPI ─────────────────────────────────────────────────
     const last5   = all.slice(-5);
     const avgRpe  = last5.length
@@ -1232,8 +1271,27 @@ export function renderAthProgressi() {
         }
     }
 
-    // ── e1RM trend line chart ────────────────────────────────
-    const e1rmSess = all.filter(s => (s.maxE1rm || 0) > 0).slice(-12);
+    // ── e1RM trend line chart con selector esercizi ──────────
+    const allExNames = [...new Set(
+        all.flatMap(s => Object.keys(s.e1rmPerExercise || {}))
+    )].filter(Boolean).sort();
+
+    const filterEl2 = document.getElementById('ap-e1rm-filter');
+    const savedExFilter = localStorage.getItem('ap_e1rm_ex') || '';
+    if (filterEl2 && allExNames.length > 0) {
+        filterEl2.innerHTML = `
+        <select onchange="localStorage.setItem('ap_e1rm_ex',this.value);renderAthProgressi()"
+                style="width:100%;padding:8px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+            <option value="">Tutti gli esercizi (e1RM massimo)</option>
+            ${allExNames.map(n => `<option value="${escHtml(n)}" ${savedExFilter===n?'selected':''}>${escHtml(n)}</option>`).join('')}
+        </select>`;
+    }
+
+    const e1rmSess = savedExFilter
+        ? all.filter(s => (s.e1rmPerExercise?.[savedExFilter] || 0) > 0).slice(-12)
+              .map(s => ({ ...s, maxE1rm: s.e1rmPerExercise[savedExFilter] }))
+        : all.filter(s => (s.maxE1rm || 0) > 0).slice(-12);
+
     if (apE1rmChart) { apE1rmChart.destroy(); apE1rmChart = null; }
     const wrapEl = document.getElementById('ap-e1rm-wrap');
     if (wrapEl) {
@@ -1271,15 +1329,347 @@ export function renderAthProgressi() {
         }
     }
 
-    // ── Personal Records ─────────────────────────────────────
+    // ── Body composition mini ─────────────────────────────────
+    const bodcompEl = document.getElementById('ap-bodcomp');
+    if (bodcompEl) {
+        const history = (ath?.anthropoHistory?.length >= 2)
+            ? [...ath.anthropoHistory].sort((a, b) => a.date.localeCompare(b.date)).slice(-3)
+            : [];
+        if (history.length >= 2) {
+            const last   = history[history.length - 1];
+            const first  = history[0];
+            const wDelta = last.weight && first.weight ? (last.weight - first.weight).toFixed(1) : null;
+            const bfDelta = last.bf && first.bf ? (last.bf - first.bf).toFixed(1) : null;
+            bodcompEl.innerHTML = `
+            <div class="card" style="border:1px solid var(--border)">
+              <div class="card-t">Composizione corporea</div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap">
+                ${history.map(m => `
+                <div style="flex:1;min-width:80px;text-align:center;padding:8px;background:var(--s2);border-radius:8px">
+                  <div style="font-size:10px;color:var(--muted)">${m.date?.slice(5) || '—'}</div>
+                  ${m.weight ? `<div style="font-size:14px;font-weight:700;color:var(--text)">${m.weight}kg</div>` : ''}
+                  ${m.bf ? `<div style="font-size:12px;color:var(--muted)">${m.bf}%BF</div>` : ''}
+                </div>`).join('')}
+              </div>
+              <div style="margin-top:8px;font-size:11px;color:var(--muted);display:flex;gap:12px">
+                ${wDelta !== null ? `<span>Peso <strong style="color:${parseFloat(wDelta)<0?'var(--teal)':'var(--coral)'}">${parseFloat(wDelta)>=0?'+':''}${wDelta}kg</strong></span>` : ''}
+                ${bfDelta !== null ? `<span>BF% <strong style="color:${parseFloat(bfDelta)<0?'var(--teal)':'var(--coral)'}">${parseFloat(bfDelta)>=0?'+':''}${bfDelta}%</strong></span>` : ''}
+              </div>
+            </div>`;
+        } else {
+            bodcompEl.innerHTML = '';
+        }
+    }
+
+    // ── Personal Records arricchiti ───────────────────────────
+    const bestE1rmSess = all.filter(s => s.maxE1rm > 0).sort((a,b) => b.maxE1rm - a.maxE1rm)[0];
+    const bestVolSess  = all.filter(s => s.vol > 0).sort((a,b) => b.vol - a.vol)[0];
     const recEl = document.getElementById('ap-records');
     if (recEl) recEl.innerHTML = [
-        { label: 'Miglior e1RM registrato',       value: bestE1rm > 0 ? `${bestE1rm} kg` : '—',             color: 'var(--amber)'  },
-        { label: 'Volume massimo in una sessione', value: bestVol > 0 ? `${(bestVol / 1000).toFixed(1)} t` : '—', color: 'var(--teal)'   },
-        { label: 'Sessioni totali completate',     value: all.length,                                         color: 'var(--purple)' },
+        {
+            label: 'Miglior e1RM', value: bestE1rm > 0 ? `${bestE1rm} kg` : '—', color: 'var(--amber)',
+            sub: bestE1rmSess ? `${bestE1rmSess.date} · ${escHtml(bestE1rmSess.session)}` : ''
+        },
+        {
+            label: 'Volume record', value: bestVol > 0 ? `${(bestVol/1000).toFixed(1)} t` : '—', color: 'var(--teal)',
+            sub: bestVolSess ? `${bestVolSess.date} · ${escHtml(bestVolSess.session)}` : ''
+        },
+        {
+            label: 'Sessioni totali', value: all.length, color: 'var(--purple)', sub: ''
+        },
     ].map(r => `
         <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
-            <span style="font-size:13px;color:var(--muted)">${r.label}</span>
+            <div>
+                <div style="font-size:13px;color:var(--muted)">${r.label}</div>
+                ${r.sub ? `<div style="font-size:10px;color:var(--border);margin-top:2px">${r.sub}</div>` : ''}
+            </div>
             <span style="font-size:16px;font-weight:800;color:${r.color}">${r.value}</span>
         </div>`).join('');
+}
+
+// ─────────────────────────────────────────────────────────────
+// renderBodyComp(ath)
+// Renderizza KPI, grafico dual-line e storico misurazioni
+// nel card "Composizione Corporea" del pannello Analytics.
+// ─────────────────────────────────────────────────────────────
+export function renderBodyComp(ath) {
+    const kpisEl   = document.getElementById('an-bc-kpis');
+    const histEl   = document.getElementById('an-bc-history');
+    const canvas   = document.getElementById('an-bc-chart');
+    if (!kpisEl || !histEl || !canvas) return;
+
+    const history = (ath && ath.anthropoHistory && ath.anthropoHistory.length)
+        ? [...ath.anthropoHistory].sort((a, b) => a.date.localeCompare(b.date))
+        : [];
+
+    // ── Stato vuoto ──────────────────────────────────────────
+    if (history.length === 0) {
+        kpisEl.innerHTML = '<div style="color:var(--muted);font-size:12px;grid-column:1/-1;text-align:center;padding:8px 0;">Nessuna misurazione registrata.</div>';
+        canvas.style.display = 'none';
+        histEl.innerHTML = '';
+        return;
+    }
+
+    canvas.style.display = 'block';
+    const last = history[history.length - 1];
+    const prev = history.length > 1 ? history[history.length - 2] : null;
+
+    const fmt = (v, decimals = 1) => v != null && !isNaN(v) ? Number(v).toFixed(decimals) : '—';
+    const delta = (curr, prv, unit = '') => {
+        if (prv == null || isNaN(curr) || isNaN(prv)) return '';
+        const d = (parseFloat(curr) - parseFloat(prv)).toFixed(1);
+        const col = d > 0 ? 'var(--coral)' : d < 0 ? 'var(--teal)' : 'var(--muted)';
+        return `<span style="font-size:10px;color:${col};font-weight:700;">${d > 0 ? '+' : ''}${d}${unit}</span>`;
+    };
+
+    const leanMass = (last.weight && last.bf != null) ? (last.weight * (1 - last.bf / 100)) : null;
+    const prevLean = (prev && prev.weight && prev.bf != null) ? (prev.weight * (1 - prev.bf / 100)) : null;
+
+    kpisEl.innerHTML = [
+        { label: 'Peso', value: fmt(last.weight) + ' kg', d: delta(last.weight, prev?.weight, 'kg') },
+        { label: 'BF%',  value: fmt(last.bf) + '%',        d: delta(last.bf, prev?.bf, '%') },
+        { label: 'Massa magra', value: leanMass ? fmt(leanMass) + ' kg' : '—', d: delta(leanMass, prevLean, 'kg') },
+    ].map(k => `
+        <div style="background:var(--s1);border-radius:8px;padding:10px;text-align:center;">
+            <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px;">${k.label}</div>
+            <div style="font-size:18px;font-weight:800;color:var(--text);">${k.value}</div>
+            <div style="min-height:14px;margin-top:2px;">${k.d}</div>
+        </div>`).join('');
+
+    // ── Grafico dual-line ────────────────────────────────────
+    if (bodyCompChart) { bodyCompChart.destroy(); bodyCompChart = null; }
+
+    const labels   = history.map(h => h.date.slice(5));
+    const weights  = history.map(h => parseFloat(h.weight) || null);
+    const bfValues = history.map(h => (h.bf != null && h.bf !== '') ? parseFloat(h.bf) : null);
+    const hasBf    = bfValues.some(v => v != null);
+
+    const datasets = [
+        {
+            label: 'Peso (kg)',
+            data: weights,
+            borderColor: '#10b981',
+            backgroundColor: 'rgba(16,185,129,0.1)',
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#10b981',
+            fill: true,
+            yAxisID: 'y',
+        }
+    ];
+    if (hasBf) {
+        datasets.push({
+            label: 'BF%',
+            data: bfValues,
+            borderColor: '#a78bfa',
+            backgroundColor: 'rgba(167,139,250,0.08)',
+            tension: 0.3,
+            pointRadius: 4,
+            pointBackgroundColor: '#a78bfa',
+            fill: false,
+            yAxisID: 'y2',
+        });
+    }
+
+    bodyCompChart = new window.Chart(canvas, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: { legend: { labels: { color: '#9CA3AF', font: { size: 11 } } } },
+            scales: {
+                x:  { ticks: { color: '#6B7280', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y:  { position: 'left',  ticks: { color: '#10b981', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y2: { position: 'right', display: hasBf, ticks: { color: '#a78bfa', font: { size: 10 } }, grid: { drawOnChartArea: false } },
+            }
+        }
+    });
+
+    // ── Storico misurazioni ──────────────────────────────────
+    const rows = [...history].reverse().map(h => {
+        const lm = (h.weight && h.bf != null) ? (h.weight * (1 - h.bf / 100)).toFixed(1) : '—';
+        const sfStr = h.skinfolds && h.skinfolds.length === 3
+            ? `<span style="color:var(--muted);margin-left:4px;">· Pliche: ${h.skinfolds.map(s => s + 'mm').join(' / ')}</span>` : '';
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:4px;">
+            <span style="font-size:11px;color:var(--muted);">${h.date}</span>
+            <span style="font-size:12px;font-weight:700;">
+                <span style="color:var(--teal)">${h.weight ?? '—'}kg</span>
+                ${h.bf != null && h.bf !== '' ? `<span style="color:var(--muted);margin:0 4px;">·</span><span style="color:var(--purple)">${h.bf}%BF</span>` : ''}
+                <span style="color:var(--muted);margin:0 4px;">·</span><span style="color:var(--text)">M.M. ${lm}kg</span>
+                ${sfStr}
+            </span>
+            ${h.notes ? `<span style="font-size:10px;color:var(--muted);font-style:italic;width:100%;">${escHtml(h.notes)}</span>` : ''}
+        </div>`;
+    }).join('');
+    histEl.innerHTML = rows || '<div style="color:var(--muted);font-size:12px;padding:8px 0;">Nessun dato.</div>';
+}
+
+// ─────────────────────────────────────────────────────────────
+// renderTestDB(ath)
+// Mostra test raggruppati per categoria con ultimo valore,
+// delta colorato, count. Click su una riga → grafico tendenza.
+// ─────────────────────────────────────────────────────────────
+const _CAT_COLORS = {
+    'Velocità':'#F59E0B', 'Potenza':'#EF4444', 'Agilità':'#8B5CF6',
+    'Resistenza':'#3B82F6', 'Forza':'#10B981', 'Mobilità':'#F97316', 'Personalizzato':'#6B7280'
+};
+let _testActiveCat = 'Tutti';
+
+export function renderTestDB(ath) {
+    const listEl  = document.getElementById('an-test-list');
+    const catsEl  = document.getElementById('an-test-cats');
+    if (!listEl || !catsEl) return;
+
+    const history = (ath && ath.testHistory) ? [...ath.testHistory].sort((a,b) => a.date.localeCompare(b.date)) : [];
+
+    if (history.length === 0) {
+        catsEl.innerHTML = '';
+        listEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px 0;">Nessun test registrato.</div>';
+        return;
+    }
+
+    // Raggruppa per nome test
+    const byTest = {};
+    history.forEach(e => {
+        if (!byTest[e.test]) byTest[e.test] = { cat: e.category, unit: e.unit, lib: e.lowerIsBetter, entries: [] };
+        byTest[e.test].entries.push(e);
+    });
+
+    // Categorie presenti
+    const cats = ['Tutti', ...new Set(history.map(e => e.category))];
+    catsEl.innerHTML = cats.map(c => {
+        const active = c === _testActiveCat;
+        const col = _CAT_COLORS[c] || 'var(--muted)';
+        return `<button onclick="setTestCat('${escHtml(c)}')" style="padding:4px 10px;border-radius:16px;font-size:11px;font-weight:700;cursor:pointer;
+            background:${active ? col : 'var(--s1)'};color:${active ? '#000' : 'var(--muted)'};
+            border:1px solid ${active ? col : 'var(--border)'};transition:.15s">${escHtml(c)}</button>`;
+    }).join('');
+
+    // Filtra per categoria attiva
+    const filtered = Object.entries(byTest).filter(([, v]) =>
+        _testActiveCat === 'Tutti' || v.cat === _testActiveCat
+    );
+
+    if (filtered.length === 0) {
+        listEl.innerHTML = '<div style="color:var(--muted);font-size:12px;padding:8px 0;">Nessun test in questa categoria.</div>';
+        return;
+    }
+
+    // Raggruppa per categoria per il display
+    const byCat = {};
+    filtered.forEach(([name, data]) => {
+        if (!byCat[data.cat]) byCat[data.cat] = [];
+        byCat[data.cat].push([name, data]);
+    });
+
+    const fmtVal = (v, unit) => `${unit === 'mm:ss' ? _fmtSec(v) : v}${unit && unit !== 'mm:ss' ? ' ' + unit : ''}`;
+    const _fmtSec = s => { const m = Math.floor(s/60); const sec = Math.round(s%60); return `${m}:${sec.toString().padStart(2,'0')}`; };
+
+    listEl.innerHTML = Object.entries(byCat).map(([cat, tests]) => {
+        const col = _CAT_COLORS[cat] || 'var(--muted)';
+        const rows = tests.map(([name, data]) => {
+            const entries = data.entries;
+            const last    = entries[entries.length - 1];
+            const prev    = entries.length > 1 ? entries[entries.length - 2] : null;
+            const lib     = data.lib;
+
+            let deltaHtml = '';
+            if (prev) {
+                const d = last.value - prev.value;
+                const improved = lib ? d < 0 : d > 0;
+                const sign     = d > 0 ? '+' : '';
+                const dCol     = improved ? 'var(--teal)' : d === 0 ? 'var(--muted)' : 'var(--coral)';
+                deltaHtml = `<span style="font-size:10px;font-weight:700;color:${dCol};">${sign}${d.toFixed(2)}</span>`;
+            }
+
+            const prBadge = entries.length > 1 && (() => {
+                const best = lib
+                    ? Math.min(...entries.map(e => e.value))
+                    : Math.max(...entries.map(e => e.value));
+                return last.value === best;
+            })()
+                ? `<span style="font-size:9px;font-weight:800;color:#f59e0b;margin-left:4px;background:rgba(245,158,11,0.15);padding:1px 5px;border-radius:4px;">🏆 BEST</span>` : '';
+
+            return `<div onclick="showTestChart('${escHtml(name)}', '${escHtml(ath.id)}')"
+                style="display:flex;align-items:center;gap:8px;padding:8px 10px;margin-bottom:3px;
+                       background:var(--s1);border-radius:8px;cursor:pointer;transition:.15s"
+                onmouseover="this.style.background='var(--s2)'" onmouseout="this.style.background='var(--s1)'">
+                <div style="flex:1;min-width:0;">
+                    <div style="font-size:12px;font-weight:700;color:var(--text);">${escHtml(name)}${prBadge}</div>
+                    <div style="font-size:10px;color:var(--muted);">${entries.length} mis. · ultima: ${last.date}</div>
+                </div>
+                <div style="text-align:right;flex-shrink:0;">
+                    <div style="font-size:15px;font-weight:800;color:${col};">${fmtVal(last.value, last.unit)}</div>
+                    <div style="min-height:14px;">${deltaHtml}</div>
+                </div>
+            </div>`;
+        }).join('');
+
+        return `<div style="margin-bottom:10px;">
+            <div style="font-size:10px;font-weight:800;color:${col};text-transform:uppercase;letter-spacing:0.5px;
+                        margin-bottom:5px;padding-left:2px;">${escHtml(cat)}</div>
+            ${rows}
+        </div>`;
+    }).join('');
+}
+
+export function setTestCat(cat) {
+    _testActiveCat = cat;
+    const ath = DB.athletes.find(a => a.id === appState.selAthId);
+    renderTestDB(ath);
+    closeTestChart();
+}
+
+export function showTestChart(testName, athId) {
+    const ath = DB.athletes.find(a => a.id === athId);
+    if (!ath || !ath.testHistory) return;
+
+    const entries = [...ath.testHistory]
+        .filter(e => e.test === testName)
+        .sort((a, b) => a.date.localeCompare(b.date));
+    if (entries.length < 2) { toast('Servono almeno 2 misurazioni per il grafico'); return; }
+
+    const wrap  = document.getElementById('an-test-chart-wrap');
+    const title = document.getElementById('an-test-chart-title');
+    const canvas= document.getElementById('an-test-chart');
+    if (!wrap || !canvas) return;
+
+    if (testChartInstance) { testChartInstance.destroy(); testChartInstance = null; }
+
+    wrap.style.display = 'block';
+    title.textContent  = testName;
+
+    const col = _CAT_COLORS[entries[0].category] || 'var(--teal)';
+    testChartInstance = new window.Chart(canvas, {
+        type: 'line',
+        data: {
+            labels: entries.map(e => e.date.slice(5)),
+            datasets: [{
+                label: testName,
+                data: entries.map(e => e.value),
+                borderColor: col,
+                backgroundColor: col + '22',
+                tension: 0.3,
+                pointRadius: 5,
+                pointBackgroundColor: col,
+                fill: true,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { ticks: { color: '#6B7280', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+                y: { ticks: { color: col, font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+            }
+        }
+    });
+}
+
+export function closeTestChart() {
+    const wrap = document.getElementById('an-test-chart-wrap');
+    if (wrap) wrap.style.display = 'none';
+    if (testChartInstance) { testChartInstance.destroy(); testChartInstance = null; }
 }

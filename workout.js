@@ -110,7 +110,7 @@ export function loadLive() {
     // Mostra SOLO le sessioni del mesociclo attivo (sch.sessions
     // corrisponde sempre allo stato corrente di DB.schedules).
     sch.sessions.forEach(s => {
-        select.innerHTML += `<option value="${escHtml(s.id)}">${escHtml(s.name)}</option>`;
+        select.innerHTML += `<option value="${escHtml(s.id)}" data-sesstype="${escHtml(s.sessType||'Palestra')}">${escHtml(s.name)}</option>`;
     });
 
     if (ultimaSessioneSelezionata && [...select.options].some(o => o.value === ultimaSessioneSelezionata)) {
@@ -190,12 +190,21 @@ export function loadLive() {
                     ${mods.messages.join('<br>')}
                 </div></div>`;
         }
-        wrap.innerHTML = sessionBanner + `<div style="font-size:11px; color:var(--muted); text-align:center; margin-bottom:15px;
-                               background:var(--s2); padding:8px; border-radius:8px; border:1px solid var(--border);">
+        wrap.innerHTML = sessionBanner + `
+        <div id="live-prog-header" style="padding:10px 12px;background:var(--s1);border:1px solid var(--border);border-radius:10px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
+                <span class="prog-text" style="font-size:12px;font-weight:700;color:var(--text)">0/0 esercizi</span>
+                <span class="prog-pct" style="font-size:11px;color:var(--muted)">0%</span>
+            </div>
+            <div style="height:4px;background:var(--s2);border-radius:2px;overflow:hidden">
+                <div class="prog-fill" style="width:0%;height:100%;background:var(--amber);border-radius:2px;transition:width .3s"></div>
+            </div>
+        </div>
+        <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:15px;background:var(--s2);padding:8px;border-radius:8px;border:1px solid var(--border);">
             💡 <strong style="color:var(--teal)">Tip:</strong>
             Fai <strong>Tap</strong> sul pallino per completare, oppure
             <strong>Tieni premuto</strong> per modificare Rep/Kg reali.
-          </div>`;
+        </div>`;
     }
 
     const currentWeek = document.getElementById('lv-week').value || '1';
@@ -377,8 +386,12 @@ for (let l = 0; l < actualSet; l++) {
     let isMod  = 'class="dot"';
     
     if (window.realLog && window.realLog[logKey]) {
-        label = window.realLog[logKey].rep;
-        isMod = `class="dot done" style="background:var(--purple); border-color:var(--purple); color:#fff;"`;
+        const logged = window.realLog[logKey];
+        label = logged.rep;
+        const isPr = _checkSetPR(ex, logged.rep, logged.kg, appState.selAthId);
+        isMod = isPr
+            ? `class="dot done" style="background:#f59e0b; border-color:#d97706; color:#000; font-weight:800; box-shadow:0 0 8px rgba(245,158,11,0.6);"`
+            : `class="dot done" style="background:var(--purple); border-color:var(--purple); color:#fff;"`;
     }
     dots += `<div ${isMod} id="ld-${i}-${l}">${label}</div>`;
 }
@@ -449,6 +462,7 @@ for (let l = 0; l < actualSet; l++) {
             if (!linkedToNext) {
                 restTimerHtml = `
                 <div class="timer-container" id="timer-container-${i}"
+                     data-seconds="${totalSeconds}"
                      style="display:flex; align-items:center; gap:8px; background-color:#161E2E;
                             border:1px solid #1A2235; border-radius:8px; padding:4px 10px; margin-top:0;">
                   <span style="font-size:10px; color:#F97316; font-weight:800; margin-right:4px;">REST</span>
@@ -516,6 +530,10 @@ for (let l = 0; l < actualSet; l++) {
                     <span style="font-weight:700; font-size:16px; color:#E2DDD4; flex:1 1 auto;
                                  word-wrap:break-word; min-width:0; padding-right:8px;">${escHtml(ex.name)}</span>
                     ${videoBadge}
+                    <span id="pr-badge-${i}" style="display:none;align-items:center;gap:4px;
+                          background:rgba(251,191,36,0.15);border:1px solid #f59e0b;border-radius:6px;
+                          padding:3px 8px;font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.3px;
+                          white-space:nowrap;">🏆 PR</span>
                   </div>
                   <span style="position:absolute; top:16px; right:16px; color:#00E5A8;
                                font-weight:700; font-size:15px;" id="lvol-${i}">0 kg</span>
@@ -555,8 +573,8 @@ for (let l = 0; l < actualSet; l++) {
 
                 ${ex.note
                     ? `<div style="margin-bottom:16px;">
-                         <p style="color:#A78BFA; font-size:12px; font-weight:600; margin:0 0 4px 0;">CUE Tecnici:</p>
-                         <div style="color:#A78BFA; font-size:11px; padding-left:4px; line-height:1.4;">${escHtml(ex.note)}</div>
+                         <p style="color:#A78BFA; font-size:13px; font-weight:700; margin:0 0 6px 0;">💡 CUE:</p>
+                         <div style="color:#A78BFA; font-size:12px; padding:7px 10px; background:rgba(167,139,250,.08); border-left:2px solid #A78BFA; border-radius:0 6px 6px 0; line-height:1.5;">${escHtml(ex.note)}</div>
                        </div>`
                     : ''}
 
@@ -817,9 +835,9 @@ let sKg  = parseFloat(targetKg)  || 0;
         // Proposta redirect Post-Workout (con leggero delay per iOS)
         setTimeout(function () {
             const lvSess    = document.getElementById('lv-sess');
-            const sessText  = (lvSess && lvSess.selectedIndex >= 0)
-                ? lvSess.options[lvSess.selectedIndex].text : '';
-            const tipoSess  = sessText.includes('Campo') ? 'Campo' : 'Palestra';
+            const tipoSess  = (lvSess && lvSess.selectedIndex >= 0)
+                ? (lvSess.options[lvSess.selectedIndex].dataset.sesstype || 'Palestra')
+                : 'Palestra';
 
             const existing = document.getElementById('mo-session-done');
             if (existing) existing.remove();
@@ -851,6 +869,27 @@ let sKg  = parseFloat(targetKg)  || 0;
                 document.getElementById('mo-session-done').remove();
             });
         }, 800);
+    }
+
+    // ── Aggiorna progress header ─────────────────────────────
+    const progHeader = document.getElementById('live-prog-header');
+    if (progHeader && exs.length) {
+        const workExs     = exs.map((ex, i) => ({ ex, i })).filter(({ ex }) => ex.section !== 'warmup' && ex.type !== 'circuit');
+        const completedEx = workExs.filter(({ i }) => {
+            let maxSet = 0;
+            while (document.getElementById(`ld-${i}-${maxSet}`)) maxSet++;
+            if (maxSet === 0) return false;
+            return Array.from({ length: maxSet }, (_, j) => document.getElementById(`ld-${i}-${j}`))
+                .every(d => d && d.classList.contains('done'));
+        }).length;
+        const total   = workExs.length;
+        const pct     = total ? Math.round(completedEx / total * 100) : 0;
+        const fillEl  = progHeader.querySelector('.prog-fill');
+        const textEl  = progHeader.querySelector('.prog-text');
+        const pctEl   = progHeader.querySelector('.prog-pct');
+        if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = pct === 100 ? 'var(--teal)' : 'var(--amber)'; }
+        if (textEl) textEl.textContent = `${completedEx}/${total} esercizi`;
+        if (pctEl)  pctEl.textContent  = pct + '%';
     }
 }
 
@@ -948,6 +987,12 @@ export function toggleDot(dot) {
     } else {
         // Completato: haptic feedback
         if (navigator.vibrate) navigator.vibrate(40);
+
+        // Auto-start timer REST solo per set reali (ld-) con timer configurato
+        if (dot.id.startsWith('ld-')) {
+            const exIdx = parseInt(dot.id.split('-')[1]);
+            _autoStartRestTimer(exIdx);
+        }
     }
 
     // Micro-delay necessario per far aggiornare la UI grafica prima del calcolo su iOS
@@ -1133,15 +1178,41 @@ export function saveRealLog() {
     if (!window.realLog) window.realLog = {};
     window.realLog[logKey] = { rep, kg };
 
-    // Aggiorna visivamente il pallino → Viola Elite con numero reps
+    // ── Aggiorna visivamente il pallino ──────────────────────
     const dot = document.getElementById(`ld-${exI}-${setL}`);
+
+    // Recupera esercizio per PR check
+    const _sch  = DB.schedules[appState.selAthId];
+    const _sess = _sch?.sessions?.find(s => s.id === activeSessId);
+    const _ex   = _sess?.exercises[parseInt(exI)];
+    const prE1rm = _checkSetPR(_ex, rep, kg, appState.selAthId);
+
     if (dot) {
         dot.classList.add('done');
-        dot.style.background  = 'var(--purple)';
-        dot.style.borderColor = 'var(--purple)';
-        dot.style.color       = '#fff';
-        dot.textContent       = rep;
+        if (prE1rm) {
+            dot.style.background  = '#f59e0b';
+            dot.style.borderColor = '#d97706';
+            dot.style.color       = '#000';
+            dot.style.fontWeight  = '800';
+            dot.style.boxShadow   = '0 0 8px rgba(245,158,11,0.6)';
+        } else {
+            dot.style.background  = 'var(--purple)';
+            dot.style.borderColor = 'var(--purple)';
+            dot.style.color       = '#fff';
+        }
+        dot.textContent = rep;
     }
+
+    // ── PR: badge sul card + toast + haptic ──────────────────
+    if (prE1rm) {
+        const badge = document.getElementById(`pr-badge-${exI}`);
+        if (badge) { badge.style.display = 'inline-flex'; badge.textContent = `🏆 PR — ${prE1rm}kg`; }
+        toast(`🏆 PR! ${_ex.name} — ${prE1rm}kg e1RM`);
+        if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]);
+    }
+
+    // Auto-start timer REST dopo salvataggio log reale
+    _autoStartRestTimer(parseInt(exI));
 
     // Al primo salvataggio reale: rimuove l'hint e lo sopprime per sempre
     localStorage.setItem('coachOS_hint_seen', '1');
@@ -1306,6 +1377,31 @@ export function playTimerEndSound() {
 let activeTimers = {};
 
 /**
+ * _autoStartRestTimer(exIdx)
+ * Avvia automaticamente il timer REST per un esercizio dopo il completamento di un set.
+ * Se il timer è già in corso lo riavvia da capo (nuovo set → nuovo recupero completo).
+ * Skip silenzioso se non c'è timer-container (superset NO REST o circuiti).
+ */
+function _autoStartRestTimer(exIdx) {
+    const container = document.getElementById(`timer-container-${exIdx}`);
+    if (!container) return; // NO REST o blocco circuit — skip
+    const seconds = parseInt(container.dataset.seconds) || 90;
+    if (!seconds || seconds <= 0) return;
+
+    // Ferma il timer corrente se in esecuzione, poi avvia fresco
+    if (activeTimers[exIdx]) {
+        clearInterval(activeTimers[exIdx].interval);
+        delete activeTimers[exIdx];
+        container.classList.remove('timer-running');
+        const display = document.getElementById(`timer-display-${exIdx}`);
+        const btn     = document.getElementById(`timer-btn-${exIdx}`);
+        if (display) display.textContent = formatTime(seconds);
+        if (btn)     btn.textContent     = 'START';
+    }
+    startTimer(exIdx, seconds);
+}
+
+/**
  * startTimer(exerciseId, defaultSeconds)
  * Avvia (o resetta) il timer di recupero per un esercizio.
  *   - Prima chiamata → avvia il countdown, bottone "RESET"
@@ -1430,9 +1526,17 @@ export function formatTime(seconds) {
 
 /**
  * _buildCircuitCard(ex, i)
- * Costruisce il div completo del blocco circuito per la sessione live.
+ * Dispatch per modo: circuit / emom / amrap / tabata
  */
 export function _buildCircuitCard(ex, i) {
+    const mode = ex.circuitMode || 'circuit';
+    if (mode === 'emom')   return _buildEmomCard(ex, i);
+    if (mode === 'amrap')  return _buildAmrapCard(ex, i);
+    if (mode === 'tabata') return _buildTabataCard(ex, i);
+    return _buildCircuitCardInner(ex, i);
+}
+
+function _buildCircuitCardInner(ex, i) {
     const meta    = ex.circuitMeta    || { workTime: 40, restBetweenEx: 20, restBetweenRounds: 120, rounds: 3 };
     const circExs = ex.circuitExercises || [];
 
@@ -1520,6 +1624,150 @@ export function _buildCircuitCard(ex, i) {
     return div;
 }
 
+function _buildEmomCard(ex, i) {
+    const meta    = ex.circuitMeta || {};
+    const circExs = ex.circuitExercises || [];
+    const dur     = meta.duration || 10;
+
+    const exListHtml = circExs.map((ce, idx) => {
+        const videoBadge = (ce.video && ce.video.trim())
+            ? `<a href="${ce.video}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;padding:3px 8px;text-decoration:none;flex-shrink:0;margin-left:4px;"><span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span></a>` : '';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(0,0,0,0.2);border-radius:7px;border-left:2px solid rgba(16,185,129,0.4);">
+            <span style="color:var(--teal);font-weight:800;font-size:12px;min-width:20px;">M${idx + 1}.</span>
+            <span id="circ-ex-item-${i}-${idx}" style="color:var(--text);font-size:13px;font-weight:600;">${escHtml(ce.name)}</span>
+            ${videoBadge}
+            ${ce.note ? `<span style="color:var(--muted);font-size:11px;margin-left:auto;">${escHtml(ce.note)}</span>` : ''}
+        </div>`;
+    }).join('');
+
+    const div = document.createElement('div');
+    div.style.cssText = 'width:100%;position:relative;';
+    div.innerHTML = `
+      <div class="circuit-block" id="circuit-block-${i}" style="border:2px solid rgba(16,185,129,0.3);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:20px;">⏱</span>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);">${escHtml(ex.name || 'EMOM')}</div>
+            <div style="font-size:10px;color:var(--teal);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">EMOM — ${dur} minuti · ${circExs.length} esercizi</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;padding:10px;background:rgba(0,0,0,0.25);border-radius:10px;border:1px dashed rgba(16,185,129,0.2);">
+          <div style="text-align:center;"><div style="font-size:9px;color:var(--teal);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">DURATA</div><div style="font-size:24px;font-weight:800;color:var(--text);">${dur}'</div></div>
+          <div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">PER MINUTO</div><div style="font-size:24px;font-weight:800;color:var(--text);">60"</div></div>
+          <div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">ESERCIZI</div><div style="font-size:24px;font-weight:800;color:var(--teal);">${circExs.length}</div></div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Schema EMOM</div>
+          <div id="circ-exlist-${i}" style="display:flex;flex-direction:column;gap:4px;">${exListHtml || '<div style="color:var(--muted);font-size:11px;font-style:italic;">Nessun esercizio.</div>'}</div>
+        </div>
+        <div class="circuit-timer-box" id="circ-timer-box-${i}">
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--teal);" id="circ-phase-${i}">Pronto</div>
+          <div class="circuit-time-display" id="circ-display-${i}" style="color:var(--text);">1:00</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;" id="circ-exname-${i}">${circExs[0] ? circExs[0].name : '—'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;" id="circ-progress-${i}">Minuto 1/${dur}</div>
+          <button id="circ-btn-${i}" onclick="startCircuit(${i})" style="width:100%;padding:14px;background:var(--teal);color:#000;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:0.5px;">▶ START EMOM</button>
+        </div>
+      </div>`;
+    return div;
+}
+
+function _buildAmrapCard(ex, i) {
+    const meta    = ex.circuitMeta || {};
+    const circExs = ex.circuitExercises || [];
+    const dur     = meta.duration || 12;
+
+    const exListHtml = circExs.map((ce, idx) => {
+        const videoBadge = (ce.video && ce.video.trim())
+            ? `<a href="${ce.video}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;padding:3px 8px;text-decoration:none;flex-shrink:0;margin-left:4px;"><span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span></a>` : '';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(0,0,0,0.2);border-radius:7px;border-left:2px solid rgba(59,130,246,0.4);">
+            <span style="color:var(--blue);font-weight:800;font-size:12px;min-width:18px;">${idx + 1}.</span>
+            <span id="circ-ex-item-${i}-${idx}" style="color:var(--text);font-size:13px;font-weight:600;">${escHtml(ce.name)}</span>
+            ${videoBadge}
+            ${ce.note ? `<span style="color:var(--muted);font-size:11px;margin-left:auto;">${escHtml(ce.note)}</span>` : ''}
+        </div>`;
+    }).join('');
+
+    const div = document.createElement('div');
+    div.style.cssText = 'width:100%;position:relative;';
+    div.innerHTML = `
+      <div class="circuit-block" id="circuit-block-${i}" style="border:2px solid rgba(59,130,246,0.3);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:20px;">🔁</span>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);">${escHtml(ex.name || 'AMRAP')}</div>
+            <div style="font-size:10px;color:var(--blue);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">AMRAP — ${dur} minuti</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px;padding:10px;background:rgba(0,0,0,0.25);border-radius:10px;border:1px dashed rgba(59,130,246,0.2);">
+          <div style="text-align:center;"><div style="font-size:9px;color:var(--blue);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">DURATA</div><div style="font-size:24px;font-weight:800;color:var(--text);">${dur}'</div></div>
+          <div style="text-align:center;"><div style="font-size:9px;color:var(--teal);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">GIRI COMP.</div><div style="font-size:24px;font-weight:800;color:var(--teal);" id="circ-amrap-rounds-${i}">0</div></div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Schema Round</div>
+          <div style="display:flex;flex-direction:column;gap:4px;">${exListHtml || '<div style="color:var(--muted);font-size:11px;font-style:italic;">Nessun esercizio.</div>'}</div>
+        </div>
+        <div class="circuit-timer-box" id="circ-timer-box-${i}">
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--blue);" id="circ-phase-${i}">Pronto</div>
+          <div class="circuit-time-display" id="circ-display-${i}" style="color:var(--text);">${formatTime(dur * 60)}</div>
+          <div style="font-size:13px;font-weight:700;color:var(--muted);margin-bottom:14px;" id="circ-progress-${i}">Giri completati: 0</div>
+          <button id="circ-lap-${i}" onclick="amrapLap(${i})" style="display:none;width:100%;padding:12px;background:var(--teal);color:#000;border:none;border-radius:10px;font-size:13px;font-weight:800;cursor:pointer;margin-bottom:8px;">✅ Giro Completato</button>
+          <button id="circ-btn-${i}" onclick="startCircuit(${i})" style="width:100%;padding:14px;background:var(--blue);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:0.5px;">▶ START AMRAP</button>
+        </div>
+      </div>`;
+    return div;
+}
+
+function _buildTabataCard(ex, i) {
+    const meta    = ex.circuitMeta || {};
+    const circExs = ex.circuitExercises || [];
+    const work    = meta.workTime || 20;
+    const rest    = meta.restTime || 10;
+    const rounds  = meta.rounds   || 8;
+
+    const exListHtml = circExs.map((ce, idx) => {
+        const videoBadge = (ce.video && ce.video.trim())
+            ? `<a href="${ce.video}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;padding:3px 8px;text-decoration:none;flex-shrink:0;margin-left:4px;"><span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span></a>` : '';
+        return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(0,0,0,0.2);border-radius:7px;border-left:2px solid rgba(239,68,68,0.4);">
+            <span style="color:var(--coral);font-weight:800;font-size:12px;min-width:18px;">${idx + 1}.</span>
+            <span id="circ-ex-item-${i}-${idx}" style="color:var(--text);font-size:13px;font-weight:600;">${escHtml(ce.name)}</span>
+            ${videoBadge}
+            ${ce.note ? `<span style="color:var(--muted);font-size:11px;margin-left:auto;">${escHtml(ce.note)}</span>` : ''}
+        </div>`;
+    }).join('');
+
+    const totalTime = circExs.length * rounds * (work + rest);
+    const div = document.createElement('div');
+    div.style.cssText = 'width:100%;position:relative;';
+    div.innerHTML = `
+      <div class="circuit-block" id="circuit-block-${i}" style="border:2px solid rgba(239,68,68,0.3);">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+          <span style="font-size:20px;">🔥</span>
+          <div>
+            <div style="font-size:16px;font-weight:800;color:var(--text);">${escHtml(ex.name || 'Tabata')}</div>
+            <div style="font-size:10px;color:var(--coral);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;">TABATA — ${work}s/${rest}s · ${rounds} round/es. · ~${Math.round(totalTime/60)}' tot</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px;padding:10px;background:rgba(0,0,0,0.25);border-radius:10px;border:1px dashed rgba(239,68,68,0.2);">
+          <div style="text-align:center;"><div style="font-size:9px;color:var(--coral);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">LAVORO</div><div style="font-size:24px;font-weight:800;color:var(--text);">${work}"</div></div>
+          <div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">RIPOSO</div><div style="font-size:24px;font-weight:800;color:var(--text);">${rest}"</div></div>
+          <div style="text-align:center;"><div style="font-size:9px;color:var(--teal);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">ROUND</div><div style="font-size:24px;font-weight:800;color:var(--teal);">${rounds}</div></div>
+          <div style="text-align:center;"><div style="font-size:9px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:4px;">ESERCIZI</div><div style="font-size:24px;font-weight:800;color:var(--text);">${circExs.length}</div></div>
+        </div>
+        <div style="margin-bottom:12px;">
+          <div style="font-size:11px;font-weight:800;color:var(--coral);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;">Esercizi (${circExs.length})</div>
+          <div id="circ-exlist-${i}" style="display:flex;flex-direction:column;gap:4px;">${exListHtml || '<div style="color:var(--muted);font-size:11px;font-style:italic;">Nessun esercizio.</div>'}</div>
+        </div>
+        <div class="circuit-timer-box" id="circ-timer-box-${i}">
+          <div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:1px;color:var(--coral);" id="circ-phase-${i}">Pronto</div>
+          <div class="circuit-time-display" id="circ-display-${i}" style="color:var(--text);">${work}"</div>
+          <div style="font-size:15px;font-weight:700;color:var(--text);margin-bottom:4px;" id="circ-exname-${i}">${circExs[0] ? circExs[0].name : '—'}</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:14px;" id="circ-progress-${i}">Es. 1/${circExs.length} · Round 1/${rounds}</div>
+          <button id="circ-btn-${i}" onclick="startCircuit(${i})" style="width:100%;padding:14px;background:var(--coral);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;letter-spacing:0.5px;">▶ START TABATA</button>
+        </div>
+      </div>`;
+    return div;
+}
+
 /**
  * startCircuit(circuitIdx)
  * Avvia il circuito oppure, se già in corso, lo resetta.
@@ -1544,12 +1792,15 @@ export function startCircuit(circuitIdx) {
         return;
     }
 
-    // Nuova esecuzione
+    // Nuova esecuzione — stato iniziale per-mode
+    const mode = ex.circuitMode || 'circuit';
     window.circuitStates[circuitIdx] = {
         running: true,
         phase:   'work',
         round:   1,
         exIdx:   0,
+        minute:  1,         // EMOM
+        amrapRounds: 0,     // AMRAP
         interval: null,
         endTime:  null
     };
@@ -1565,6 +1816,11 @@ export function startCircuit(circuitIdx) {
 export function _tickCircuit(circuitIdx, ex) {
     const state = window.circuitStates[circuitIdx];
     if (!state || !state.running) return;
+
+    const mode = ex.circuitMode || 'circuit';
+    if (mode === 'emom')   { _tickEmom(circuitIdx, ex, state);   return; }
+    if (mode === 'amrap')  { _tickAmrap(circuitIdx, ex, state);  return; }
+    if (mode === 'tabata') { _tickTabata(circuitIdx, ex, state); return; }
 
     const meta    = ex.circuitMeta    || {};
     const circExs = ex.circuitExercises || [];
@@ -1661,12 +1917,187 @@ export function _tickCircuit(circuitIdx, ex) {
     }, 250);
 }
 
+function _tickEmom(idx, ex, state) {
+    const meta    = ex.circuitMeta || {};
+    const circExs = ex.circuitExercises || [];
+    const dur     = meta.duration || 10;
+    const exIdx   = (state.minute - 1) % Math.max(circExs.length, 1);
+    const curEx   = circExs[exIdx];
+
+    const phaseEl  = document.getElementById(`circ-phase-${idx}`);
+    const dispEl   = document.getElementById(`circ-display-${idx}`);
+    const exNameEl = document.getElementById(`circ-exname-${idx}`);
+    const progEl   = document.getElementById(`circ-progress-${idx}`);
+    const btn      = document.getElementById(`circ-btn-${idx}`);
+    const box      = document.getElementById(`circ-timer-box-${idx}`);
+
+    if (box)     box.classList.add('circuit-running');
+    if (phaseEl) { phaseEl.textContent = `MINUTO ${state.minute}/${dur}`; phaseEl.style.color = 'var(--teal)'; }
+    if (dispEl)  { dispEl.textContent = '1:00'; dispEl.style.color = 'var(--teal)'; }
+    if (exNameEl)exNameEl.textContent = curEx ? curEx.name : '—';
+    if (progEl)  progEl.textContent   = curEx && curEx.note ? curEx.note : `Minuto ${state.minute}/${dur}`;
+    if (btn)     { btn.textContent = '■ RESET'; btn.style.background = 'var(--coral)'; btn.style.color = '#fff'; }
+
+    circExs.forEach((_, i) => {
+        const el = document.getElementById(`circ-ex-item-${idx}-${i}`);
+        if (el) { el.style.color = i === exIdx ? 'var(--teal)' : 'var(--text)'; el.style.fontWeight = i === exIdx ? '800' : '600'; }
+    });
+
+    const endTime = Date.now() + 60000;
+    state.endTime = endTime;
+    state.interval = setInterval(() => {
+        const left = Math.round((state.endTime - Date.now()) / 1000);
+        if (left <= 0) {
+            clearInterval(state.interval);
+            playTimerEndSound();
+            if (state.minute >= dur) {
+                state.running = false; window.circuitStates[idx] = null;
+                if (box)     box.classList.remove('circuit-running');
+                if (phaseEl) { phaseEl.textContent = 'COMPLETATO!'; phaseEl.style.color = 'var(--teal)'; }
+                if (dispEl)  { dispEl.textContent = '0:00'; dispEl.style.color = 'var(--teal)'; }
+                if (exNameEl)exNameEl.textContent = 'Ottimo lavoro!';
+                if (progEl)  progEl.textContent = `${dur} minuti completati`;
+                if (btn)     { btn.textContent = '▶ RICOMINCIA'; btn.style.background = 'var(--teal)'; btn.style.color = '#000'; }
+                if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+            } else {
+                state.minute++;
+                _tickEmom(idx, ex, state);
+            }
+        } else {
+            if (dispEl) dispEl.textContent = formatTime(left);
+        }
+    }, 250);
+}
+
+function _tickAmrap(idx, ex, state) {
+    const meta = ex.circuitMeta || {};
+    const dur  = (meta.duration || 12) * 60;
+
+    const phaseEl  = document.getElementById(`circ-phase-${idx}`);
+    const dispEl   = document.getElementById(`circ-display-${idx}`);
+    const progEl   = document.getElementById(`circ-progress-${idx}`);
+    const btn      = document.getElementById(`circ-btn-${idx}`);
+    const lapBtn   = document.getElementById(`circ-lap-${idx}`);
+    const box      = document.getElementById(`circ-timer-box-${idx}`);
+
+    if (box)     box.classList.add('circuit-running');
+    if (phaseEl) { phaseEl.textContent = 'IN CORSO'; phaseEl.style.color = 'var(--blue)'; }
+    if (dispEl)  { dispEl.textContent = formatTime(dur); dispEl.style.color = 'var(--blue)'; }
+    if (lapBtn)  lapBtn.style.display = 'block';
+    if (btn)     { btn.textContent = '■ STOP'; btn.style.background = 'var(--coral)'; btn.style.color = '#fff'; }
+
+    const endTime = Date.now() + dur * 1000;
+    state.endTime = endTime;
+    state.interval = setInterval(() => {
+        const left = Math.round((state.endTime - Date.now()) / 1000);
+        const rounds = state.amrapRounds || 0;
+        if (progEl) progEl.textContent = `Giri completati: ${rounds}`;
+        const roundsEl = document.getElementById(`circ-amrap-rounds-${idx}`);
+        if (roundsEl) roundsEl.textContent = rounds;
+        if (left <= 0) {
+            clearInterval(state.interval);
+            playTimerEndSound();
+            state.running = false; window.circuitStates[idx] = null;
+            if (box)     box.classList.remove('circuit-running');
+            if (phaseEl) { phaseEl.textContent = 'TEMPO!'; phaseEl.style.color = 'var(--coral)'; }
+            if (dispEl)  { dispEl.textContent = '0:00'; dispEl.style.color = 'var(--coral)'; }
+            if (progEl)  progEl.textContent = `${rounds} giri completati`;
+            if (lapBtn)  lapBtn.style.display = 'none';
+            if (btn)     { btn.textContent = '▶ RICOMINCIA'; btn.style.background = 'var(--blue)'; btn.style.color = '#fff'; }
+            if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+        } else {
+            if (dispEl) dispEl.textContent = formatTime(left);
+        }
+    }, 250);
+}
+
+export function amrapLap(idx) {
+    const state = window.circuitStates[idx];
+    if (!state || !state.running) return;
+    state.amrapRounds = (state.amrapRounds || 0) + 1;
+    if (navigator.vibrate) navigator.vibrate(50);
+    const roundsEl = document.getElementById(`circ-amrap-rounds-${idx}`);
+    if (roundsEl) roundsEl.textContent = state.amrapRounds;
+    const progEl = document.getElementById(`circ-progress-${idx}`);
+    if (progEl) progEl.textContent = `Giri completati: ${state.amrapRounds}`;
+}
+
+function _tickTabata(idx, ex, state) {
+    const meta    = ex.circuitMeta || {};
+    const circExs = ex.circuitExercises || [];
+    const work    = meta.workTime || 20;
+    const rest    = meta.restTime || 10;
+    const rounds  = meta.rounds   || 8;
+
+    const isWork   = state.phase !== 'rest-ex';
+    const phaseDur = isWork ? work : rest;
+    const curEx    = circExs[state.exIdx] || { name: '—' };
+
+    const phaseEl  = document.getElementById(`circ-phase-${idx}`);
+    const dispEl   = document.getElementById(`circ-display-${idx}`);
+    const exNameEl = document.getElementById(`circ-exname-${idx}`);
+    const progEl   = document.getElementById(`circ-progress-${idx}`);
+    const btn      = document.getElementById(`circ-btn-${idx}`);
+    const box      = document.getElementById(`circ-timer-box-${idx}`);
+
+    if (box)     box.classList.add('circuit-running');
+    if (phaseEl) { phaseEl.textContent = isWork ? 'LAVORO' : 'RIPOSO'; phaseEl.style.color = isWork ? 'var(--coral)' : 'var(--muted)'; }
+    if (dispEl)  { dispEl.textContent = formatTime(phaseDur); dispEl.style.color = isWork ? 'var(--coral)' : 'var(--muted)'; }
+    if (exNameEl)exNameEl.textContent = isWork ? curEx.name : '—';
+    if (progEl)  progEl.textContent   = `Es. ${state.exIdx + 1}/${circExs.length} · Round ${state.round}/${rounds}`;
+    if (btn)     { btn.textContent = '■ RESET'; btn.style.background = 'var(--coral)'; btn.style.color = '#fff'; }
+
+    circExs.forEach((_, i) => {
+        const el = document.getElementById(`circ-ex-item-${idx}-${i}`);
+        if (el) { el.style.color = (i === state.exIdx && isWork) ? 'var(--coral)' : 'var(--text)'; el.style.fontWeight = (i === state.exIdx && isWork) ? '800' : '600'; }
+    });
+
+    const endTime = Date.now() + phaseDur * 1000;
+    state.endTime = endTime;
+    state.interval = setInterval(() => {
+        const left = Math.round((state.endTime - Date.now()) / 1000);
+        if (left <= 0) {
+            clearInterval(state.interval);
+            playTimerEndSound();
+            if (isWork) {
+                state.phase = 'rest-ex';
+            } else {
+                state.phase = 'work';
+                if (state.round < rounds) {
+                    state.round++;
+                } else {
+                    // Tutti i round di questo esercizio finiti
+                    if (state.exIdx < circExs.length - 1) {
+                        state.exIdx++;
+                        state.round = 1;
+                    } else {
+                        // Tabata completata
+                        state.running = false; window.circuitStates[idx] = null;
+                        if (box)     box.classList.remove('circuit-running');
+                        if (phaseEl) { phaseEl.textContent = 'COMPLETATO!'; phaseEl.style.color = 'var(--teal)'; }
+                        if (dispEl)  { dispEl.textContent = '0:00'; dispEl.style.color = 'var(--teal)'; }
+                        if (exNameEl)exNameEl.textContent = 'Ottimo lavoro!';
+                        if (progEl)  progEl.textContent = `${circExs.length} esercizi · ${rounds} round completati`;
+                        if (btn)     { btn.textContent = '▶ RICOMINCIA'; btn.style.background = 'var(--coral)'; btn.style.color = '#fff'; }
+                        if (navigator.vibrate) navigator.vibrate([500, 200, 500, 200, 500]);
+                        return;
+                    }
+                }
+            }
+            _tickTabata(idx, ex, state);
+        } else {
+            if (dispEl) dispEl.textContent = formatTime(left);
+        }
+    }, 250);
+}
+
 /**
  * _resetCircuitUI(circuitIdx, ex)
  * Riporta la card del circuito allo stato idle.
  */
 export function _resetCircuitUI(circuitIdx, ex) {
-    const meta    = ex.circuitMeta    || {};
+    const mode    = ex.circuitMode || 'circuit';
+    const meta    = ex.circuitMeta || {};
     const circExs = ex.circuitExercises || [];
 
     const box     = document.getElementById(`circ-timer-box-${circuitIdx}`);
@@ -1675,16 +2106,62 @@ export function _resetCircuitUI(circuitIdx, ex) {
     const exNameEl= document.getElementById(`circ-exname-${circuitIdx}`);
     const progEl  = document.getElementById(`circ-progress-${circuitIdx}`);
     const btn     = document.getElementById(`circ-btn-${circuitIdx}`);
+    const lapBtn  = document.getElementById(`circ-lap-${circuitIdx}`);
 
-    if (box)     box.classList.remove('circuit-running');
-    if (phaseEl) { phaseEl.textContent = 'Pronto'; phaseEl.style.color = 'var(--amber)'; }
-    if (dispEl)  { dispEl.textContent = formatTime(meta.workTime || 40); dispEl.style.color = 'var(--text)'; }
-    if (exNameEl)exNameEl.textContent = circExs[0] ? circExs[0].name : '—';
-    if (progEl)  progEl.textContent = `Giro 1/${meta.rounds || 3} · Esercizio 1/${circExs.length}`;
-    if (btn)     { btn.textContent = '▶ START CIRCUITO'; btn.style.background = 'var(--amber)'; btn.style.color = '#000'; }
-
+    if (box) box.classList.remove('circuit-running');
+    if (lapBtn) lapBtn.style.display = 'none';
     circExs.forEach((_, idx) => {
         const el = document.getElementById(`circ-ex-item-${circuitIdx}-${idx}`);
         if (el) { el.style.color = 'var(--text)'; el.style.fontWeight = '600'; }
     });
+
+    if (mode === 'emom') {
+        const dur = meta.duration || 10;
+        if (phaseEl) { phaseEl.textContent = 'Pronto'; phaseEl.style.color = 'var(--teal)'; }
+        if (dispEl)  { dispEl.textContent = '1:00'; dispEl.style.color = 'var(--text)'; }
+        if (exNameEl)exNameEl.textContent = circExs[0] ? circExs[0].name : '—';
+        if (progEl)  progEl.textContent = `Minuto 1/${dur}`;
+        if (btn)     { btn.textContent = '▶ START EMOM'; btn.style.background = 'var(--teal)'; btn.style.color = '#000'; }
+    } else if (mode === 'amrap') {
+        const dur = meta.duration || 12;
+        if (phaseEl) { phaseEl.textContent = 'Pronto'; phaseEl.style.color = 'var(--blue)'; }
+        if (dispEl)  { dispEl.textContent = formatTime(dur * 60); dispEl.style.color = 'var(--text)'; }
+        if (progEl)  progEl.textContent = 'Giri completati: 0';
+        const roundsEl = document.getElementById(`circ-amrap-rounds-${circuitIdx}`);
+        if (roundsEl) roundsEl.textContent = '0';
+        if (btn)     { btn.textContent = '▶ START AMRAP'; btn.style.background = 'var(--blue)'; btn.style.color = '#fff'; }
+    } else if (mode === 'tabata') {
+        const work = meta.workTime || 20; const rounds = meta.rounds || 8;
+        if (phaseEl) { phaseEl.textContent = 'Pronto'; phaseEl.style.color = 'var(--coral)'; }
+        if (dispEl)  { dispEl.textContent = formatTime(work); dispEl.style.color = 'var(--text)'; }
+        if (exNameEl)exNameEl.textContent = circExs[0] ? circExs[0].name : '—';
+        if (progEl)  progEl.textContent = `Es. 1/${circExs.length} · Round 1/${rounds}`;
+        if (btn)     { btn.textContent = '▶ START TABATA'; btn.style.background = 'var(--coral)'; btn.style.color = '#fff'; }
+    } else {
+        if (phaseEl) { phaseEl.textContent = 'Pronto'; phaseEl.style.color = 'var(--amber)'; }
+        if (dispEl)  { dispEl.textContent = formatTime(meta.workTime || 40); dispEl.style.color = 'var(--text)'; }
+        if (exNameEl)exNameEl.textContent = circExs[0] ? circExs[0].name : '—';
+        if (progEl)  progEl.textContent = `Giro 1/${meta.rounds || 3} · Esercizio 1/${circExs.length}`;
+        if (btn)     { btn.textContent = '▶ START CIRCUITO'; btn.style.background = 'var(--amber)'; btn.style.color = '#000'; }
+    }
+}
+
+/**
+ * _checkSetPR(ex, rep, kg, athId)
+ * Restituisce l'e1RM stimato SE supera il massimo storico per quell'esercizio,
+ * altrimenti null. Usa formula Epley con RIR. Valida solo per ≤6 reps effettive.
+ */
+function _checkSetPR(ex, rep, kg, athId) {
+    if (!ex || !rep || !kg || ex.trackE1rm === false) return null;
+    const rirVal = parseInt(ex.rir);
+    const effectiveReps = rep + (isNaN(rirVal) ? 0 : rirVal);
+    if (effectiveReps <= 0 || effectiveReps > 6) return null;
+
+    const newE1rm = kg * (1 + effectiveReps / 30);
+
+    const historicBest = DB.sessions
+        .filter(s => s.athlete === athId && s.e1rmPerExercise && s.e1rmPerExercise[ex.name])
+        .reduce((best, s) => Math.max(best, s.e1rmPerExercise[ex.name] || 0), 0);
+
+    return (historicBest > 0 && newE1rm > historicBest) ? Math.round(newE1rm) : null;
 }

@@ -19,12 +19,13 @@ import { upW, setW, mkPips, renderInjuries, renderQuickWellness, qwSet, quickWel
 
 import { calculateACWR, renderAnalytics, renderAthProgressi,
          renderE1rmChart, calculateEfficiencyIndex,
-         calculateProgressionIndex, getRollingHrvTrend } from './analytics.js';
+         calculateProgressionIndex, getRollingHrvTrend,
+         renderTestDB, setTestCat, showTestChart, closeTestChart } from './analytics.js';
 
 import { loadLive, updateLiveTotals, toggleDot,
          openRealLog, saveRealLog, unlockAudio,
          startTimer, startIsoTimer, formatTime,
-         startCircuit, _resetCircuitUI,
+         startCircuit, _resetCircuitUI, amrapLap,
          saveLiveNextLoad,
          toggleIsometricTimer, abortIsometricTimer, saveTimerSet } from './workout.js';
 
@@ -52,7 +53,13 @@ import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          renderMessaggi, sendMessageCoach,
          renderAthleteChat, sendMessageAthleta, updateMsgBadge,
          renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
-         applyMacroTemplate, saveMacroPlan } from './app.js';
+         applyMacroTemplate, saveMacroPlan,
+         sendWellnessReminders,
+         openBodyCompModal, toggleSkinfoldInputs, calcBFFromSkinfolds, saveBodyComp,
+         updateSessionType, addEmom, addAmrap, addTabata,
+         calc1RM, calcHRZones, setVO2Tab, calcVO2, calcVDOT, calcPace,
+         openTestModal, onTestCategoryChange, onTestNameChange, saveTest,
+         toggleStoCard, loadMoreSto, dismissOnboarding } from './app.js';
 
 import { uid, openMo, closeMo } from './utils.js';
 import { appState, DB, replaceDB } from './state.js';
@@ -81,15 +88,17 @@ Object.assign(window, {
     // Analytics
     renderAnalytics, renderAthProgressi, renderE1rmChart,
     calculateACWR, calculateEfficiencyIndex, calculateProgressionIndex, getRollingHrvTrend,
+    renderTestDB, setTestCat, showTestChart, closeTestChart,
     // Workout
     loadLive, updateLiveTotals, openRealLog, saveRealLog,
     unlockAudio, startTimer, startIsoTimer,
-    startCircuit, _resetCircuitUI, formatTime, saveLiveNextLoad,
+    startCircuit, _resetCircuitUI, amrapLap, formatTime, saveLiveNextLoad,
     toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
     // Atleti
     renderAthletes, openNewAthleteModal, openEditAthleteModal, deleteSelectedAthlete,
     // Storico
     renderStorico, renderCoachReply, editReply, saveReply, delSess, saveSess,
+    toggleStoCard, loadMoreSto, dismissOnboarding,
     // Editor
     renderEditor, renderEdExercises, loadEditorForAthlete,
     getEdExercises, getAthleteRiskScore,
@@ -128,6 +137,16 @@ Object.assign(window, {
     // Macro Periodizzazione
     renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
     applyMacroTemplate, saveMacroPlan,
+    // Wellness notifications
+    sendWellnessReminders,
+    // Test Atletici
+    openTestModal, onTestCategoryChange, onTestNameChange, saveTest,
+    // Body Composition
+    openBodyCompModal, toggleSkinfoldInputs, calcBFFromSkinfolds, saveBodyComp,
+    // Calcolatori S&C
+    calc1RM, calcHRZones, setVO2Tab, calcVO2, calcVDOT, calcPace,
+    // Session types + conditioning
+    updateSessionType, addEmom, addAmrap, addTabata,
 });
 
 

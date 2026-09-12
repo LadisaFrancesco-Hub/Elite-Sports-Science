@@ -117,6 +117,7 @@
     <label class="fl">Note atleta</label>
     <div id="mr-notes" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--purple);min-height:60px;white-space:pre-wrap;line-height:1.5;"></div>
   </div>
+  <div id="mr-rpe-compare" style="display:none;margin-top:4px;"></div>
   <div class="fg" id="mr-vars-wrap" style="margin-top:4px;display:none">
     <label class="fl">Variazioni apportate</label>
     <div id="mr-vars" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--amber);min-height:40px;white-space:pre-wrap;line-height:1.5;"></div>
@@ -379,6 +380,7 @@
     <span class="nav-lbl">Analisi</span>
     <button class="nav-btn" onclick="go('analytics',this)"><span class="ico">↗</span>Analytics</button>
     <button class="nav-btn" onclick="go('progressione',this)"><span class="ico">⬆</span>Progressione</button>
+    <button class="nav-btn" onclick="go('calcolatori',this)"><span class="ico">🧮</span>Calcolatori S&C</button>
   </div>
   <div class="sidebar-foot">
     <button class="foot-btn" onclick="exportJSON()">⬇ Backup JSON</button>
@@ -398,6 +400,16 @@
   </div>
   <div id="dh-inattivi" style="display:none" class="card"></div>
   <div class="card" id="dh-compliance" style="margin-bottom:10px"></div>
+  <div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:14px 20px !important;">
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);">🌅 Reminder Wellness</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px;">Invia un promemoria agli atleti che non hanno ancora fatto il check-in oggi</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="wellness-reminder-status" style="font-size:10px;color:var(--muted);"></span>
+      <button class="btn btn-g btn-sm" onclick="sendWellnessReminders()" style="color:var(--amber);border-color:var(--amber);white-space:nowrap;">Invia Reminder</button>
+    </div>
+  </div>
   <div class="card" style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px !important;">
     <div>
       <div style="font-size:12px; font-weight:700; color:var(--text);">🔔 Notifiche Push</div>
@@ -447,7 +459,7 @@
     </label>
     <button class="btn btn-p btn-sm" onclick="openMo('mo-sess')">+ Sessione</button>
   </div>
-  <div class="tw"><table id="sto-table"><thead><tr><th>Data</th><th>Sessione</th><th>Atleta</th><th>W</th><th>Fase</th><th>Read.</th><th>Vol kg</th><th>sRPE</th><th>RPE</th><th>e1RM</th><th>DOMS</th><th>Flag</th><th>Risposta</th><th>Var.</th><th></th></tr></thead><tbody id="sto-body"></tbody></table></div>
+  <div class="tw"><table id="sto-table"><thead><tr><th>Data</th><th>Sessione</th><th>Atleta</th><th>W</th><th>Fase</th><th>Read.</th><th>Vol kg</th><th>sRPE</th><th>RPE (P→A)</th><th>e1RM</th><th>DOMS</th><th>Flag</th><th>Risposta</th><th>Var.</th><th></th></tr></thead><tbody id="sto-body"></tbody></table></div>
   <div style="text-align:right;margin-top:8px;font-size:10px;color:var(--muted)" id="sto-count"></div>
 </div>
 
@@ -490,6 +502,20 @@
       <div class="fg"><label class="fl">Note coach (visibili all'atleta)</label><textarea id="ed-coachnote" rows="2" placeholder="Focus tecnico, variazioni autorizzate..." oninput="syncEdCoachNote(this.value)"></textarea></div>
       <div class="fg"><label class="fl">Obiettivo seduta</label><textarea id="ed-obj" rows="2" placeholder="Es: focus accelerazione, riabilitazione spalla..."></textarea></div>
     </div>
+    <div class="fr">
+      <div class="fg" style="flex-basis:100%">
+        <label class="fl">Giorni allenamento atleta (per vista settimanale)</label>
+        <div id="ed-scheduled-days" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="1" style="accent-color:var(--teal);width:14px;height:14px"> Lun</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="2" style="accent-color:var(--teal);width:14px;height:14px"> Mar</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="3" style="accent-color:var(--teal);width:14px;height:14px"> Mer</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="4" style="accent-color:var(--teal);width:14px;height:14px"> Gio</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="5" style="accent-color:var(--teal);width:14px;height:14px"> Ven</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="6" style="accent-color:var(--teal);width:14px;height:14px"> Sab</label>
+          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="0" style="accent-color:var(--teal);width:14px;height:14px"> Dom</label>
+        </div>
+      </div>
+    </div>
   </div>
   <div style="display:flex;justify-content:between;align-items:center;gap:10px;margin-bottom:10px">
     <div class="sess-tabs" id="ed-tabs" style="margin-bottom:0; flex:1"></div>
@@ -498,6 +524,13 @@
   <div class="card" id="ed-session-details-card" style="display:none">
     <div class="fr" style="align-items:end">
       <div class="fg" style="margin-bottom:0"><label class="fl">Nome Sessione Selezionata</label><input type="text" id="ed-sess-name" oninput="renameCurrentSession(this.value)"></div>
+      <div class="fg" style="margin-bottom:0;max-width:220px"><label class="fl">Tipo Sessione</label><select id="ed-sess-type" onchange="updateSessionType(this.value)">
+        <option value="Palestra">🏋️ Palestra — Forza / Meccanica</option>
+        <option value="Campo">⚽ Campo — Tecnica / Tattica</option>
+        <option value="Corsa">🏃 Corsa — Endurance / Resistenza</option>
+        <option value="Sprint">⚡ Sprint — Velocità / Potenza</option>
+        <option value="Condizionamento">🔥 Condizionamento — Metabolico</option>
+      </select></div>
       <button class="btn btn-d btn-sm" onclick="deleteCurrentSession()">✕ Elimina Questa Sessione</button>
     </div>
   </div>
@@ -520,7 +553,10 @@
       <button class="btn btn-g btn-sm" onclick="addExType('superset')" style="color:var(--purple);border-color:var(--purple)">+ Superset</button>
       <button class="btn btn-g btn-sm" onclick="addExType('tempo')" style="color:#fbbf24;border-color:#fbbf24">+ Tempo Run</button>
       <button class="btn btn-g btn-sm" onclick="openCustomTypeModal()" style="color:var(--muted);border-color:var(--border)">+ Custom</button>
-      <button class="btn btn-sm" onclick="addCircuit()" style="color:var(--amber);border:1px solid rgba(251,191,36,0.5);background:rgba(251,191,36,0.08);">⏱ Crea Circuito</button>
+      <button class="btn btn-sm" onclick="addCircuit()" style="color:var(--amber);border:1px solid rgba(251,191,36,0.5);background:rgba(251,191,36,0.08);">⏱ Circuito</button>
+      <button class="btn btn-sm" onclick="addEmom()" style="color:var(--teal);border:1px solid rgba(16,185,129,0.5);background:rgba(16,185,129,0.08);">⏱ EMOM</button>
+      <button class="btn btn-sm" onclick="addAmrap()" style="color:var(--blue);border:1px solid rgba(59,130,246,0.5);background:rgba(59,130,246,0.08);">🔁 AMRAP</button>
+      <button class="btn btn-sm" onclick="addTabata()" style="color:var(--coral);border:1px solid rgba(239,68,68,0.5);background:rgba(239,68,68,0.08);">🔥 Tabata</button>
       <button class="btn btn-g btn-sm" onclick="exportProgramPDF()" style="color:var(--blue);border-color:var(--blue);margin-left:auto">📄 Esporta PDF</button>
       <button class="btn btn-p btn-sm" onclick="saveSchedule()">💾 Salva scheda</button>
       <button class="btn btn-sm" onclick="archiveAndNewMeso()"
@@ -754,6 +790,9 @@
     <select id="pw-type" style="background:var(--s2); color:var(--teal); font-weight:800; font-size:14px; padding:10px; border-color:var(--teal);">
       <option value="Palestra">🏋️ Palestra — Forza / Meccanica</option>
       <option value="Campo">⚽ Campo — Tecnica / Tattica</option>
+      <option value="Corsa">🏃 Corsa — Endurance / Resistenza</option>
+      <option value="Sprint">⚡ Sprint — Velocità / Potenza</option>
+      <option value="Condizionamento">🔥 Condizionamento — Metabolico</option>
     </select>
   </div>
   <div class="card" style="margin-bottom:10px">
@@ -789,9 +828,10 @@
   <div id="cr-list"></div>
 </div>
 
-<div class="panel" id="p-ath-progressi">
+<div class="panel" id="p-ath-progressi" style="padding-bottom:100px">
   <div class="ph" id="ap-title">I miei progressi</div>
   <div class="ps" id="ap-sub">Storico personale</div>
+  <div id="ap-month" style="margin-bottom:12px"></div>
   <div class="g4" id="ap-kpis" style="margin-bottom:14px"></div>
   <div class="card" style="margin-bottom:12px">
     <div class="card-t">Questa settimana</div>
@@ -803,12 +843,14 @@
   </div>
   <div class="card" style="margin-bottom:12px">
     <div class="card-t">Andamento e1RM</div>
+    <div id="ap-e1rm-filter" style="margin-bottom:8px"></div>
     <div style="position:relative;height:180px" id="ap-e1rm-wrap">
       <canvas id="ap-e1rm-chart"></canvas>
     </div>
   </div>
+  <div id="ap-bodcomp" style="margin-bottom:12px"></div>
   <div class="card">
-    <div class="card-t">Personal Records</div>
+    <div class="card-t">I miei record</div>
     <div id="ap-records"></div>
   </div>
 </div>
@@ -835,10 +877,32 @@
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px" id="an-sparks"></div>
   
   <div class="card">
-    <div class="card-t">Storico Composizione Corporea ed Antropometria</div>
-    <div id="an-antropo-history" style="font-size:12px; max-height:120px; overflow-y:auto; color:var(--text)"></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+      <div class="card-t" style="margin-bottom:0;">Composizione Corporea</div>
+      <button class="btn btn-p btn-sm" onclick="openBodyCompModal()">+ Nuova Misurazione</button>
+    </div>
+    <div id="an-bc-kpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;"></div>
+    <div style="position:relative;height:180px;margin-bottom:12px;"><canvas id="an-bc-chart"></canvas></div>
+    <div id="an-bc-history" style="font-size:12px;max-height:140px;overflow-y:auto;color:var(--text);"></div>
   </div>
   
+  <!-- Test Atletici -->
+  <div class="card" style="margin-bottom:10px;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <div class="card-t" style="margin-bottom:0;">Test Atletici</div>
+      <button class="btn btn-p btn-sm" onclick="openTestModal()">+ Nuovo Test</button>
+    </div>
+    <div id="an-test-cats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+    <div id="an-test-list"></div>
+    <div id="an-test-chart-wrap" style="display:none;margin-top:12px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span id="an-test-chart-title" style="font-size:12px;font-weight:700;color:var(--text);"></span>
+        <button onclick="closeTestChart()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
+      </div>
+      <div style="position:relative;height:160px;"><canvas id="an-test-chart"></canvas></div>
+    </div>
+  </div>
+
   <div class="card"><div class="card-t">Insight automatici</div><div id="an-insights"></div></div>
 
   <div id="peaking-wrapper"></div>
@@ -857,6 +921,95 @@
     </div>
     <div style="font-size: 10px; color: var(--muted); margin-top: 6px; text-align: center;">
       Come il recupero del Sistema Nervoso Autonomo (HRV) impatta la forza massima.
+    </div>
+  </div>
+</div>
+
+<div class="panel" id="p-calcolatori">
+  <div class="ph">Calcolatori S&C</div>
+  <div class="ps">Strumenti di calcolo integrati — nessuna app esterna necessaria</div>
+
+  <!-- 1RM -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-t">🏋️ Massimale (1RM)</div>
+    <div class="fr" style="margin-bottom:10px">
+      <div class="fg"><label class="fl">Peso sollevato (kg)</label><input type="number" id="c1rm-kg" placeholder="100" step="0.5" oninput="calc1RM()"></div>
+      <div class="fg"><label class="fl">Ripetizioni eseguite</label><input type="number" id="c1rm-rep" placeholder="5" min="1" max="15" oninput="calc1RM()"></div>
+    </div>
+    <div id="c1rm-result" style="display:none">
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px" id="c1rm-formulas"></div>
+      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Tabella % del massimale</div>
+      <div id="c1rm-table" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:12px;"></div>
+    </div>
+  </div>
+
+  <!-- Zone FC -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-t">❤️ Zone Frequenza Cardiaca</div>
+    <div class="fr" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
+      <div class="fg" style="min-width:100px"><label class="fl">Età</label><input type="number" id="chr-age" placeholder="30" oninput="calcHRZones()"></div>
+      <div class="fg" style="min-width:100px"><label class="fl">FCmax (opz.)</label><input type="number" id="chr-hrmax" placeholder="auto" oninput="calcHRZones()"></div>
+      <div class="fg" style="min-width:100px"><label class="fl">FC riposo (opz.)</label><input type="number" id="chr-hrrest" placeholder="—" oninput="calcHRZones()"></div>
+    </div>
+    <div id="chr-result"></div>
+  </div>
+
+  <!-- VO2max -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-t">🫁 VO2max</div>
+    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+      <button id="vo2-tab-cooper" onclick="setVO2Tab('cooper')" class="btn btn-p btn-sm">Cooper 12'</button>
+      <button id="vo2-tab-rockport" onclick="setVO2Tab('rockport')" class="btn btn-g btn-sm">Rockport Walk</button>
+      <button id="vo2-tab-15k" onclick="setVO2Tab('15k')" class="btn btn-g btn-sm">1.5km Run</button>
+    </div>
+    <div id="vo2-section-cooper">
+      <div class="fr">
+        <div class="fg"><label class="fl">Distanza percorsa (m)</label><input type="number" id="vo2-cooper-dist" placeholder="2800" oninput="calcVO2()"></div>
+      </div>
+    </div>
+    <div id="vo2-section-rockport" style="display:none">
+      <div class="fr" style="flex-wrap:wrap;gap:8px">
+        <div class="fg"><label class="fl">Tempo 1 miglio (mm:ss)</label><input type="text" id="vo2-rp-time" placeholder="15:00" oninput="calcVO2()"></div>
+        <div class="fg"><label class="fl">FC a fine test</label><input type="number" id="vo2-rp-hr" placeholder="130" oninput="calcVO2()"></div>
+        <div class="fg"><label class="fl">Peso (kg)</label><input type="number" id="vo2-rp-kg" placeholder="75" oninput="calcVO2()"></div>
+        <div class="fg"><label class="fl">Sesso</label><select id="vo2-rp-sex" onchange="calcVO2()"><option value="1">M</option><option value="0">F</option></select></div>
+      </div>
+    </div>
+    <div id="vo2-section-15k" style="display:none">
+      <div class="fr">
+        <div class="fg"><label class="fl">Tempo 1.5km (mm:ss)</label><input type="text" id="vo2-15k-time" placeholder="07:30" oninput="calcVO2()"></div>
+      </div>
+    </div>
+    <div id="vo2-result" style="margin-top:10px;"></div>
+  </div>
+
+  <!-- Daniels VDOT -->
+  <div class="card" style="margin-bottom:10px">
+    <div class="card-t">🏃 Zone di Corsa — Daniels VDOT</div>
+    <div class="fr" style="flex-wrap:wrap;gap:8px;margin-bottom:10px">
+      <div class="fg" style="min-width:120px"><label class="fl">Tempo gara (mm:ss o h:mm:ss)</label><input type="text" id="vdot-time" placeholder="22:30" oninput="calcVDOT()"></div>
+      <div class="fg" style="max-width:160px"><label class="fl">Distanza</label>
+        <select id="vdot-dist" onchange="calcVDOT()">
+          <option value="1500">1500m</option>
+          <option value="3000">3000m</option>
+          <option value="5000" selected>5km</option>
+          <option value="10000">10km</option>
+          <option value="21097">Mezza maratona</option>
+          <option value="42195">Maratona</option>
+        </select>
+      </div>
+    </div>
+    <div id="vdot-result"></div>
+  </div>
+
+  <!-- Pace Converter -->
+  <div class="card">
+    <div class="card-t">⏱ Convertitore Pace</div>
+    <div class="fr" style="align-items:flex-end;gap:8px;flex-wrap:wrap">
+      <div class="fg"><label class="fl">km/h</label><input type="number" id="pace-kmh" step="0.1" placeholder="12.0" oninput="calcPace('kmh')"></div>
+      <div style="padding-bottom:8px;color:var(--muted);font-weight:700">↔</div>
+      <div class="fg"><label class="fl">min/km</label><input type="text" id="pace-minkm" placeholder="5:00" oninput="calcPace('minkm')"></div>
+      <div class="fg"><label class="fl">min/miglio</label><input type="text" id="pace-minmi" placeholder="8:03" oninput="calcPace('minmi')"></div>
     </div>
   </div>
 </div>
@@ -1048,8 +1201,97 @@
     <div class="bb-item on" id="bb-oggi" onclick="go('ath-home')"><div class="bb-icon">⊙</div><div class="bb-lbl">Oggi</div></div>
     <div class="bb-item" id="bb-week" onclick="go('ath-week')"><div class="bb-icon">📅</div><div class="bb-lbl">Settimana</div></div>
     <div class="bb-item" id="bb-sess" onclick="go('sessione')"><div class="bb-icon">▶</div><div class="bb-lbl">Sessione</div></div>
-    <div class="bb-item" id="bb-well" onclick="go('wellness')"><div class="bb-icon">♡</div><div class="bb-lbl">Wellness</div></div>
+    <div class="bb-item" id="bb-prog" onclick="go('ath-progressi')" style="position:relative"><div class="bb-icon">📈</div><div class="bb-lbl">Progressi</div></div>
+    <div class="bb-item" id="bb-well" onclick="go('wellness')" style="position:relative"><div class="bb-icon">♡</div><div class="bb-lbl">Wellness</div><span id="bb-well-badge" style="display:none;position:absolute;top:4px;right:8px;width:8px;height:8px;background:var(--coral);border-radius:50%;border:2px solid var(--bg)"></span></div>
     <div class="bb-item" id="bb-coach" onclick="go('coach-reply')" style="position:relative"><div class="bb-icon">💬</div><div class="bb-lbl">Coach</div><span id="bb-msg-badge" style="display:none;position:absolute;top:4px;right:8px;background:var(--coral);color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:1px 5px;line-height:1.4">0</span></div>
+</div>
+
+<!-- ── Modale Test Atletici ───────────────────────── -->
+<div class="mo" id="mo-test">
+  <div class="mo-box" style="max-width:360px;">
+    <div class="mo-hdr">
+      <span class="mo-title">🏆 Nuovo Test Atletico</span>
+      <button class="mo-x" onclick="closeMo('mo-test')">✕</button>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Data</label><input type="date" id="tst-date"></div>
+      <div class="fg"><label class="fl">Atleta</label><select id="tst-ath"></select></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Categoria</label>
+        <select id="tst-cat" onchange="onTestCategoryChange()">
+          <option value="">Seleziona...</option>
+          <option>Velocità</option>
+          <option>Potenza</option>
+          <option>Agilità</option>
+          <option>Resistenza</option>
+          <option>Forza</option>
+          <option>Mobilità</option>
+          <option>Personalizzato</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Test</label>
+        <select id="tst-name" onchange="onTestNameChange()"><option value="">—</option></select>
+      </div>
+    </div>
+    <div id="tst-custom-name-row" style="display:none" class="fg">
+      <label class="fl">Nome test personalizzato</label>
+      <input type="text" id="tst-custom-name" placeholder="es. Illinois Agility">
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Valore</label><input type="number" id="tst-value" step="0.01" placeholder="0.00"></div>
+      <div class="fg"><label class="fl">Unità</label><input type="text" id="tst-unit" placeholder="s / cm / kg" style="max-width:80px;"></div>
+    </div>
+    <div class="fg"><label class="fl">Note</label><input type="text" id="tst-notes" placeholder="condizioni, attrezzatura..."></div>
+    <button class="btn btn-p" style="width:100%;margin-top:8px;" onclick="saveTest()">💾 Salva</button>
+  </div>
+</div>
+
+<!-- ── Modale Body Composition ─────────────────────── -->
+<div class="mo" id="mo-body-comp">
+  <div class="mo-box" style="max-width:380px;">
+    <div class="mo-hdr">
+      <span class="mo-title">📏 Nuova Misurazione</span>
+      <button class="mo-x" onclick="closeMo('mo-body-comp')">✕</button>
+    </div>
+    <div class="fg"><label class="fl">Data</label><input type="date" id="bc-date"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Peso (kg)</label><input type="number" id="bc-weight" step="0.1" placeholder="78.5"></div>
+      <div class="fg"><label class="fl">BF%</label><input type="number" id="bc-bf" step="0.1" placeholder="12.0"></div>
+    </div>
+    <div style="margin:10px 0 6px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);">
+        <input type="checkbox" id="bc-skinfold-toggle" onchange="toggleSkinfoldInputs()" style="accent-color:var(--teal);">
+        Calcola BF% da pliche cutanee (Jackson-Pollock 3 siti)
+      </label>
+    </div>
+    <div id="bc-skinfold-section" style="display:none;background:var(--s1);border-radius:8px;padding:10px;margin-bottom:8px;">
+      <div class="fr" style="margin-bottom:6px;">
+        <div class="fg" style="flex:0 0 auto;max-width:80px;">
+          <label class="fl">Sesso</label>
+          <select id="bc-sex" onchange="calcBFFromSkinfolds()">
+            <option value="M">M</option>
+            <option value="F">F</option>
+          </select>
+        </div>
+        <div class="fg" style="flex:0 0 auto;max-width:80px;">
+          <label class="fl">Età</label>
+          <input type="number" id="bc-age" placeholder="25" min="15" max="80" oninput="calcBFFromSkinfolds()">
+        </div>
+      </div>
+      <div id="bc-site-labels" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px;font-size:10px;font-weight:700;color:var(--muted);text-align:center;">
+        <span id="bc-lbl-1">PETTO</span><span id="bc-lbl-2">ADDOME</span><span id="bc-lbl-3">COSCIA</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+        <input type="number" id="bc-sf1" placeholder="mm" step="0.5" oninput="calcBFFromSkinfolds()">
+        <input type="number" id="bc-sf2" placeholder="mm" step="0.5" oninput="calcBFFromSkinfolds()">
+        <input type="number" id="bc-sf3" placeholder="mm" step="0.5" oninput="calcBFFromSkinfolds()">
+      </div>
+      <div id="bc-jp-result" style="font-size:11px;color:var(--teal);font-weight:700;text-align:center;margin-top:8px;"></div>
+    </div>
+    <div class="fg"><label class="fl">Note</label><input type="text" id="bc-notes" placeholder="es. mattino a digiuno"></div>
+    <button class="btn btn-p" style="width:100%;margin-top:8px;" onclick="saveBodyComp()">💾 Salva</button>
+  </div>
 </div>
 
 <script type="module" src="main.js"></script>
