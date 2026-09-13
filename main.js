@@ -27,11 +27,13 @@ import { loadLive, updateLiveTotals, toggleDot,
          startTimer, startIsoTimer, formatTime,
          startCircuit, _resetCircuitUI, amrapLap,
          saveLiveNextLoad,
-         toggleIsometricTimer, abortIsometricTimer, saveTimerSet } from './workout.js';
+         toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
+         openVideoModal, closeVideoModal } from './workout.js';
 
 import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          populateSelects, onAthChange, updateModalSessions,
-         renderDashboard, renderAthletes, renderStorico, renderCoachReply,
+         renderCoachOnboarding, renderDashboard, renderAthletes, renderStorico, renderCoachReply,
+         exportAthleteReport,
          renderCalendario, renderAthStorico, calPrev, calNext, calToday,
          renderEditor, renderEdExercises, renderProg,
          getEdExercises, loadEditorForAthlete,
@@ -63,6 +65,10 @@ import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
 
 import { uid, openMo, closeMo } from './utils.js';
 import { appState, DB, replaceDB } from './state.js';
+import { checkAndAwardBadges, renderBadgesSection } from './badges.js';
+import { renderNutritionCard, openNutritionModal, saveNutritionLog, saveNutritionTargets } from './nutrition.js';
+import { loadBranding, applyBranding, saveBranding, renderBrandingSettings } from './branding.js';
+import { renderTeamPanel, sendTeamInvite, revokeInvite, checkAndAcceptInvite } from './team.js';
 
 
 // ─────────────────────────────────────────────────────────────
@@ -94,6 +100,7 @@ Object.assign(window, {
     unlockAudio, startTimer, startIsoTimer,
     startCircuit, _resetCircuitUI, amrapLap, formatTime, saveLiveNextLoad,
     toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
+    openVideoModal, closeVideoModal,
     // Atleti
     renderAthletes, openNewAthleteModal, openEditAthleteModal, deleteSelectedAthlete,
     // Storico
@@ -127,10 +134,16 @@ Object.assign(window, {
     // Atleti — azioni dirette
     addAthlete,
     // Render
-    renderDashboard, renderProg,
+    renderCoachOnboarding, renderDashboard, renderProg,
     renderCalendario, renderAthStorico, calPrev, calNext, calToday,
     // PDF Export
-    exportProgramPDF,
+    exportProgramPDF, exportAthleteReport,
+    // Badge & Nutrition
+    checkAndAwardBadges, renderBadgesSection,
+    openNutritionModal, saveNutritionLog, saveNutritionTargets, renderNutritionCard,
+    // Branding & Team
+    saveBranding, renderBrandingSettings, applyBranding,
+    sendTeamInvite, revokeInvite,
     // Messaggistica
     renderMessaggi, sendMessageCoach,
     renderAthleteChat, sendMessageAthleta, updateMsgBadge,

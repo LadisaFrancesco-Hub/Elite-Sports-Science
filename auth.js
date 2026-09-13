@@ -10,6 +10,9 @@
 
 import { DB, KEY, replaceDB, appState } from './state.js';
 import { toast, escHtml }     from './utils.js';
+import { loadCoachPlan, checkUpgradeSuccess } from './billing.js';
+import { loadBranding } from './branding.js';
+import { checkAndAcceptInvite } from './team.js';
 
 // ─────────────────────────────────────────────────────────────
 // 1. SUPABASE
@@ -350,6 +353,8 @@ export async function handleLoginAdmin() {
 
     document.getElementById('login-screen').style.display = 'none';
     _showPushBanner(data.user.id, 'coach');
+    await loadCoachPlan(email);
+    loadBranding();
     resolveAppAuth('ADMIN');
 }
 
@@ -479,6 +484,10 @@ async function _autoRestoreSession(user) {
         const el = document.getElementById('login-screen');
         if (el) el.style.display = 'none';
         _showPushBanner(user.id, 'coach');
+        await loadCoachPlan(user.email);
+        loadBranding();
+        checkUpgradeSuccess();
+        checkAndAcceptInvite();
         resolveAppAuth('ADMIN');
         return;
     }

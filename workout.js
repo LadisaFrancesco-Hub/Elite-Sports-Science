@@ -414,11 +414,12 @@ for (let l = 0; l < actualSet; l++) {
 
             // ── Badge video ───────────────────────────────────
             const videoBadge = ex.ytUrl
-                ? `<a href="${ex.ytUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;
+                ? `<button onclick="openVideoModal('${ex.ytUrl}','${ex.name.replace(/'/g,"\\'")}')"
+                    style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;
                     background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:6px;
-                    padding:5px 10px;text-decoration:none;flex-shrink:0;touch-action:manipulation;">
+                    padding:5px 10px;flex-shrink:0;touch-action:manipulation;">
                     <span style="font-size:12px;">▶</span>
-                    <span style="color:#f97316;font-size:11px;font-weight:700;">Video</span></a>`
+                    <span style="color:#f97316;font-size:11px;font-weight:700;">Video</span></button>`
                 : '';
 
             // ── Composizione display carico (usa actualKg post-autoregolazione) ─
@@ -1543,11 +1544,12 @@ function _buildCircuitCardInner(ex, i) {
     const exListHtml = circExs.map((ce, idx) => {
         // Controllo se esiste il link video e genero il badge
         const videoBadge = (ce.video && ce.video.trim() !== '')
-            ? `<a href="${ce.video}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;
+            ? `<button onclick="openVideoModal('${ce.video}','${(ce.name||'').replace(/'/g,"\\'")}')"
+                style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;
                 background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;
-                padding:3px 8px;text-decoration:none;flex-shrink:0;margin-left:4px;">
+                padding:3px 8px;flex-shrink:0;margin-left:4px;">
                 <span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span>
-               </a>`
+               </button>`
             : '';
 
         return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;
@@ -1631,7 +1633,7 @@ function _buildEmomCard(ex, i) {
 
     const exListHtml = circExs.map((ce, idx) => {
         const videoBadge = (ce.video && ce.video.trim())
-            ? `<a href="${ce.video}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;padding:3px 8px;text-decoration:none;flex-shrink:0;margin-left:4px;"><span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span></a>` : '';
+            ? `<button onclick="openVideoModal('${ce.video}','${(ce.name||'').replace(/'/g,"\\'")}')" style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;padding:3px 8px;flex-shrink:0;margin-left:4px;"><span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span></button>` : '';
         return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(0,0,0,0.2);border-radius:7px;border-left:2px solid rgba(16,185,129,0.4);">
             <span style="color:var(--teal);font-weight:800;font-size:12px;min-width:20px;">M${idx + 1}.</span>
             <span id="circ-ex-item-${i}-${idx}" style="color:var(--text);font-size:13px;font-weight:600;">${escHtml(ce.name)}</span>
@@ -1678,7 +1680,7 @@ function _buildAmrapCard(ex, i) {
 
     const exListHtml = circExs.map((ce, idx) => {
         const videoBadge = (ce.video && ce.video.trim())
-            ? `<a href="${ce.video}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;padding:3px 8px;text-decoration:none;flex-shrink:0;margin-left:4px;"><span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span></a>` : '';
+            ? `<button onclick="openVideoModal('${ce.video}','${(ce.name||'').replace(/'/g,"\\'")}')" style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;padding:3px 8px;flex-shrink:0;margin-left:4px;"><span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span></button>` : '';
         return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(0,0,0,0.2);border-radius:7px;border-left:2px solid rgba(59,130,246,0.4);">
             <span style="color:var(--blue);font-weight:800;font-size:12px;min-width:18px;">${idx + 1}.</span>
             <span id="circ-ex-item-${i}-${idx}" style="color:var(--text);font-size:13px;font-weight:600;">${escHtml(ce.name)}</span>
@@ -1726,7 +1728,7 @@ function _buildTabataCard(ex, i) {
 
     const exListHtml = circExs.map((ce, idx) => {
         const videoBadge = (ce.video && ce.video.trim())
-            ? `<a href="${ce.video}" target="_blank" style="display:inline-flex;align-items:center;gap:3px;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;padding:3px 8px;text-decoration:none;flex-shrink:0;margin-left:4px;"><span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span></a>` : '';
+            ? `<button onclick="openVideoModal('${ce.video}','${(ce.name||'').replace(/'/g,"\\'")}')" style="display:inline-flex;align-items:center;gap:3px;cursor:pointer;background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:5px;padding:3px 8px;flex-shrink:0;margin-left:4px;"><span style="color:#f97316;font-size:10px;font-weight:700;">▶ Video</span></button>` : '';
         return `<div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:rgba(0,0,0,0.2);border-radius:7px;border-left:2px solid rgba(239,68,68,0.4);">
             <span style="color:var(--coral);font-weight:800;font-size:12px;min-width:18px;">${idx + 1}.</span>
             <span id="circ-ex-item-${i}-${idx}" style="color:var(--text);font-size:13px;font-weight:600;">${escHtml(ce.name)}</span>
@@ -2164,4 +2166,37 @@ function _checkSetPR(ex, rep, kg, athId) {
         .reduce((best, s) => Math.max(best, s.e1rmPerExercise[ex.name] || 0), 0);
 
     return (historicBest > 0 && newE1rm > historicBest) ? Math.round(newE1rm) : null;
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// VIDEO MODAL
+// ─────────────────────────────────────────────────────────────
+export function openVideoModal(rawUrl, title = '') {
+    const iframe = document.getElementById('mo-video-iframe');
+    const titleEl = document.getElementById('mo-video-title');
+    if (!iframe) return;
+
+    // Estrae l'ID video da qualsiasi formato YouTube
+    let videoId = '';
+    try {
+        const u = new URL(rawUrl);
+        if (u.hostname === 'youtu.be') {
+            videoId = u.pathname.slice(1).split('?')[0];
+        } else if (u.hostname.includes('youtube.com')) {
+            videoId = u.searchParams.get('v') || u.pathname.split('/').pop();
+        }
+    } catch (_) {
+        videoId = rawUrl; // fallback: tratta come ID diretto
+    }
+
+    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    if (titleEl) titleEl.textContent = title || 'Video esercizio';
+    openMo('mo-video');
+}
+
+export function closeVideoModal() {
+    const iframe = document.getElementById('mo-video-iframe');
+    if (iframe) iframe.src = ''; // stop playback
+    closeMo('mo-video');
 }

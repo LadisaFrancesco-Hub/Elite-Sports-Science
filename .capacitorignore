@@ -1,0 +1,10 @@
+*.sql
+*.md
+.git
+.claude
+node_modules
+ios
+android
+memory
+supabase/functions/*/node_modules
+.DS_Store

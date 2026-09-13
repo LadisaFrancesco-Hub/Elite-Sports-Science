@@ -21,6 +21,9 @@ import { upW, renderInjuries, renderQuickWellness } from './wellness.js';
 import { loadLive, updateLiveTotals } from './workout.js';
 import { renderAnalytics, calculateACWR, renderE1rmChart, renderAthProgressi, renderBodyComp } from './analytics.js';
 import { subscribePush } from './auth.js';
+import { canAddAthlete, showUpgradeModal } from './billing.js';
+import { checkAndAwardBadges, renderBadgesSection } from './badges.js';
+import { renderNutritionCard, openNutritionModal, saveNutritionLog, saveNutritionTargets, loadNutrition } from './nutrition.js';
 
 // ─────────────────────────────────────────────────────────────
 // MODAL HELPERS — showConfirm, copyCodiceAtleta
@@ -385,7 +388,9 @@ export function go(id, btn) {
         'ath-storico':    renderAthStorico,
         'calendario':     renderCalendario,
         'messaggi':       renderMessaggi,
-        'macro':          renderMacro
+        'macro':          renderMacro,
+        'team':           () => { import('./team.js').then(m => m.renderTeamPanel('team-panel-container')); },
+        'branding':       () => { import('./branding.js').then(m => m.renderBrandingSettings('branding-panel-container')); }
     };
     if (renders[id]) renders[id]();
 
@@ -611,7 +616,97 @@ export async function sendWellnessReminders() {
     if (statusEl) statusEl.textContent = `Inviato a ${sent} atleti oggi ✓`;
 }
 
+export function renderCoachOnboarding() {
+    const step = parseInt(localStorage.getItem('coachos_coach_onb_step') || '1', 10);
+    const container = document.getElementById('dh-kpis');
+    if (!container) return;
+
+    const panels = document.querySelectorAll('#p-dashboard > *:not(#coach-onboarding-wizard)');
+    panels.forEach(el => { el.style.display = 'none'; });
+
+    let existing = document.getElementById('coach-onboarding-wizard');
+    if (!existing) {
+        existing = document.createElement('div');
+        existing.id = 'coach-onboarding-wizard';
+        document.getElementById('p-dashboard').appendChild(existing);
+    }
+
+    const steps = [
+        { n:1, icon:'🏋️', title:'Benvenuto in CoachOS', desc:'La piattaforma di sports science per coach seri. Aggiungi il tuo primo atleta per iniziare.' },
+        { n:2, icon:'👤', title:'Aggiungi il primo atleta', desc:'Crea il profilo del tuo atleta — il sistema genererà automaticamente il codice di accesso.' },
+        { n:3, icon:'📋', title:'Crea la prima scheda', desc:'Vai nell\'Editor schede per costruire il primo programma di allenamento.' }
+    ];
+    const s = steps[step - 1];
+
+    existing.innerHTML = `
+        <div style="max-width:480px;margin:20px auto;padding:0 4px;">
+          <div style="text-align:center;margin-bottom:24px;">
+            <div style="font-size:52px;margin-bottom:12px;">${s.icon}</div>
+            <div style="font-size:22px;font-weight:800;color:var(--text);margin-bottom:8px;">${s.title}</div>
+            <div style="font-size:13px;color:var(--muted);line-height:1.6;">${s.desc}</div>
+          </div>
+          <div style="display:flex;justify-content:center;gap:6px;margin-bottom:24px;">
+            ${[1,2,3].map(i => `<div style="width:${i===step?28:8}px;height:8px;border-radius:4px;background:${i===step?'var(--teal)':'var(--border)'};transition:all .3s;"></div>`).join('')}
+          </div>
+          ${step === 1 ? `
+            <div class="card" style="margin-bottom:12px;border:1px solid var(--border);">
+              <div style="display:flex;flex-direction:column;gap:12px;">
+                ${[['📊','Analytics sportscience-grade','ACWR, HRV, e1RM, Foster index, LSI'],
+                   ['🏃','Tracking atleti completo','Wellness, injury map, ciclo, autoregolazione'],
+                   ['💬','Comunicazione integrata','Chat diretta, reply sessione, push notification'],
+                   ['📅','Programmazione avanzata','Mesocicli, fasi, periodizzazione macro']
+                  ].map(([ic,t,d]) => `<div style="display:flex;gap:12px;align-items:flex-start;">
+                    <div style="font-size:18px;flex-shrink:0;">${ic}</div>
+                    <div><div style="font-size:13px;font-weight:700;color:var(--text);">${t}</div><div style="font-size:11px;color:var(--muted);">${d}</div></div>
+                  </div>`).join('')}
+              </div>
+            </div>
+            <button onclick="window._coachOnbNext(2)" style="width:100%;padding:14px;background:var(--teal);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:8px;">
+              Aggiungi il primo atleta →
+            </button>` : ''}
+          ${step === 2 ? `
+            <button onclick="openNewAthleteModal(); window._coachOnbHint();" style="width:100%;padding:14px;background:var(--teal);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:8px;">
+              + Aggiungi atleta ora
+            </button>
+            <p style="text-align:center;font-size:11px;color:var(--muted);margin:0 0 8px;">oppure</p>
+            <button onclick="window._coachOnbNext(3)" style="width:100%;padding:12px;background:var(--s1);border:1px solid var(--border);border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;">
+              Salta per ora →
+            </button>` : ''}
+          ${step === 3 ? `
+            <button onclick="go('editor'); window._coachOnbDone();" style="width:100%;padding:14px;background:var(--teal);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;margin-bottom:8px;">
+              Vai all'Editor schede →
+            </button>
+            <button onclick="window._coachOnbDone()" style="width:100%;padding:12px;background:var(--s1);border:1px solid var(--border);border-radius:12px;color:var(--muted);font-size:13px;cursor:pointer;">
+              Ho capito, vai alla dashboard →
+            </button>` : ''}
+        </div>`;
+
+    document.getElementById('dh-title').textContent = 'Inizia';
+    const sub = document.getElementById('dh-sub'); if (sub) sub.textContent = 'Configurazione guidata';
+}
+
+window._coachOnbNext = (step) => {
+    localStorage.setItem('coachos_coach_onb_step', String(step));
+    renderCoachOnboarding();
+};
+window._coachOnbHint = () => {
+    localStorage.setItem('coachos_coach_onb_step', '3');
+};
+window._coachOnbDone = () => {
+    localStorage.setItem('coachos_coach_onboard_done', '1');
+    const wizard = document.getElementById('coach-onboarding-wizard');
+    if (wizard) wizard.remove();
+    const panels = document.querySelectorAll('#p-dashboard > *');
+    panels.forEach(el => { el.style.display = ''; });
+    renderDashboard();
+};
+
 export function renderDashboard() {
+    if (DB.athletes.length === 0 && !localStorage.getItem('coachos_coach_onboard_done')) {
+        renderCoachOnboarding();
+        return;
+    }
+
     const sess = appState.selAthId ? DB.sessions.filter(s => s.athlete === appState.selAthId) : [];
     const ath  = appState.selAthId ? athById(appState.selAthId) : null;
     document.getElementById('dh-title').textContent = ath ? ath.name : 'Seleziona un Atleta';
@@ -925,6 +1020,20 @@ function _athColor(id) {
 export function renderAthletes() {
     const grid = document.getElementById('ath-grid');
     grid.innerHTML = '';
+
+    const limitBadge = document.getElementById('ath-limit-badge');
+    if (limitBadge) {
+        const limit = appState.coachAthleteLimit ?? 3;
+        const count = DB.athletes.length;
+        if (limit < 999) {
+            const remaining = limit - count;
+            limitBadge.textContent = `${count}/${limit} atleti${remaining <= 1 ? ' — ⬆️ Upgrade per sbloccare altri' : ''}`;
+            limitBadge.style.color = remaining <= 1 ? 'var(--amber)' : 'var(--muted)';
+        } else {
+            limitBadge.textContent = `${count} atleti`;
+        }
+    }
+
     const sorted = [...DB.athletes].sort((a, b) => getAthleteRiskScore(b.id) - getAthleteRiskScore(a.id));
 
     sorted.forEach(a => {
@@ -951,6 +1060,11 @@ export function renderAthletes() {
 }
 
 export async function addAthlete() {
+    if (!canAddAthlete(DB.athletes.length)) {
+        showUpgradeModal('limit');
+        return;
+    }
+
     const name  = document.getElementById('ma-name').value.trim();
     const email = document.getElementById('ma-email').value.trim();
     if (!name)                          { toast('Inserisci il nome');         return; }
@@ -1688,6 +1802,65 @@ export function dismissOnboarding() {
 }
 
 export function renderAthStorico() {
+    const athId = window.mioIdLoggato || appState.selAthId;
+
+    // ── Timeline multi-mesociclo ──────────────────────────────
+    const timelineEl = document.getElementById('ath-meso-timeline');
+    if (timelineEl && athId) {
+        const archived  = (DB.mesocycles || []).filter(m => m.athlete_id === athId || m.athlete === athId)
+                          .sort((a, b) => (a.archived_at || '').localeCompare(b.archived_at || ''));
+        const activeSch = DB.schedules[athId];
+
+        const allMesos = [
+            ...archived.map(m => ({ ...m, active: false })),
+            ...(activeSch ? [{ meso: activeSch.meso, phase: activeSch.phase, duration: activeSch.duration,
+                               coach_note: activeSch.coachNote, objective: activeSch.objective, active: true }] : [])
+        ];
+
+        if (allMesos.length <= 1) {
+            timelineEl.innerHTML = '';
+        } else {
+            const phaseColors = { Accumulo: 'var(--teal)', Intensificazione: 'var(--amber)', Picco: 'var(--coral)', Scarico: '#60a5fa' };
+
+            const cards = allMesos.map((m, i) => {
+                const col     = phaseColors[m.phase] || 'var(--muted)';
+                const sessM   = DB.sessions.filter(s => s.athlete === athId && s.meso === m.meso && s.phase === m.phase);
+                const totalVol = sessM.reduce((a, s) => a + (s.vol || 0), 0);
+                const bestE1rm = sessM.length ? Math.max(...sessM.map(s => s.maxE1rm || 0)) : 0;
+                return `
+                <div style="display:flex;flex-direction:column;align-items:center;min-width:90px;max-width:110px">
+                  <div style="width:100%;border-radius:10px;padding:10px 8px;text-align:center;
+                       border:1px solid ${m.active ? col : 'var(--border)'};
+                       background:${m.active ? `rgba(249,115,22,.08)` : 'var(--s1)'};
+                       position:relative">
+                    ${m.active ? `<div style="position:absolute;top:-7px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:800;background:var(--teal);color:#000;padding:1px 6px;border-radius:10px;white-space:nowrap">ATTIVO</div>` : ''}
+                    <div style="font-size:10px;font-weight:800;color:${col};margin-bottom:2px">${escHtml(m.phase || '—')}</div>
+                    <div style="font-size:11px;font-weight:700;color:var(--text);margin-bottom:4px">${escHtml(m.meso || '—')}</div>
+                    ${m.duration ? `<div style="font-size:9px;color:var(--muted)">${m.duration}w</div>` : ''}
+                    ${totalVol > 0 ? `<div style="font-size:9px;color:var(--muted);margin-top:2px">${(totalVol/1000).toFixed(1)}t</div>` : ''}
+                    ${bestE1rm > 0 ? `<div style="font-size:9px;color:var(--amber)">${bestE1rm}kg</div>` : ''}
+                  </div>
+                  ${i < allMesos.length - 1 ? '' : ''}
+                </div>`;
+            }).join(`<div style="width:16px;flex-shrink:0;display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:10px;margin-top:20px">→</div>`);
+
+            const bestMeso = [...allMesos].filter(m => !m.active).reduce((best, m) => {
+                const sessM = DB.sessions.filter(s => s.athlete === athId && s.meso === m.meso && s.phase === m.phase);
+                const e1rm  = sessM.length ? Math.max(...sessM.map(s => s.maxE1rm || 0)) : 0;
+                return e1rm > (best?.e1rm || 0) ? { meso: m.meso, phase: m.phase, e1rm } : best;
+            }, null);
+
+            timelineEl.innerHTML = `
+            <div class="card" style="border:1px solid var(--border)">
+                <div class="card-t" style="margin-bottom:12px">📈 Percorso — ${allMesos.length} mesocicli</div>
+                <div style="display:flex;gap:4px;overflow-x:auto;padding-bottom:8px;align-items:flex-start">
+                    ${cards}
+                </div>
+                ${bestMeso ? `<div style="margin-top:10px;font-size:11px;color:var(--muted)">Miglior blocco: <strong style="color:var(--teal)">${escHtml(bestMeso.meso)}</strong> — e1RM ${bestMeso.e1rm}kg</div>` : ''}
+            </div>`;
+        }
+    }
+
     const list = document.getElementById('ath-sto-list');
     if (!list) return;
 
@@ -2282,7 +2455,9 @@ export async function handleExNameChange(exIdx, newName) {
     if (!sess) return;
     sess.exercises[exIdx].name = newName;
     const match = EXERCISE_LIBRARY.find(e => e.name.trim().toLowerCase() === newName.trim().toLowerCase());
-    sess.exercises[exIdx].trackE1rm = match ? match.trackE1rm : false;
+    sess.exercises[exIdx].trackE1rm      = match ? match.trackE1rm : false;
+    sess.exercises[exIdx].ytUrl          = match?.ytUrl          ?? '';
+    sess.exercises[exIdx].anatomicalZone = match?.anatomicalZone ?? (sess.exercises[exIdx].anatomicalZone || '');
     await saveDB();
 }
 
@@ -3296,6 +3471,7 @@ export async function submitFB() {
     } catch (err) { console.error(err); }
 
     initFB(); loadLive(); renderDashboard();
+    checkAndAwardBadges(appState.selAthId);
     if (window.userRole === 'ATLETA') showAthSummary(sessObj);
     window.liveE1rmDom = 0; window.liveE1rmNDom = 0; window.liveMaxE1rm = 0;
     appState.pwRpe = 0; appState.pwStars = 0;
@@ -3394,6 +3570,133 @@ export function exportProgramPDF() {
         </div>
         <div class="no-print" style="margin-top:20px;text-align:center">
             <button onclick="window.print()" style="padding:12px 32px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(249,115,22,0.3)">
+                📄 Stampa / Salva PDF
+            </button>
+        </div>
+    </body></html>`);
+    w.document.close();
+    w.focus();
+}
+
+export function exportAthleteReport() {
+    const athId = appState.selAthId;
+    const ath   = athById(athId);
+    if (!ath) { toast('Seleziona un atleta prima di generare il report.'); return; }
+
+    const now       = new Date();
+    const moKey     = now.toISOString().slice(0, 7);
+    const prevMo    = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const prevMoKey = prevMo.toISOString().slice(0, 7);
+    const monthName = now.toLocaleDateString('it-IT', { month: 'long', year: 'numeric' });
+
+    const allSess   = DB.sessions.filter(s => s.athlete === athId).sort((a,b) => a.date.localeCompare(b.date));
+    const moSess    = allSess.filter(s => s.date.startsWith(moKey));
+    const prevSess  = allSess.filter(s => s.date.startsWith(prevMoKey));
+
+    const totalVol  = moSess.reduce((a,s) => a + (s.vol||0), 0);
+    const prevVol   = prevSess.reduce((a,s) => a + (s.vol||0), 0);
+    const volDelta  = prevVol > 0 ? Math.round((totalVol - prevVol) / prevVol * 100) : null;
+    const avgRpe    = moSess.length ? (moSess.reduce((a,s) => a + (s.rpe||0), 0) / moSess.length).toFixed(1) : '—';
+    const bestE1rm  = moSess.length ? Math.max(...moSess.map(s => s.maxE1rm||0)) : 0;
+    const freq      = ath.freq || 4;
+    const compliance = freq > 0 ? Math.min(100, Math.round(moSess.length / (freq * 4) * 100)) : null;
+
+    const sch = DB.schedules[athId];
+    const acwrData = window.calculateACWR ? window.calculateACWR(athId) : null;
+
+    // Wellness dati (se disponibili)
+    const wData     = DB.wellnessByAthlete?.[athId];
+    const wellStr   = wData ? `Sonno ${wData.sleep ?? '—'}/5 · Soreness ${wData.sore ?? '—'}/5 · Readiness ${wData.readinessScore ?? '—'}` : 'Nessun dato wellness';
+
+    // Sessioni tabella
+    const sessRows = moSess.map(s => `
+        <tr>
+            <td style="padding:5px 8px">${s.date}</td>
+            <td style="padding:5px 8px">${escHtml(s.session||'')}</td>
+            <td style="padding:5px 8px;text-align:center">${((s.vol||0)/1000).toFixed(1)}t</td>
+            <td style="padding:5px 8px;text-align:center">${s.rpe||'—'}</td>
+            <td style="padding:5px 8px;text-align:center">${s.maxE1rm ? s.maxE1rm+'kg' : '—'}</td>
+            <td style="padding:5px 8px;font-size:11px;color:#555">${escHtml(s.notes||'')}</td>
+        </tr>`).join('');
+
+    const w = window.open('', '_blank');
+    if (!w) { toast('Popup bloccato — abilita i popup per esportare.'); return; }
+    w.document.write(`<!DOCTYPE html><html lang="it"><head>
+        <meta charset="UTF-8"><title>Report ${escHtml(ath.name)} — ${monthName}</title>
+        <style>
+            body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:24px;color:#1e293b;background:#fff;font-size:13px}
+            h1{font-size:20px;font-weight:800;margin:0 0 2px}
+            h2{font-size:13px;color:#64748b;font-weight:400;margin:0 0 16px}
+            .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #f97316}
+            .brand{font-size:11px;font-weight:800;color:#f97316;letter-spacing:.12em;text-transform:uppercase}
+            .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+            .kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}
+            .kpi-l{font-size:10px;text-transform:uppercase;color:#64748b;letter-spacing:.06em;margin-bottom:4px}
+            .kpi-v{font-size:20px;font-weight:800;color:#f97316}
+            .section{margin-bottom:20px}
+            .section-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #e2e8f0}
+            table{width:100%;border-collapse:collapse;font-size:12px}
+            th{padding:6px 8px;text-align:left;background:#f1f5f9;font-size:11px;border-bottom:1px solid #e2e8f0}
+            td{border-bottom:1px solid #f1f5f9}
+            .badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700}
+            .green{background:#d1fae5;color:#065f46} .amber{background:#fef3c7;color:#92400e} .red{background:#fee2e2;color:#991b1b}
+            @media print{body{padding:10px}button{display:none!important}}
+        </style>
+    </head><body>
+        <div class="header">
+            <div>
+                <h1>${escHtml(ath.name)}</h1>
+                <h2>${monthName} · ${escHtml([ath.level, ath.goal].filter(Boolean).join(' · '))}</h2>
+            </div>
+            <div class="brand">CoachOS · Report Mensile</div>
+        </div>
+
+        <div class="grid4">
+            <div class="kpi"><div class="kpi-l">Sessioni</div><div class="kpi-v">${moSess.length}</div>${compliance !== null ? `<div style="font-size:10px;color:#64748b">${compliance}% compliance</div>` : ''}</div>
+            <div class="kpi"><div class="kpi-l">Volume</div><div class="kpi-v">${(totalVol/1000).toFixed(1)}t</div>${volDelta !== null ? `<div style="font-size:10px;color:${volDelta>=0?'#065f46':'#991b1b'}">${volDelta>=0?'+':''}${volDelta}% vs mese prec.</div>` : ''}</div>
+            <div class="kpi"><div class="kpi-l">RPE medio</div><div class="kpi-v">${avgRpe}</div></div>
+            <div class="kpi"><div class="kpi-l">Miglior e1RM</div><div class="kpi-v">${bestE1rm > 0 ? bestE1rm+'kg' : '—'}</div></div>
+        </div>
+
+        ${sch ? `<div class="section">
+            <div class="section-title">Programma in corso</div>
+            <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;display:flex;gap:24px">
+                <div><strong>Mesociclo:</strong> ${escHtml(sch.meso||'—')}</div>
+                <div><strong>Fase:</strong> ${escHtml(sch.phase||'—')}</div>
+                <div><strong>Durata:</strong> ${sch.duration||4}w</div>
+                ${sch.objective ? `<div><strong>Obiettivo:</strong> ${escHtml(sch.objective)}</div>` : ''}
+            </div>
+            ${sch.coachNote ? `<div style="margin-top:8px;padding:8px 12px;background:#f8fafc;border-left:3px solid #f97316;font-size:12px"><strong>Note coach:</strong> ${escHtml(sch.coachNote)}</div>` : ''}
+        </div>` : ''}
+
+        ${acwrData ? `<div class="section">
+            <div class="section-title">Carico di lavoro (ACWR)</div>
+            <div style="display:flex;gap:16px">
+                <div>Palestra: <strong style="color:${acwrData.gym.color||'#1e293b'}">${acwrData.gym.value||'—'}</strong> <span style="color:#64748b;font-size:11px">${acwrData.gym.text||''}</span></div>
+                <div>Campo: <strong style="color:${acwrData.field.color||'#1e293b'}">${acwrData.field.value||'—'}</strong> <span style="color:#64748b;font-size:11px">${acwrData.field.text||''}</span></div>
+            </div>
+        </div>` : ''}
+
+        <div class="section">
+            <div class="section-title">Wellness (ultimo check-in)</div>
+            <div>${wellStr}</div>
+        </div>
+
+        ${moSess.length ? `<div class="section">
+            <div class="section-title">Sessioni del mese (${moSess.length})</div>
+            <table>
+                <thead><tr>
+                    <th>Data</th><th>Sessione</th><th>Volume</th><th>RPE</th><th>e1RM</th><th>Note</th>
+                </tr></thead>
+                <tbody>${sessRows}</tbody>
+            </table>
+        </div>` : ''}
+
+        <div style="margin-top:32px;text-align:center;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8">
+            Generato da CoachOS · ${new Date().toLocaleDateString('it-IT')}
+        </div>
+        <div style="margin-top:16px;text-align:center">
+            <button onclick="window.print()" style="padding:12px 32px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">
                 📄 Stampa / Salva PDF
             </button>
         </div>

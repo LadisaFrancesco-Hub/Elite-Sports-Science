@@ -28,6 +28,8 @@
 
 import { DB, appState } from './state.js';
 import { uid, escHtml, toast, athName, athById } from './utils.js';
+import { renderBadgesSection } from './badges.js';
+import { renderNutritionCard } from './nutrition.js';
 
 
 // Istanze Chart.js — distrutte e ricreate ad ogni render
@@ -1360,6 +1362,12 @@ export function renderAthProgressi() {
             bodcompEl.innerHTML = '';
         }
     }
+
+    // ── Nutrition card ────────────────────────────────────────
+    renderNutritionCard(athId);
+
+    // ── Badge / Trofei ────────────────────────────────────────
+    renderBadgesSection('ap-badges', athId);
 
     // ── Personal Records arricchiti ───────────────────────────
     const bestE1rmSess = all.filter(s => s.maxE1rm > 0).sort((a,b) => b.maxE1rm - a.maxE1rm)[0];

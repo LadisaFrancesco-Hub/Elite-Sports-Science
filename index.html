@@ -382,7 +382,16 @@
     <button class="nav-btn" onclick="go('progressione',this)"><span class="ico">⬆</span>Progressione</button>
     <button class="nav-btn" onclick="go('calcolatori',this)"><span class="ico">🧮</span>Calcolatori S&C</button>
   </div>
+  <div class="nav-group" id="nav-team-group" style="display:none">
+    <span class="nav-lbl">Team</span>
+    <button class="nav-btn" onclick="go('team',this)"><span class="ico">👥</span>Team & Coach</button>
+    <button class="nav-btn" onclick="go('branding',this)"><span class="ico">🎨</span>Branding</button>
+  </div>
   <div class="sidebar-foot">
+    <div id="plan-badge-wrap" style="text-align:center;padding:6px 0 4px;cursor:pointer;" onclick="window._showUpgradeModal && window._showUpgradeModal()">
+      <span id="plan-badge-label" style="display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(160,168,180,.12);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;">FREE</span>
+      <div id="plan-badge-sub" style="font-size:9px;color:var(--muted);margin-top:2px;display:none;">→ Passa a Pro</div>
+    </div>
     <button class="foot-btn" onclick="exportJSON()">⬇ Backup JSON</button>
     <button class="foot-btn danger" onclick="confirmReset()">⚠ Reset dati</button>
   </div>
@@ -400,6 +409,13 @@
   </div>
   <div id="dh-inattivi" style="display:none" class="card"></div>
   <div class="card" id="dh-compliance" style="margin-bottom:10px"></div>
+  <div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:14px 20px !important;">
+    <div>
+      <div style="font-size:12px;font-weight:700;color:var(--text);">📄 Report Mensile Atleta</div>
+      <div style="font-size:11px;color:var(--muted);margin-top:3px;">Genera un PDF con sessioni, volume, e1RM, ACWR e wellness</div>
+    </div>
+    <button class="btn btn-g btn-sm" onclick="exportAthleteReport()" style="color:var(--teal);border-color:rgba(249,115,22,.3);white-space:nowrap;">Esporta PDF</button>
+  </div>
   <div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:14px 20px !important;">
     <div>
       <div style="font-size:12px;font-weight:700;color:var(--text);">🌅 Reminder Wellness</div>
@@ -438,9 +454,10 @@
 <div class="panel" id="p-athletes">
   <div class="ph">Atleti</div>
   <div class="ps">Gestisci il roster — clicca su una card per selezionare</div>
-  <div style="display:flex;gap:8px;margin-bottom:14px">
+  <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
     <button class="btn btn-p" onclick="openNewAthleteModal()">+ Nuovo atleta</button>
     <button class="btn btn-sm btn-del-soft" onclick="deleteSelectedAthlete()">✕ Elimina selezionato</button>
+    <span id="ath-limit-badge" style="margin-left:auto;font-size:10px;font-family:var(--fm);color:var(--muted);"></span>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:14px" id="ath-grid"></div>
 </div>
@@ -853,6 +870,8 @@
     <div class="card-t">I miei record</div>
     <div id="ap-records"></div>
   </div>
+  <div id="ap-nutrition" style="margin-top:12px"></div>
+  <div id="ap-badges" style="margin-top:12px"></div>
 </div>
 
 <div class="panel" id="p-analytics">
@@ -1012,6 +1031,19 @@
       <div class="fg"><label class="fl">min/miglio</label><input type="text" id="pace-minmi" placeholder="8:03" oninput="calcPace('minmi')"></div>
     </div>
   </div>
+</div>
+
+<!-- ── Team & Branding panels ────────────────────────── -->
+<div class="panel" id="p-team">
+  <div class="ph">Team & Multi-Coach</div>
+  <div class="ps">Gestisci coach assistenti e condivisione atleti</div>
+  <div id="team-panel-container"></div>
+</div>
+
+<div class="panel" id="p-branding">
+  <div class="ph">Branding & White-Label</div>
+  <div class="ps">Personalizza nome app, colore e logo per i tuoi atleti</div>
+  <div id="branding-panel-container"></div>
 </div>
 
 <div class="panel" id="p-progressione">
@@ -1192,8 +1224,9 @@
 </div>
 
 <div class="panel" id="p-ath-storico">
-  <div class="ph">Le mie sessioni</div>
-  <div class="ps">Ultime 20 sessioni registrate</div>
+  <div class="ph">Storico & Progressione</div>
+  <div class="ps">Timeline mesocicli e sessioni</div>
+  <div id="ath-meso-timeline" style="margin-bottom:16px"></div>
   <div id="ath-sto-list" style="display:flex;flex-direction:column;gap:10px;margin-top:8px"></div>
 </div>
 
@@ -1291,6 +1324,42 @@
     </div>
     <div class="fg"><label class="fl">Note</label><input type="text" id="bc-notes" placeholder="es. mattino a digiuno"></div>
     <button class="btn btn-p" style="width:100%;margin-top:8px;" onclick="saveBodyComp()">💾 Salva</button>
+  </div>
+</div>
+
+<!-- ── Modale Nutrition Log ──────────────────────────── -->
+<div class="mo" id="mo-nutrition">
+  <div class="mo-box" style="max-width:360px;">
+    <div class="mo-hdr">
+      <span class="mo-title">🥗 Log Nutrizione</span>
+      <button class="mo-x" onclick="closeMo('mo-nutrition')">✕</button>
+    </div>
+    <div class="fg"><label class="fl">Data</label><input type="date" id="nut-date"></div>
+    <div class="fg"><label class="fl">Calorie totali (kcal)</label><input type="number" id="nut-kcal" placeholder="es. 2400" min="0" max="10000"></div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Proteine (g)</label><input type="number" id="nut-prot" placeholder="180" min="0" step="0.5"></div>
+      <div class="fg"><label class="fl">Carboidrati (g)</label><input type="number" id="nut-carb" placeholder="300" min="0" step="0.5"></div>
+      <div class="fg"><label class="fl">Grassi (g)</label><input type="number" id="nut-fat" placeholder="70" min="0" step="0.5"></div>
+    </div>
+    <div class="fg"><label class="fl">Note (opzionale)</label><input type="text" id="nut-note" placeholder="es. giorno di gara"></div>
+    <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="saveNutritionLog()">💾 Salva</button>
+  </div>
+</div>
+
+<!-- ── Modale Video Esercizio ────────────────────────── -->
+<div class="mo" id="mo-video">
+  <div class="mo-box" style="max-width:520px;padding:0;overflow:hidden;background:#000;">
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--border);">
+      <span id="mo-video-title" style="font-size:13px;font-weight:700;color:var(--text);">Video esercizio</span>
+      <button class="mo-x" onclick="closeVideoModal()">✕</button>
+    </div>
+    <div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;">
+      <iframe id="mo-video-iframe"
+        src="" allowfullscreen frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;">
+      </iframe>
+    </div>
   </div>
 </div>
 

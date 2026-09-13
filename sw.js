@@ -1,10 +1,10 @@
-const APP_VERSION = 'v6.37';
+const APP_VERSION = 'v6.41';
 const SHELL_CACHE   = `coachos-shell-${APP_VERSION}`;
 const RUNTIME_CACHE = `coachos-runtime-${APP_VERSION}`;
 
 // App shell: sempre offline-ready
 const SHELL_ASSETS = [
-  '/', '/index.html', '/manifest.json',
+  '/', '/index.html', '/landing.html', '/manifest.json',
   '/icons/icon-192.png', '/icons/icon-512.png',
   '/icons/icon-maskable-192.png', '/icons/icon-maskable-512.png',
   '/icons/apple-touch-icon.png',
