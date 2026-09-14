@@ -2336,95 +2336,229 @@ export function closeVideoModal() {
 
 // ─────────────────────────────────────────────────────────────
 // endWorkout()
-//   Pulsante "Fine Allenamento" — salva la sessione anche parziale
-//   (non richiede tutti i set completati) e mostra il modale
-//   di riepilogo con CTA verso il feedback.
+//   Bottom sheet che sale dal basso al termine dell'allenamento.
+//   Raccoglie RPE, stelle e nota opzionale inline — nessuna
+//   navigazione a sezioni separate. Al tap "Invia" salva la
+//   sessione e manda un messaggio strutturato in chat al coach.
 // ─────────────────────────────────────────────────────────────
 export function endWorkout() {
     const lvSess   = document.getElementById('lv-sess');
     const lvWeek   = document.getElementById('lv-week');
-    const sessName = lvSess && lvSess.selectedIndex >= 0
+    const sessName = lvSess?.selectedIndex >= 0
         ? lvSess.options[lvSess.selectedIndex].text : 'Allenamento';
-    const tipoSess = lvSess && lvSess.selectedIndex >= 0
-        ? (lvSess.options[lvSess.selectedIndex].dataset.sesstype || 'Palestra') : 'Palestra';
     const weekVal  = parseInt(lvWeek?.value) || 1;
 
     const vol     = parseInt((document.getElementById('lv-vol')?.textContent  || '0').replace(/\D/g,'')) || 0;
     const maxE1rm = parseInt((document.getElementById('lv-e1rm')?.textContent || '0').replace(/\D/g,'')) || 0;
-
-    // Conta i set completati (pallini dot.done)
     const dotsTotal = document.querySelectorAll('.dot').length;
     const dotsDone  = document.querySelectorAll('.dot.done').length;
+    const partial   = dotsDone < dotsTotal;
 
-    // Salva sessione in DB anche se parziale
-    const today = new Date().toISOString().slice(0, 10);
-    const existing = DB.sessions.find(
-        s => s.athlete === appState.selAthId && s.session === sessName && s.date === today
-    );
-    const sessionData = {
-        id:        existing?.id || ('live_end_' + uid()),
-        athlete:   appState.selAthId,
-        date:      today,
-        session:   sessName,
-        week:      weekVal,
-        phase:     DB.schedules[appState.selAthId]?.phase || 'Accumulo',
-        readiness: parseInt(document.getElementById('ring-n')?.textContent) || 80,
-        vol, maxE1rm,
-        e1rmDom:   window.liveE1rmDom  || 0,
-        e1rmNDom:  window.liveE1rmNDom || 0,
-        sRPE: 0, rpe: 0, qual: 0,
-        doms: '', flag: dotsDone < dotsTotal ? 'Parziale' : '',
-        notes: dotsDone < dotsTotal ? `Completati ${dotsDone}/${dotsTotal} set` : '',
-        reply: ''
+    let _rpe = 0, _stars = 0;
+
+    document.getElementById('ew-sheet')?.remove();
+
+    document.body.insertAdjacentHTML('beforeend', `
+    <div id="ew-sheet" style="
+        position:fixed; inset:0; z-index:99999;
+        background:rgba(0,0,0,0.55); display:flex;
+        align-items:flex-end; justify-content:center;">
+      <div id="ew-sheet-inner" style="
+          width:100%; max-width:520px;
+          background:var(--s1); border-radius:24px 24px 0 0;
+          padding:24px 20px 36px; box-shadow:0 -8px 40px rgba(0,0,0,0.4);
+          transform:translateY(100%); transition:transform .32s cubic-bezier(.32,1,.5,1);">
+
+        <!-- Handle -->
+        <div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 20px;"></div>
+
+        <!-- Stats -->
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:18px;">
+          <div style="font-size:28px;">${partial ? '💪' : '🎯'}</div>
+          <div>
+            <div style="font-size:17px;font-weight:800;color:var(--text)">
+              ${partial ? 'Allenamento completato' : 'Sessione completata!'}
+            </div>
+            <div style="font-size:12px;color:var(--muted);margin-top:2px">
+              ${sessName}${partial ? ` · ${dotsDone}/${dotsTotal} set` : ''}
+            </div>
+          </div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:20px;">
+          <div style="background:var(--s2);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px">Volume</div>
+            <div style="font-size:18px;font-weight:800;color:var(--teal)">${vol>0?Math.round(vol/100)/10+'t':'—'}</div>
+          </div>
+          <div style="background:var(--s2);border-radius:10px;padding:10px 12px;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:2px">e1RM max</div>
+            <div style="font-size:18px;font-weight:800;color:var(--amber)">${maxE1rm>0?maxE1rm+' kg':'—'}</div>
+          </div>
+        </div>
+
+        <!-- RPE -->
+        <div style="margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Com'è andata? (RPE)</div>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:6px;" id="ew-rpe-row">
+            ${[6,7,8,9,10].map(v => {
+              const col = v<=7?'#22c55e':v<=8?'#fbbf24':v<=9?'#f97316':'#ef4444';
+              return `<button data-rpe="${v}" onclick="window._ewSetRpe(${v})" style="
+                padding:12px 0;border-radius:10px;border:2px solid var(--border);
+                background:var(--s2);color:var(--text);font-size:15px;font-weight:800;
+                cursor:pointer;transition:all .15s;" id="ew-rpe-${v}">${v}</button>`;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- Stelle -->
+        <div style="margin-bottom:16px;">
+          <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Qualità sessione</div>
+          <div style="display:flex;gap:8px;" id="ew-stars-row">
+            ${[1,2,3,4,5].map(s=>`<button data-s="${s}" onclick="window._ewSetStars(${s})" style="
+              font-size:26px;background:none;border:none;cursor:pointer;padding:2px;
+              opacity:.3;transition:opacity .15s;" id="ew-star-${s}">★</button>`).join('')}
+          </div>
+        </div>
+
+        <!-- Nota -->
+        <div style="margin-bottom:20px;">
+          <input id="ew-note" type="text" placeholder="Nota al coach (opzionale)..." style="
+            width:100%;padding:12px 14px;border-radius:10px;font-size:14px;
+            background:var(--s2);border:1px solid var(--border);color:var(--text);">
+        </div>
+
+        <!-- Azioni -->
+        <button id="ew-send" style="
+          width:100%;padding:16px;border-radius:14px;border:none;
+          background:var(--teal);color:#000;font-size:16px;font-weight:800;
+          cursor:pointer;margin-bottom:10px;opacity:.45;pointer-events:none;
+          transition:opacity .2s;">Invia al coach →</button>
+        <button id="ew-skip" style="
+          width:100%;padding:12px;border-radius:14px;border:1px solid var(--border);
+          background:none;color:var(--muted);font-size:14px;cursor:pointer;">
+          Salta per ora
+        </button>
+      </div>
+    </div>`);
+
+    // Slide-up animation
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+        document.getElementById('ew-sheet-inner').style.transform = 'translateY(0)';
+    }));
+
+    // RPE selection
+    window._ewSetRpe = (v) => {
+        _rpe = v;
+        [6,7,8,9,10].forEach(x => {
+            const b = document.getElementById(`ew-rpe-${x}`);
+            if (!b) return;
+            const col = x<=7?'#22c55e':x<=8?'#fbbf24':x<=9?'#f97316':'#ef4444';
+            b.style.background  = x===v ? col : 'var(--s2)';
+            b.style.color       = x===v ? '#000' : 'var(--text)';
+            b.style.borderColor = x===v ? col : 'var(--border)';
+        });
+        _checkEwReady();
     };
 
-    if (existing) {
-        Object.assign(existing, sessionData);
-    } else {
-        DB.sessions.push(sessionData);
+    // Stars selection
+    window._ewSetStars = (s) => {
+        _stars = s;
+        [1,2,3,4,5].forEach(x => {
+            const b = document.getElementById(`ew-star-${x}`);
+            if (b) b.style.opacity = x <= s ? '1' : '.3';
+        });
+        _checkEwReady();
+    };
+
+    function _checkEwReady() {
+        const btn = document.getElementById('ew-send');
+        if (!btn) return;
+        const ready = _rpe > 0 && _stars > 0;
+        btn.style.opacity       = ready ? '1' : '.45';
+        btn.style.pointerEvents = ready ? 'auto' : 'none';
     }
-    window.saveDB();
-    window._updateFeedbackBadge?.(appState.selAthId);
 
-    // Rimuovi eventuale modale precedente
-    document.getElementById('mo-session-done')?.remove();
+    function _closeSheet() {
+        const sheet = document.getElementById('ew-sheet');
+        if (!sheet) return;
+        document.getElementById('ew-sheet-inner').style.transform = 'translateY(100%)';
+        setTimeout(() => sheet.remove(), 320);
+    }
 
-    // Mostra modale riepilogo
-    const partial = dotsDone < dotsTotal;
-    document.body.insertAdjacentHTML('beforeend', `
-        <div class="mo show" id="mo-session-done" style="z-index:99999;">
-            <div class="mo-box" style="max-width:320px; text-align:center; border:1px solid var(--teal);">
-                <div style="font-size:40px; margin-bottom:10px;">${partial ? '💪' : '🎯'}</div>
-                <div style="font-family:var(--fh); font-size:18px; font-weight:800; color:var(--teal); margin-bottom:6px;">
-                    ${partial ? 'Allenamento salvato' : 'Sessione Completata!'}
-                </div>
-                ${partial ? `<div style="font-size:12px;color:var(--amber);font-weight:700;margin-bottom:4px;">${dotsDone}/${dotsTotal} set completati</div>` : ''}
-                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;padding:12px;background:var(--s1);border-radius:10px;">
-                    <div><div style="font-size:10px;color:var(--muted)">Volume</div><div style="font-size:16px;font-weight:800;color:var(--teal)">${Math.round(vol/1000*10)/10||0}t</div></div>
-                    <div><div style="font-size:10px;color:var(--muted)">e1RM max</div><div style="font-size:16px;font-weight:800;color:var(--amber)">${maxE1rm||'—'} kg</div></div>
-                </div>
-                <div style="font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.5;">
-                    Compila il feedback per inviarlo al coach.
-                </div>
-                <div style="display:flex; flex-direction:column; gap:8px;">
-                    <button id="ew-yes" class="btn btn-p" style="width:100%; padding:14px; font-weight:800; background:var(--teal); color:#000;">
-                        Compila feedback →
-                    </button>
-                    <button id="ew-no" class="btn btn-g" style="width:100%; padding:12px;">
-                        Più tardi
-                    </button>
-                </div>
-            </div>
-        </div>`);
+    function _saveAndSend() {
+        const note   = document.getElementById('ew-note')?.value.trim() || '';
+        const today  = new Date().toISOString().slice(0, 10);
+        const athId  = appState.selAthId || window.mioIdLoggato;
+        const ath    = window.athById?.(athId);
 
-    document.getElementById('ew-yes').addEventListener('click', () => {
-        document.getElementById('mo-session-done')?.remove();
-        window.go('feedback');
-        const pwType = document.getElementById('pw-type');
-        if (pwType) pwType.value = tipoSess;
+        // Salva/aggiorna sessione con RPE e qualità
+        const existing = DB.sessions.find(
+            s => s.athlete === athId && s.session === sessName && s.date === today
+        );
+        const sessObj = {
+            id:        existing?.id || ('live_end_' + uid()),
+            athlete:   athId, date: today, session: sessName, week: weekVal,
+            phase:     DB.schedules[athId]?.phase || 'Accumulo',
+            readiness: parseInt(document.getElementById('ring-n')?.textContent) || 80,
+            vol, maxE1rm,
+            e1rmDom:  window.liveE1rmDom  || 0,
+            e1rmNDom: window.liveE1rmNDom || 0,
+            sRPE: _rpe * 60, rpe: _rpe, qual: _stars,
+            doms: '', flag: partial ? 'Parziale' : '',
+            notes: note || (partial ? `Completati ${dotsDone}/${dotsTotal} set` : ''),
+            reply: ''
+        };
+        if (existing) { Object.assign(existing, sessObj); }
+        else { DB.sessions.push(sessObj); }
+        window.saveDB();
+        window._updateFeedbackBadge?.(athId);
+
+        // Invia messaggio strutturato in chat al coach
+        const stars  = '★'.repeat(_stars) + '☆'.repeat(5 - _stars);
+        const volStr = vol > 0 ? `${Math.round(vol/100)/10}t` : null;
+        const e1Str  = maxE1rm > 0 ? `${maxE1rm}kg e1RM` : null;
+        const parts  = [sessName, volStr, e1Str, `RPE ${_rpe}`, stars].filter(Boolean);
+        const msgBody = parts.join(' · ') + (note ? `\n${note}` : '');
+
+        if (window.mySupabase) {
+            const msgRow = { athlete_id: athId, from_type: 'athlete', content: msgBody };
+            window.mySupabase.from('messages').insert([msgRow]).select().single()
+                .then(({ data, error }) => {
+                    if (!error && data) {
+                        if (!DB.messages) DB.messages = {};
+                        if (!DB.messages[athId]) DB.messages[athId] = [];
+                        DB.messages[athId].push({ ...msgRow, id: data.id, created_at: data.created_at });
+                        window.updateMsgBadge?.();
+                    }
+                });
+        }
+
+        toast('Inviato al coach!');
+        _closeSheet();
+        window.go?.('ath-home');
+    }
+
+    document.getElementById('ew-send').addEventListener('click', _saveAndSend);
+    document.getElementById('ew-skip').addEventListener('click', () => {
+        // Salva senza RPE, torna alla home
+        const today = new Date().toISOString().slice(0, 10);
+        const athId = appState.selAthId || window.mioIdLoggato;
+        const ex = DB.sessions.find(s => s.athlete === athId && s.session === sessName && s.date === today);
+        if (!ex) DB.sessions.push({
+            id: 'live_end_' + uid(), athlete: athId, date: today, session: sessName,
+            week: weekVal, phase: DB.schedules[athId]?.phase || 'Accumulo',
+            readiness: parseInt(document.getElementById('ring-n')?.textContent) || 80,
+            vol, maxE1rm, e1rmDom: window.liveE1rmDom||0, e1rmNDom: window.liveE1rmNDom||0,
+            sRPE:0, rpe:0, qual:0, doms:'', flag: partial?'Parziale':'', notes:'', reply:''
+        });
+        window.saveDB();
+        window._updateFeedbackBadge?.(athId);
+        _closeSheet();
+        window.go?.('ath-home');
     });
-    document.getElementById('ew-no').addEventListener('click', () => {
-        document.getElementById('mo-session-done')?.remove();
-        window.go('ath-home');
+
+    // Chiudi toccando lo sfondo
+    document.getElementById('ew-sheet').addEventListener('click', (e) => {
+        if (e.target.id === 'ew-sheet') _closeSheet();
     });
 }

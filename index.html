@@ -8,7 +8,7 @@
      Aggiorna ESS_REQUIRED ad ogni deploy per forzare un reset pulito su tutti i dispositivi. -->
 <script>
 (function(){
-  var ESS_REQUIRED = '6.52';
+  var ESS_REQUIRED = '6.53';
   if (localStorage.getItem('ess_cache_v') !== ESS_REQUIRED) {
     localStorage.setItem('ess_cache_v', ESS_REQUIRED);
     var p = ('serviceWorker' in navigator)
@@ -397,7 +397,8 @@
     <span class="nav-lbl">Tracking sessione</span>
     <button class="nav-btn" onclick="go('wellness',this)"><span class="ico">♡</span>Wellness</button>
     <button class="nav-btn" onclick="go('sessione',this)"><span class="ico">▶</span>Sessione</button>
-    <button class="nav-btn" onclick="go('feedback',this)"><span class="ico">✉</span>Post-workout</button>
+    <!-- [DISATTIVATO] Post-workout come sezione separata — feedback ora integrato nella bottom sheet di endWorkout() -->
+    <!-- <button class="nav-btn" onclick="go('feedback',this)"><span class="ico">✉</span>Post-workout</button> -->
     <button class="nav-btn" onclick="go('coach-reply',this)"><span class="ico">💬</span>Feedback coach</button>
   </div>
   <div class="nav-group">
