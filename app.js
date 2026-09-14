@@ -2572,6 +2572,7 @@ export function openProgressionModal(index) {
           </div>`;
     }
     openMo('mo-prog');
+    appState.currentSmartProgType = ex.series_type || null;
     const sel = document.getElementById('smart-prog-select');
     if (sel) sel.value = ex.series_type || 'manual';
 }
@@ -2590,7 +2591,11 @@ export async function saveProgressionData() {
         };
     }
     const selType = document.getElementById('smart-prog-select')?.value;
-    if (selType && selType !== 'manual') ex.series_type = selType;
+    if (selType && selType !== 'manual') {
+        ex.series_type = selType;
+    } else if (appState.currentSmartProgType) {
+        ex.series_type = appState.currentSmartProgType;
+    }
     await saveDB();
     await saveSchedule();
     renderEdExercises(); closeMo('mo-prog'); toast('Progressione salvata! ✓');
@@ -2717,6 +2722,12 @@ export function applySmartMicrocycle(type) {
         };
     }
     ex.series_type = type;
+    appState.currentSmartProgType = type;
+    // Aggiorna i campi base con i valori della settimana 1 (visibili nella griglia editor)
+    if (ex.progression && ex.progression['w1']) {
+        ex.set = ex.progression['w1'].set;
+        ex.rep = ex.progression['w1'].rep;
+    }
     saveDB().then(() => saveSchedule()).then(() => renderEdExercises());
     toast('🤖 Algoritmo applicato e salvato!');
 }
