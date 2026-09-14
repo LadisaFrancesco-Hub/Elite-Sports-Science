@@ -1317,3 +1317,15 @@ html body select:focus {
 .qw-btn:nth-child(3).on { border-color: #f59e0b; background: rgba(245,158,11,.15); }
 .qw-btn:nth-child(4).on { border-color: #84cc16; background: rgba(132,204,22,.15); }
 .qw-btn:nth-child(5).on { border-color: #10b981; background: rgba(16,185,129,.15); }
+
+/* ── Wearable chip cards ─────────────────────────────────────── */
+.wr-chip {
+  display: flex; align-items: center; gap: 5px;
+  padding: 5px 10px; border-radius: 20px;
+  border: 1.5px solid var(--border);
+  background: var(--s2); font-size: 12px; font-weight: 700;
+  white-space: nowrap; touch-action: manipulation;
+  transition: border-color .15s, background .15s;
+}
+.wr-chip:active { opacity: .75; }
+.wr-connected   { box-shadow: 0 0 6px rgba(20,184,166,.2); }

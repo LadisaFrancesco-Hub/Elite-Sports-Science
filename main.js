@@ -69,6 +69,8 @@ import { checkAndAwardBadges, renderBadgesSection } from './badges.js';
 import { renderNutritionCard, openNutritionModal, saveNutritionLog, saveNutritionTargets } from './nutrition.js';
 import { loadBranding, applyBranding, saveBranding, renderBrandingSettings } from './branding.js';
 import { renderTeamPanel, sendTeamInvite, revokeInvite, checkAndAcceptInvite } from './team.js';
+import { connectWearable, disconnectWearable, checkWearableCallback,
+         initWearable, syncWearableData, renderWearableStatus } from './wearable.js';
 
 
 // ─────────────────────────────────────────────────────────────
@@ -144,6 +146,8 @@ Object.assign(window, {
     // Branding & Team
     saveBranding, renderBrandingSettings, applyBranding,
     sendTeamInvite, revokeInvite,
+    // Wearable
+    connectWearable, disconnectWearable, syncWearableNow: () => syncWearableData(appState.selAthId, true),
     // Messaggistica
     renderMessaggi, sendMessageCoach,
     renderAthleteChat, sendMessageAthleta, updateMsgBadge,
@@ -230,6 +234,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         renderAthletes();
         renderStorico();
         renderInjuries();
+
+        // Wearable: processa eventuale callback OAuth e carica connessioni
+        await checkWearableCallback();
+        if (appState.selAthId) await initWearable(appState.selAthId);
+
+        // Auto-sync wearable quando si apre il pannello wellness
+        const _wPanel = document.getElementById('p-wellness');
+        if (_wPanel) {
+            new MutationObserver(() => {
+                if (_wPanel.classList.contains('active')) {
+                    syncWearableData(appState.selAthId);
+                }
+            }).observe(_wPanel, { attributes: true, attributeFilter: ['class'] });
+        }
 
         document.getElementById('ms-date').value = new Date().toISOString().slice(0, 10);
         setInterval(saveDB, 30000);

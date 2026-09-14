@@ -332,6 +332,9 @@ export function upW() {
     };
 
     saveWellnessCloud();
+    // Marca wellness come completato oggi (usato dal badge nav + reminder)
+    localStorage.setItem(`qw_done_${appState.selAthId}`, new Date().toISOString().slice(0, 10));
+    if (typeof window._updateWellnessBadge === 'function') window._updateWellnessBadge();
 }
 
 
@@ -885,6 +888,7 @@ export async function quickWellnessSubmit() {
     // Salva la data odierna per nascondere il widget al prossimo caricamento
     const today = new Date().toISOString().slice(0, 10);
     localStorage.setItem(`qw_done_${appState.selAthId}`, today);
+    if (typeof window._updateWellnessBadge === 'function') window._updateWellnessBadge();
 
     // Leggi il risultato dal ring aggiornato
     const readiness = parseInt(document.getElementById('ring-n')?.textContent || '0');
