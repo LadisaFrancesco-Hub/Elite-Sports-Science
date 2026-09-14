@@ -38,7 +38,7 @@ export async function loadBranding() {
 // applyBranding — applica CSS + DOM
 // ─────────────────────────────────────────────────────────────
 export function applyBranding() {
-    const name  = appState.brandName  || 'CoachOS';
+    const name  = appState.brandName  || 'Elite Sports Science';
     const color = appState.brandColor || '#f97316';
     const logo  = appState.brandLogoUrl || null;
 
