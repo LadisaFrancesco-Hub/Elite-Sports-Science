@@ -2333,3 +2333,98 @@ export function closeVideoModal() {
     if (iframe) iframe.src = ''; // stop playback
     closeMo('mo-video');
 }
+
+// ─────────────────────────────────────────────────────────────
+// endWorkout()
+//   Pulsante "Fine Allenamento" — salva la sessione anche parziale
+//   (non richiede tutti i set completati) e mostra il modale
+//   di riepilogo con CTA verso il feedback.
+// ─────────────────────────────────────────────────────────────
+export function endWorkout() {
+    const lvSess   = document.getElementById('lv-sess');
+    const lvWeek   = document.getElementById('lv-week');
+    const sessName = lvSess && lvSess.selectedIndex >= 0
+        ? lvSess.options[lvSess.selectedIndex].text : 'Allenamento';
+    const tipoSess = lvSess && lvSess.selectedIndex >= 0
+        ? (lvSess.options[lvSess.selectedIndex].dataset.sesstype || 'Palestra') : 'Palestra';
+    const weekVal  = parseInt(lvWeek?.value) || 1;
+
+    const vol     = parseInt((document.getElementById('lv-vol')?.textContent  || '0').replace(/\D/g,'')) || 0;
+    const maxE1rm = parseInt((document.getElementById('lv-e1rm')?.textContent || '0').replace(/\D/g,'')) || 0;
+
+    // Conta i set completati (pallini dot.done)
+    const dotsTotal = document.querySelectorAll('.dot').length;
+    const dotsDone  = document.querySelectorAll('.dot.done').length;
+
+    // Salva sessione in DB anche se parziale
+    const today = new Date().toISOString().slice(0, 10);
+    const existing = DB.sessions.find(
+        s => s.athlete === appState.selAthId && s.session === sessName && s.date === today
+    );
+    const sessionData = {
+        id:        existing?.id || ('live_end_' + uid()),
+        athlete:   appState.selAthId,
+        date:      today,
+        session:   sessName,
+        week:      weekVal,
+        phase:     DB.schedules[appState.selAthId]?.phase || 'Accumulo',
+        readiness: parseInt(document.getElementById('ring-n')?.textContent) || 80,
+        vol, maxE1rm,
+        e1rmDom:   window.liveE1rmDom  || 0,
+        e1rmNDom:  window.liveE1rmNDom || 0,
+        sRPE: 0, rpe: 0, qual: 0,
+        doms: '', flag: dotsDone < dotsTotal ? 'Parziale' : '',
+        notes: dotsDone < dotsTotal ? `Completati ${dotsDone}/${dotsTotal} set` : '',
+        reply: ''
+    };
+
+    if (existing) {
+        Object.assign(existing, sessionData);
+    } else {
+        DB.sessions.push(sessionData);
+    }
+    window.saveDB();
+    window._updateFeedbackBadge?.(appState.selAthId);
+
+    // Rimuovi eventuale modale precedente
+    document.getElementById('mo-session-done')?.remove();
+
+    // Mostra modale riepilogo
+    const partial = dotsDone < dotsTotal;
+    document.body.insertAdjacentHTML('beforeend', `
+        <div class="mo show" id="mo-session-done" style="z-index:99999;">
+            <div class="mo-box" style="max-width:320px; text-align:center; border:1px solid var(--teal);">
+                <div style="font-size:40px; margin-bottom:10px;">${partial ? '💪' : '🎯'}</div>
+                <div style="font-family:var(--fh); font-size:18px; font-weight:800; color:var(--teal); margin-bottom:6px;">
+                    ${partial ? 'Allenamento salvato' : 'Sessione Completata!'}
+                </div>
+                ${partial ? `<div style="font-size:12px;color:var(--amber);font-weight:700;margin-bottom:4px;">${dotsDone}/${dotsTotal} set completati</div>` : ''}
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;padding:12px;background:var(--s1);border-radius:10px;">
+                    <div><div style="font-size:10px;color:var(--muted)">Volume</div><div style="font-size:16px;font-weight:800;color:var(--teal)">${Math.round(vol/1000*10)/10||0}t</div></div>
+                    <div><div style="font-size:10px;color:var(--muted)">e1RM max</div><div style="font-size:16px;font-weight:800;color:var(--amber)">${maxE1rm||'—'} kg</div></div>
+                </div>
+                <div style="font-size:13px; color:var(--muted); margin-bottom:18px; line-height:1.5;">
+                    Compila il feedback per inviarlo al coach.
+                </div>
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <button id="ew-yes" class="btn btn-p" style="width:100%; padding:14px; font-weight:800; background:var(--teal); color:#000;">
+                        Compila feedback →
+                    </button>
+                    <button id="ew-no" class="btn btn-g" style="width:100%; padding:12px;">
+                        Più tardi
+                    </button>
+                </div>
+            </div>
+        </div>`);
+
+    document.getElementById('ew-yes').addEventListener('click', () => {
+        document.getElementById('mo-session-done')?.remove();
+        window.go('feedback');
+        const pwType = document.getElementById('pw-type');
+        if (pwType) pwType.value = tipoSess;
+    });
+    document.getElementById('ew-no').addEventListener('click', () => {
+        document.getElementById('mo-session-done')?.remove();
+        window.go('ath-home');
+    });
+}

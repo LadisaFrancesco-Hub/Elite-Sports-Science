@@ -28,7 +28,7 @@ import { loadLive, updateLiveTotals, toggleDot,
          startCircuit, _resetCircuitUI, amrapLap,
          saveLiveNextLoad,
          toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
-         openVideoModal, closeVideoModal } from './workout.js';
+         openVideoModal, closeVideoModal, endWorkout } from './workout.js';
 
 import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          populateSelects, onAthChange, updateModalSessions,
@@ -102,7 +102,7 @@ Object.assign(window, {
     unlockAudio, startTimer, startIsoTimer,
     startCircuit, _resetCircuitUI, amrapLap, formatTime, saveLiveNextLoad,
     toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
-    openVideoModal, closeVideoModal,
+    openVideoModal, closeVideoModal, endWorkout,
     // Atleti
     renderAthletes, openNewAthleteModal, openEditAthleteModal, deleteSelectedAthlete,
     // Storico

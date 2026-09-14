@@ -8,7 +8,7 @@
      Aggiorna ESS_REQUIRED ad ogni deploy per forzare un reset pulito su tutti i dispositivi. -->
 <script>
 (function(){
-  var ESS_REQUIRED = '6.51';
+  var ESS_REQUIRED = '6.52';
   if (localStorage.getItem('ess_cache_v') !== ESS_REQUIRED) {
     localStorage.setItem('ess_cache_v', ESS_REQUIRED);
     var p = ('serviceWorker' in navigator)
@@ -846,6 +846,16 @@
       Il grafico mostra il picco massimo di e1RM registrato settimana per settimana.
     </div>
   </div>
+
+  <!-- Pulsante Fine Allenamento -->
+  <button onclick="endWorkout()" style="
+    width:100%; padding:16px; margin-top:4px; margin-bottom:8px;
+    background:var(--s1); border:2px solid var(--teal);
+    border-radius:14px; color:var(--teal);
+    font-size:16px; font-weight:800; letter-spacing:0.3px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
+    <span>✓</span> Fine Allenamento
+  </button>
 </div>
 
 <div class="panel" id="p-feedback">
