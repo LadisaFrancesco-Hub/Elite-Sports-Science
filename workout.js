@@ -2413,10 +2413,11 @@ export function endWorkout() {
         <!-- Stelle -->
         <div style="margin-bottom:16px;">
           <div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Qualità sessione</div>
-          <div style="display:flex;gap:8px;" id="ew-stars-row">
+          <div style="display:flex;gap:0;justify-content:space-between;" id="ew-stars-row">
             ${[1,2,3,4,5].map(s=>`<button data-s="${s}" onclick="window._ewSetStars(${s})" style="
-              font-size:26px;background:none;border:none;cursor:pointer;padding:2px;
-              opacity:.3;transition:opacity .15s;" id="ew-star-${s}">★</button>`).join('')}
+              font-size:36px;background:none;border:none;cursor:pointer;padding:4px 6px;
+              color:#fbbf24;opacity:.25;transition:opacity .15s,transform .1s;
+              touch-action:manipulation;" id="ew-star-${s}">★</button>`).join('')}
           </div>
         </div>
 
@@ -2465,7 +2466,9 @@ export function endWorkout() {
         _stars = s;
         [1,2,3,4,5].forEach(x => {
             const b = document.getElementById(`ew-star-${x}`);
-            if (b) b.style.opacity = x <= s ? '1' : '.3';
+            if (!b) return;
+            b.style.opacity   = x <= s ? '1' : '.25';
+            b.style.transform = x <= s ? 'scale(1.15)' : 'scale(1)';
         });
         _checkEwReady();
     };
