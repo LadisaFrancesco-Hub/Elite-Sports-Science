@@ -1181,7 +1181,14 @@ export async function subscribePush(userId, userType, athleteId = null, showToas
 // 17. Service Worker
 // ─────────────────────────────────────────────────────────────
 if ('serviceWorker' in navigator) {
+    let _swReg = null;
+
     navigator.serviceWorker.register('./sw.js').then(reg => {
+        _swReg = reg;
+
+        // Controlla subito se c'è un aggiornamento disponibile
+        reg.update().catch(() => {});
+
         if (reg.waiting) _showUpdateBanner(reg.waiting);
         reg.addEventListener('updatefound', () => {
             const newWorker = reg.installing;
@@ -1192,6 +1199,14 @@ if ('serviceWorker' in navigator) {
             });
         });
     }).catch(err => console.log('SW Error:', err));
+
+    // Ogni volta che l'app torna in foreground (es. atleta riapre dal dock)
+    // forza il check per un nuovo SW — bypassa il limite di 24h del browser
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && _swReg) {
+            _swReg.update().catch(() => {});
+        }
+    });
 
     // Deep linking: tap su notifica → naviga al pannello corretto
     navigator.serviceWorker.addEventListener('message', event => {
