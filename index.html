@@ -8,7 +8,7 @@
      Aggiorna ESS_REQUIRED ad ogni deploy per forzare un reset pulito su tutti i dispositivi. -->
 <script>
 (function(){
-  var ESS_REQUIRED = '6.55';
+  var ESS_REQUIRED = '6.56';
   if (localStorage.getItem('ess_cache_v') !== ESS_REQUIRED) {
     localStorage.setItem('ess_cache_v', ESS_REQUIRED);
     var p = ('serviceWorker' in navigator)
@@ -393,14 +393,8 @@
     <button class="nav-btn" onclick="go('editor',this)"><span class="ico">✎</span>Editor schede</button>
     <button class="nav-btn" onclick="go('macro',this)"><span class="ico">📅</span>Macro Periodiz.</button>
   </div>
-  <div class="nav-group">
-    <span class="nav-lbl">Tracking sessione</span>
-    <button class="nav-btn" onclick="go('wellness',this)"><span class="ico">♡</span>Wellness</button>
-    <button class="nav-btn" onclick="go('sessione',this)"><span class="ico">▶</span>Sessione</button>
-    <!-- [DISATTIVATO] Post-workout come sezione separata — feedback ora integrato nella bottom sheet di endWorkout() -->
-    <!-- <button class="nav-btn" onclick="go('feedback',this)"><span class="ico">✉</span>Post-workout</button> -->
-    <button class="nav-btn" onclick="go('coach-reply',this)"><span class="ico">💬</span>Feedback coach</button>
-  </div>
+  <!-- [RIMOSSO dalla sidebar coach] Wellness, Sessione, Feedback coach sono pannelli atleta.
+       Accessibili dall'atleta via bottom bar. Il coach accede al feedback atleta da Storico e Messaggi. -->
   <div class="nav-group">
     <span class="nav-lbl">Analisi</span>
     <button class="nav-btn" onclick="go('analytics',this)"><span class="ico">↗</span>Analytics</button>
