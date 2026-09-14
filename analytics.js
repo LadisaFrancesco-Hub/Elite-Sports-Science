@@ -1367,7 +1367,9 @@ export function renderAthProgressi() {
     renderNutritionCard(athId);
 
     // ── Badge / Trofei ────────────────────────────────────────
-    renderBadgesSection('ap-badges', athId);
+    // [TEMPORANEAMENTE DISATTIVATO] Bacheca trofei — nascosta su richiesta del 2026-09-14.
+    // Feature completa e funzionante in badges.js. Per riattivare: decommentare la riga sotto.
+    // renderBadgesSection('ap-badges', athId);
 
     // ── Personal Records arricchiti ───────────────────────────
     const bestE1rmSess = all.filter(s => s.maxE1rm > 0).sort((a,b) => b.maxE1rm - a.maxE1rm)[0];
