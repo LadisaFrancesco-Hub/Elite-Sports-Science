@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.50';
+const APP_VERSION = 'v6.51';
 const SHELL_CACHE   = `coachos-shell-${APP_VERSION}`;
 const RUNTIME_CACHE = `coachos-runtime-${APP_VERSION}`;
 
@@ -47,27 +47,21 @@ self.addEventListener('fetch', (event) => {
   if (!request.url.startsWith('http')) return;
   if (url.hostname.includes('supabase.co')) return;
 
-  // 1. Navigazione → shell cache-first (SPA: serve sempre /index.html)
+  // 1. Navigazione → network-first (sempre contenuto fresco; cache come fallback offline)
   if (request.mode === 'navigate') {
-    event.respondWith(
-      caches.match('/index.html')
-        .then(cached => cached || fetch('/index.html'))
-        .catch(() => new Response('Offline — riconnettiti e ricarica.', {
-          status: 503, headers: { 'Content-Type': 'text/plain; charset=utf-8' }
-        }))
-    );
+    event.respondWith(networkFirst(request, SHELL_CACHE));
     return;
   }
 
-  // 2. Shell assets (manifest, icone) → cache-first
+  // 2. Shell assets (manifest, icone) → network-first con fallback cache
   if (url.origin === self.location.origin && SHELL_ASSETS.includes(url.pathname)) {
-    event.respondWith(cacheFirst(request, SHELL_CACHE));
+    event.respondWith(networkFirst(request, SHELL_CACHE));
     return;
   }
 
-  // 3. Asset statici (JS, CSS, immagini, font) → stale-while-revalidate
+  // 3. Asset statici (JS, CSS) → network-first (aggiornamenti immediati; cache solo offline)
   if (url.origin === self.location.origin && STATIC_EXT.test(url.pathname)) {
-    event.respondWith(staleWhileRevalidate(request, RUNTIME_CACHE));
+    event.respondWith(networkFirst(request, RUNTIME_CACHE));
     return;
   }
 
