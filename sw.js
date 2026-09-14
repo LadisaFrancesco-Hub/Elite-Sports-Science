@@ -1,4 +1,4 @@
-const APP_VERSION = 'v6.54';
+const APP_VERSION = 'v6.55';
 const SHELL_CACHE   = `coachos-shell-${APP_VERSION}`;
 const RUNTIME_CACHE = `coachos-runtime-${APP_VERSION}`;
 
