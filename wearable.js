@@ -16,35 +16,35 @@ import { toast } from './utils.js';
 // ─────────────────────────────────────────────────────────────
 // Configurazione piattaforme
 // ─────────────────────────────────────────────────────────────
+// [TEMPORANEAMENTE] Tutte le piattaforme in comingSoon — 2026-09-14.
+// Per attivare singolarmente: rimuovere comingSoon:true e ripristinare
+// authUrl/scope/clientId dalla sezione commento sotto.
 const PLATFORMS = {
     whoop: {
-        name:    'Whoop',
-        icon:    '⚡',
-        color:   '#00f19f',
-        authUrl: 'https://api.prod.whoop.com/oauth/oauth2/auth',
-        scope:   'read:recovery read:sleep read:profile read:body_measurement offline',
-        // WHOOP_CLIENT_ID deve essere impostato come secret Supabase
-        // Per il flow browser usa il Client ID pubblico (non il secret)
-        clientId: (typeof WHOOP_PUBLIC_CLIENT_ID !== 'undefined') ? WHOOP_PUBLIC_CLIENT_ID : '',
+        name:      'Whoop',
+        color:     '#00f19f',
+        comingSoon: true,
+        // authUrl:  'https://api.prod.whoop.com/oauth/oauth2/auth',
+        // scope:    'read:recovery read:sleep read:profile read:body_measurement offline',
+        // clientId: (typeof WHOOP_PUBLIC_CLIENT_ID !== 'undefined') ? WHOOP_PUBLIC_CLIENT_ID : '',
     },
     polar: {
-        name:    'Polar',
-        icon:    '🎯',
-        color:   '#c0392b',
-        authUrl: 'https://flow.polar.com/oauth2/authorization',
-        scope:   'accesslink.read_all',
-        clientId: (typeof POLAR_PUBLIC_CLIENT_ID !== 'undefined') ? POLAR_PUBLIC_CLIENT_ID : '',
+        name:      'Polar',
+        color:     '#c0392b',
+        comingSoon: true,
+        // authUrl:  'https://flow.polar.com/oauth2/authorization',
+        // scope:    'accesslink.read_all',
+        // clientId: (typeof POLAR_PUBLIC_CLIENT_ID !== 'undefined') ? POLAR_PUBLIC_CLIENT_ID : '',
     },
     apple_health: {
-        name:       'Apple Health',
-        icon:       '🍎',
-        color:      '#ff3b30',
-        nativeOnly: true,
+        name:      'Apple Health',
+        color:     '#ff3b30',
+        comingSoon: true,
+        // nativeOnly: true,
     },
     garmin: {
-        name:       'Garmin',
-        icon:       '⌚',
-        color:      '#007cc2',
+        name:      'Garmin',
+        color:     '#007cc2',
         comingSoon: true,
     },
 };
@@ -250,10 +250,9 @@ export function renderWearableStatus() {
         const isConnected = !!conn;
 
         if (cfg.comingSoon) {
-            return `<div class="wr-chip" style="opacity:.45;cursor:default;">
-                <span>${cfg.icon}</span>
-                <span style="font-size:11px;">${cfg.name}</span>
-                <span style="font-size:9px;color:var(--muted)">Presto</span>
+            return `<div class="wr-chip" style="opacity:.5;cursor:default;">
+                <span style="font-size:11px;font-weight:600;">${cfg.name}</span>
+                <span style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.3px;">Coming Soon</span>
             </div>`;
         }
         if (cfg.nativeOnly) {
