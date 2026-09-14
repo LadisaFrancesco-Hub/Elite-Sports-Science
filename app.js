@@ -979,7 +979,10 @@ export function renderCalendario() {
     html += '</tr></thead><tbody>';
 
     DB.athletes.forEach(a => {
-        const shortName = a.name.split(' ')[0];
+        const parts = a.name.trim().split(' ');
+        const shortName = parts.length > 1
+            ? `${parts.slice(1).join(' ')} ${parts[0][0]}.`
+            : parts[0];
         html += `<tr><td style="padding:6px 8px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;border-bottom:1px solid var(--border)">${escHtml(shortName)}</td>`;
         dayKeys.forEach(dk => {
             const sess = idx[a.id + '|' + dk] || [];
@@ -2113,8 +2116,10 @@ export async function saveSess() {
 // EDITOR SCHEDE
 // ─────────────────────────────────────────────────────────────
 export function renderEditor() {
-    const athId = document.getElementById('ed-ath').value || appState.selAthId;
-    if (athId) document.getElementById('ed-ath').value = athId;
+    const edAthEl = document.getElementById('ed-ath');
+    // appState.selAthId è la fonte autoritativa — ed-ath si sincronizza ad esso
+    const athId = appState.selAthId || (edAthEl && edAthEl.value);
+    if (edAthEl && athId) edAthEl.value = athId;
     if (!DB.schedules[athId]) {
         DB.schedules[athId] = {
             meso: 'Meso 1', phase: 'Accumulo', coachNote: '', objective: '',
@@ -3780,10 +3785,32 @@ export function confirmReset() {
 // MESSAGGISTICA DIRETTA
 // ─────────────────────────────────────────────────────────────
 export function renderMessaggi() {
+    // Auto-seleziona l'atleta con il messaggio non letto più recente
+    const unreadAthletes = DB.athletes
+        .map(a => {
+            const msgs = (DB.messages && DB.messages[a.id]) || [];
+            const unread = msgs.filter(m => m.from_type === 'athlete' && !m.read_at);
+            const last = unread.length ? unread[unread.length - 1].created_at : null;
+            return { a, unreadCount: unread.length, last };
+        })
+        .filter(x => x.unreadCount > 0)
+        .sort((x, y) => (y.last || '').localeCompare(x.last || ''));
+
+    if (!appState.selAthId && unreadAthletes.length) appState.selAthId = unreadAthletes[0].a.id;
+    else if (appState.selAthId === '' && unreadAthletes.length) appState.selAthId = unreadAthletes[0].a.id;
+
     const athId = appState.selAthId;
     const selEl = document.getElementById('msg-ath-select');
     if (selEl) {
-        selEl.innerHTML = DB.athletes.map(a => `<option value="${escHtml(a.id)}"${a.id === athId ? ' selected' : ''}>${escHtml(a.name)}</option>`).join('');
+        const unreadMap = {};
+        unreadAthletes.forEach(x => { unreadMap[x.a.id] = x.unreadCount; });
+        selEl.innerHTML = DB.athletes
+            .sort((a, b) => (unreadMap[b.id] || 0) - (unreadMap[a.id] || 0))
+            .map(a => {
+                const n = unreadMap[a.id] || 0;
+                const label = n ? `${a.name} 🔴 ${n} nuov${n === 1 ? 'o' : 'i'}` : a.name;
+                return `<option value="${escHtml(a.id)}"${a.id === athId ? ' selected' : ''}>${escHtml(label)}</option>`;
+            }).join('');
         selEl.onchange = () => { appState.selAthId = selEl.value; renderMessaggi(); };
     }
 
