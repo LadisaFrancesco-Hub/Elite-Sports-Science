@@ -2401,6 +2401,11 @@ export function renderEdExercises() {
                   </select></div>
               </div>
               ${groupRowHtml}
+              ${ex.progression && Object.keys(ex.progression).length ? `
+              <div style="margin-top:6px;padding:6px 8px;background:rgba(0,229,168,0.05);border:1px solid rgba(0,229,168,0.2);border-radius:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+                <span style="font-size:9px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;">Prog.</span>
+                ${Object.entries(ex.progression).sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).map(([w,v])=>`<span style="font-size:10px;color:var(--text);white-space:nowrap;"><span style="color:var(--teal);font-weight:700;">${w.toUpperCase()}</span> ${v.set}×${v.rep}@${v.kg}kg</span>`).join('<span style="color:var(--border);font-size:10px;">|</span>')}
+              </div>` : ''}
               <input type="text" value="${ex.note||''}" placeholder="Note / CUE d'esecuzione" style="width:100%;font-size:11px;margin-top:6px;color:var(--purple)" oninput="updateEx(${i},'note',this.value)">`;
             wrap.appendChild(div);
         });
