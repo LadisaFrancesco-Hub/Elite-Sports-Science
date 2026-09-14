@@ -292,6 +292,10 @@ export function loadLive() {
             // ── Tipo esercizio e colore bordo ─────────────────
             const currentType = (ex.type || 'normal').toLowerCase();
             const borderColor = typeColors[currentType] || 'var(--teal)';
+            const _stLabels = { myo_reps:'MYO', hyper_block_dup:'BLK', hyper_stretch:'STRCH', hyper_metabolic:'META', block_period:'BLOCK', double_prog:'DBL', overreach:'OVER', lin_taper:'TAPER', step_load:'STEP', wave_contrast:'WAVE', french_contrast:'FC', cluster:'CLST', wave_load:'WL', wup:'WUP', triphasic:'TRI', wendler_531:'531', linear_classic:'LIN', amrap_top:'AMRAP' };
+            const seriesTypeBadge = (ex.series_type && ex.series_type !== 'manual')
+                ? `<span style="font-size:9px;background:#00E5A8;color:#000;padding:2px 6px;border-radius:6px;font-weight:800;letter-spacing:0.5px;">${_stLabels[ex.series_type] || ex.series_type.toUpperCase().slice(0,5)}</span>`
+                : '';
 
             // ── Autoregolazione (Readiness + CNS + Ciclo) ─────
             let numKg       = parseFloat(targetKg) || 0;
@@ -530,6 +534,7 @@ for (let l = 0; l < actualSet; l++) {
                   <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
                     <span style="font-weight:700; font-size:16px; color:#E2DDD4; flex:1 1 auto;
                                  word-wrap:break-word; min-width:0; padding-right:8px;">${escHtml(ex.name)}</span>
+                    ${seriesTypeBadge}
                     ${videoBadge}
                     <span id="pr-badge-${i}" style="display:none;align-items:center;gap:4px;
                           background:rgba(251,191,36,0.15);border:1px solid #f59e0b;border-radius:6px;
@@ -1056,8 +1061,43 @@ export function openRealLog(exIndex, setIndex) {
             actualRep = window.realLog[logKey].rep;
             actualKg  = window.realLog[logKey].kg;
         }
+
+        // RPE adattativo: se esiste un aggiustamento calcolato dal set precedente, applicalo
+        const adjBanner = document.getElementById('rl-rpe-adj');
+        const prevAdj   = window.rpeAdjustments?.[String(exIndex)];
+        if (prevAdj && parseInt(setIndex) > 0) {
+            actualKg = prevAdj.kg;
+            if (adjBanner) {
+                adjBanner.style.display = 'block';
+                adjBanner.textContent   = `🤖 Carico aggiustato: ${prevAdj.fromKg}kg → ${prevAdj.kg}kg (RPE ${prevAdj.rpe} su target ${prevAdj.targetRpe})`;
+            }
+        } else if (adjBanner) {
+            adjBanner.style.display = 'none';
+        }
+
         document.getElementById('rl-rep').value = actualRep;
         document.getElementById('rl-kg').value  = actualKg;
+
+        // Init bottoni RPE (reset selezione)
+        window._setRpe = null;
+        const rpeRow = document.getElementById('rl-rpe-row');
+        if (rpeRow) {
+            rpeRow.innerHTML = '';
+            [6, 7, 8, 9, 10].forEach(v => {
+                const b = document.createElement('button');
+                b.className   = 'rpe-b';
+                b.textContent = v;
+                b.dataset.v   = v;
+                b.type        = 'button';
+                b.onclick = () => {
+                    window._setRpe = v;
+                    rpeRow.querySelectorAll('.rpe-b').forEach(x => { x.className = 'rpe-b'; });
+                    b.classList.add(v <= 7 ? 'ag' : v <= 8 ? 'aa' : 'ac');
+                };
+                rpeRow.appendChild(b);
+            });
+        }
+
         document.getElementById('rl-normal-section').style.display = 'block';
         document.getElementById('rl-timer-section').style.display  = 'none';
     }
@@ -1210,6 +1250,22 @@ export function saveRealLog() {
         if (badge) { badge.style.display = 'inline-flex'; badge.textContent = `🏆 PR — ${prE1rm}kg`; }
         toast(`🏆 PR! ${_ex.name} — ${prE1rm}kg e1RM`);
         if (navigator.vibrate) navigator.vibrate([100, 50, 100, 50, 300]);
+    }
+
+    // ── RPE adattativo: calcola aggiustamento per il prossimo set ──
+    if (window._setRpe && kg > 0 && _ex) {
+        const actualRpe = window._setRpe;
+        const rir       = parseInt(_ex.rir);
+        const targetRpe = (!isNaN(rir) && rir >= 0) ? Math.min(10, 10 - rir) : 8;
+        const rawAdj    = kg * (1 + (targetRpe - actualRpe) * 0.03);
+        const adjKg     = Math.max(0, Math.round(rawAdj * 2) / 2); // arrotonda a 0.5kg
+        if (!window.rpeAdjustments) window.rpeAdjustments = {};
+        window.rpeAdjustments[String(exI)] = { kg: adjKg, fromKg: kg, rpe: actualRpe, targetRpe };
+        if (adjKg !== kg) {
+            const dir = adjKg > kg ? `+${(adjKg - kg).toFixed(1)}kg` : `${(adjKg - kg).toFixed(1)}kg`;
+            toast(`🤖 Set successivo: ${adjKg}kg (${dir})`);
+        }
+        window._setRpe = null;
     }
 
     // Auto-start timer REST dopo salvataggio log reale

@@ -2378,7 +2378,7 @@ export function renderEdExercises() {
                   <option value="NDom" ${ex.arm==='NDom'?'selected':''}>Non-Dom</option>
                 </select>
                 <input type="url" value="${ex.ytUrl||''}" placeholder="Link Video" style="flex:1.5;font-size:11px" oninput="updateEx(${i},'ytUrl',this.value)">
-                <button class="btn-prog" onclick="openProgressionModal(${i})">⚙️ Progressione</button>
+                <button class="btn-prog" onclick="openProgressionModal(${i})">⚙️ Prog${ex.series_type && ex.series_type !== 'manual' ? ` <span style="font-size:9px;background:var(--teal);color:#000;padding:1px 5px;border-radius:4px;font-weight:800;vertical-align:middle;">${_seriesTypeLabel(ex.series_type)}</span>` : ''}</button>
                 <button class="btn btn-d btn-xs" onclick="delExConfirm(${i})">✕</button>
               </div>
               <div style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px">
@@ -2531,6 +2531,16 @@ export function updateCircuitEx(circuitIdx, exIdx, field, val) {
     exs[circuitIdx].circuitExercises[exIdx][field] = val;
 }
 
+const _seriesTypeLabels = {
+    myo_reps:'MYO', hyper_block_dup:'BLK', hyper_stretch:'STRCH',
+    hyper_metabolic:'META', block_period:'BLOCK', double_prog:'DBL',
+    overreach:'OVER', lin_taper:'TAPER', step_load:'STEP',
+    wave_contrast:'WAVE', french_contrast:'FC', cluster:'CLST',
+    wave_load:'WL', wup:'WUP', triphasic:'TRI', wendler_531:'531',
+    linear_classic:'LIN', amrap_top:'AMRAP'
+};
+function _seriesTypeLabel(t){ return _seriesTypeLabels[t] || t.toUpperCase().slice(0,5); }
+
 export function openProgressionModal(index) {
     appState.currentProgExIndex = index;
     const athId    = document.getElementById('ed-ath').value || appState.selAthId;
@@ -2557,6 +2567,8 @@ export function openProgressionModal(index) {
           </div>`;
     }
     openMo('mo-prog');
+    const sel = document.getElementById('smart-prog-select');
+    if (sel) sel.value = ex.series_type || 'manual';
 }
 
 export async function saveProgressionData() {
@@ -2572,6 +2584,8 @@ export async function saveProgressionData() {
             kg:  parseFloat(document.getElementById(`p-kg-${w}`).value)|| ex.kg
         };
     }
+    const selType = document.getElementById('smart-prog-select')?.value;
+    if (selType && selType !== 'manual') ex.series_type = selType;
     await saveDB();
     await saveSchedule();
     renderEdExercises(); closeMo('mo-prog'); toast('Progressione salvata! ✓');
@@ -2690,9 +2704,16 @@ export function applySmartMicrocycle(type) {
         const si = document.getElementById(`p-set-${w}`); if (si) si.value = tSet;
         const ri = document.getElementById(`p-rep-${w}`); if (ri) ri.value = tRep;
         const ki = document.getElementById(`p-kg-${w}`);  if (ki && tKg > 0) ki.value = tKg;
+        if (!ex.progression) ex.progression = {};
+        ex.progression[`w${w}`] = {
+            set: parseInt(tSet) || ex.set,
+            rep: String(tRep)   || ex.rep,
+            kg:  (typeof tKg === 'number' && tKg > 0) ? tKg : (parseFloat(ex.kg) || 0)
+        };
     }
-    toast('🤖 Algoritmo Elite Applicato!');
-    document.getElementById('smart-prog-select').value = 'manual';
+    ex.series_type = type;
+    saveDB().then(() => saveSchedule()).then(() => renderEdExercises());
+    toast('🤖 Algoritmo applicato e salvato!');
 }
 
 export function updatePredictiveACWR() {
