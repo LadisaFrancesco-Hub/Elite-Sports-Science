@@ -580,6 +580,14 @@ window._updateWellnessBadge = function() {
     if (badge) badge.style.display = done ? 'none' : 'block';
 };
 
+window._updateFeedbackBadge = function(athId) {
+    const today   = new Date().toISOString().slice(0, 10);
+    const id      = athId || appState.selAthId || window.mioIdLoggato;
+    const pending = DB.sessions.some(s => s.athlete === id && s.date === today && (!s.rpe || s.rpe === 0));
+    const badge   = document.getElementById('bb-fb-badge');
+    if (badge) badge.style.display = pending ? 'inline-block' : 'none';
+};
+
 export async function sendWellnessReminders() {
     if (!window.mySupabase) { toast('⚠️ Connessione Supabase necessaria'); return; }
 
@@ -1676,6 +1684,11 @@ export function renderAthHome() {
     const volVals = last8.map(s => Math.round((s.vol||0)/1000));
     const avgRpe  = DB.sessions.length ? (DB.sessions.reduce((a,s)=>a+(s.rpe||0),0)/DB.sessions.length).toFixed(1) : '—';
 
+    // ── Feedback pendente: sessione completata oggi senza RPE ──
+    const pendingFeedback = DB.sessions.find(s =>
+        s.athlete === athId && s.date === todayKey && (!s.rpe || s.rpe === 0)
+    );
+
     // ── SEZIONE E: Reply non letta ────────────────────────────
     const unreadReply = DB.sessions.find(s => s.reply && !s.replyRead);
     const msgs        = DB.messages?.[athId] || [];
@@ -1684,6 +1697,7 @@ export function renderAthHome() {
     const unreadCount = coachMsgs.filter(m => !m.read_at).length;
 
     _updateWellnessBadge();
+    _updateFeedbackBadge(athId);
 
     // ── GAP 1: Card messaggio coach (coachNote / objective) ────
     const coachNoteKey    = `coach_note_read_${athId}_${sch?.meso}`;
@@ -1737,6 +1751,19 @@ export function renderAthHome() {
           <div style="font-size:18px;font-weight:800;color:${readColor};margin-bottom:2px">${readLabel}</div>
           <div style="font-size:12px;color:var(--muted)">Readiness · check-in completato ✓</div>
         </div>
+      </div>` : ''}
+
+      <!-- Banner feedback pendente -->
+      ${pendingFeedback ? `
+      <div onclick="go('feedback')" style="cursor:pointer;margin-bottom:18px;padding:14px 16px;
+           background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.4);border-radius:12px;
+           display:flex;align-items:center;gap:12px;">
+        <div style="font-size:24px;flex-shrink:0">📝</div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:800;color:var(--coral);margin-bottom:2px;">Feedback mancante</div>
+          <div style="font-size:12px;color:var(--muted);">Hai completato <strong>${escHtml(pendingFeedback.session || 'l\'allenamento')}</strong> — il coach aspetta il tuo report.</div>
+        </div>
+        <div style="background:var(--coral);color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;flex-shrink:0;white-space:nowrap;">Compila →</div>
       </div>` : ''}
 
       <!-- Greeting -->
@@ -3544,6 +3571,7 @@ export async function submitFB() {
     } catch (err) { console.error(err); }
 
     initFB(); loadLive(); renderDashboard();
+    window._updateFeedbackBadge(appState.selAthId);
     checkAndAwardBadges(appState.selAthId);
     if (window.userRole === 'ATLETA') showAthSummary(sessObj);
     window.liveE1rmDom = 0; window.liveE1rmNDom = 0; window.liveMaxE1rm = 0;
