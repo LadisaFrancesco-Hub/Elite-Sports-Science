@@ -4,6 +4,24 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>Elite Sports Science</title>
+<!-- CACHE BUSTER: questo script gira PRIMA di qualsiasi SW o cache.
+     Aggiorna ESS_REQUIRED ad ogni deploy per forzare un reset pulito su tutti i dispositivi. -->
+<script>
+(function(){
+  var ESS_REQUIRED = '6.51';
+  if (localStorage.getItem('ess_cache_v') !== ESS_REQUIRED) {
+    localStorage.setItem('ess_cache_v', ESS_REQUIRED);
+    var p = ('serviceWorker' in navigator)
+      ? navigator.serviceWorker.getRegistrations()
+          .then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); })
+      : Promise.resolve();
+    var c = ('caches' in window)
+      ? caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); })
+      : Promise.resolve();
+    Promise.all([p, c]).then(function(){ location.reload(); });
+  }
+})();
+</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
