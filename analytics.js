@@ -1217,16 +1217,139 @@ export function renderAthProgressi() {
     const thisWeek  = all.filter(s => s.date >= mondayStr);
     const freq      = (ath && ath.freq) ? ath.freq : 4;
 
+    // ── GAP 5: KPI adattivi per obiettivo atleta ─────────────
+    const GOAL_KPI_CONFIG = {
+        'Dimagrimento':         { hideE1rm: true,  primary: 'volume'     },
+        'Forza':                { hideE1rm: false, primary: 'e1rm'       },
+        'Performance Atletica': { hideE1rm: false, primary: 'acwr'       },
+        'Riabilitazione':       { hideE1rm: true,  primary: 'compliance' },
+        'Fitness Generale':     { hideE1rm: false, primary: 'compliance' },
+    };
+    const goalCfg = ath?.goal ? (GOAL_KPI_CONFIG[ath.goal] || null) : null;
+
+    // Calcola valori aggiuntivi per goal specifici
+    const sch4kpi  = DB.schedules?.[athId];
+    const tSess    = ((ath?.freq || 4) * (sch4kpi?.duration || 4));
+    const compPct  = tSess > 0 ? Math.min(100, Math.round(all.filter(s => {
+        const mo = new Date().toISOString().slice(0,7);
+        return s.date.startsWith(mo);
+    }).length / tSess * 100)) : null;
+
+    // Streak sessioni consecutive
+    let streak = 0;
+    const sessDesc = [...all].reverse();
+    if (sessDesc.length) {
+        const t = new Date(); t.setHours(0,0,0,0);
+        const last = new Date(sessDesc[0].date); last.setHours(0,0,0,0);
+        if (Math.floor((t - last) / 86400000) <= 1) {
+            streak = 1;
+            for (let k = 1; k < sessDesc.length; k++) {
+                const a = new Date(sessDesc[k-1].date); a.setHours(0,0,0,0);
+                const b = new Date(sessDesc[k].date);   b.setHours(0,0,0,0);
+                if (Math.floor((a - b) / 86400000) <= 2) streak++; else break;
+            }
+        }
+    }
+
+    // Volume ultimi 30 giorni
+    const d30 = new Date(); d30.setDate(d30.getDate() - 30);
+    const d30key = d30.toISOString().slice(0,10);
+    const vol30  = all.filter(s => s.date >= d30key).reduce((a, s) => a + (s.vol || 0), 0);
+
+    // Peso attuale (ultimo valore anthropoHistory)
+    const anthro = ath?.anthropoHistory;
+    const lastWeight = anthro?.length ? anthro[anthro.length - 1] : null;
+    const prevWeight = anthro?.length > 1 ? anthro[anthro.length - 2] : null;
+    const weightDelta = (lastWeight && prevWeight) ? (lastWeight.weight - prevWeight.weight).toFixed(1) : null;
+
+    // ACWR (usa la funzione esistente se disponibile)
+    let acwrVal = '—';
+    if (typeof calculateACWR === 'function') {
+        try {
+            const acwrRes = calculateACWR(athId);
+            if (acwrRes?.field?.value !== null && acwrRes?.field?.value !== undefined) {
+                acwrVal = acwrRes.field.value;
+            }
+        } catch (e) { /* fallback */ }
+    }
+
+    // Ultimi 30 gg (sessioni)
+    const sess30 = all.filter(s => s.date >= d30key).length;
+
+    let kpisHtml = '';
+    if (!goalCfg) {
+        // Default: comportamento originale
+        kpisHtml = `
+            <div class="kpi"><div class="kpi-l">Sessioni totali</div><div class="kpi-v">${all.length}</div></div>
+            <div class="kpi"><div class="kpi-l">Questa settimana</div>
+                <div class="kpi-v" style="color:${thisWeek.length >= freq ? 'var(--teal)' : 'var(--text)'}">
+                    ${thisWeek.length}<span style="font-size:14px;font-weight:500;color:var(--muted)">/${freq}</span>
+                </div></div>
+            <div class="kpi"><div class="kpi-l">Miglior e1RM</div>
+                <div class="kpi-v" style="color:var(--amber)">${bestE1rm > 0 ? bestE1rm + ' kg' : '—'}</div></div>
+            <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>`;
+    } else if (ath.goal === 'Dimagrimento') {
+        const wLabel = lastWeight ? `${lastWeight.weight} kg${weightDelta !== null ? ` (${weightDelta >= 0 ? '+' : ''}${weightDelta})` : ''}` : '—';
+        const wColor = weightDelta !== null ? (parseFloat(weightDelta) <= 0 ? 'var(--teal)' : 'var(--coral)') : 'var(--text)';
+        kpisHtml = `
+            <div class="kpi"><div class="kpi-l">Sessioni mese</div><div class="kpi-v">${all.filter(s=>s.date.startsWith(new Date().toISOString().slice(0,7))).length}</div></div>
+            <div class="kpi"><div class="kpi-l">Compliance %</div>
+                <div class="kpi-v" style="color:${compPct >= 80 ? 'var(--teal)' : 'var(--amber)'}">${compPct !== null ? compPct + '%' : '—'}</div></div>
+            <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>
+            <div class="kpi"><div class="kpi-l">${lastWeight ? 'Peso attuale' : 'Volume 30gg'}</div>
+                <div class="kpi-v" style="color:${lastWeight ? wColor : 'var(--text)'}">${lastWeight ? wLabel : Math.round(vol30/1000) + 't'}</div></div>`;
+    } else if (ath.goal === 'Forza') {
+        kpisHtml = `
+            <div class="kpi"><div class="kpi-l">Miglior e1RM</div>
+                <div class="kpi-v" style="color:var(--amber)">${bestE1rm > 0 ? bestE1rm + ' kg' : '—'}</div></div>
+            <div class="kpi"><div class="kpi-l">Sessioni totali</div><div class="kpi-v">${all.length}</div></div>
+            <div class="kpi"><div class="kpi-l">Volume mese (t)</div>
+                <div class="kpi-v" style="color:var(--teal)">${(all.filter(s=>s.date.startsWith(new Date().toISOString().slice(0,7))).reduce((a,s)=>a+(s.vol||0),0)/1000).toFixed(1)}</div></div>
+            <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>`;
+    } else if (ath.goal === 'Performance Atletica') {
+        kpisHtml = `
+            <div class="kpi"><div class="kpi-l">Sessioni mese</div><div class="kpi-v">${all.filter(s=>s.date.startsWith(new Date().toISOString().slice(0,7))).length}</div></div>
+            <div class="kpi"><div class="kpi-l">ACWR (sRPE)</div>
+                <div class="kpi-v" style="color:var(--teal)">${acwrVal}</div></div>
+            <div class="kpi"><div class="kpi-l">Volume 30gg (t)</div>
+                <div class="kpi-v" style="color:var(--text)">${(vol30/1000).toFixed(1)}</div></div>
+            <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>`;
+    } else if (ath.goal === 'Riabilitazione') {
+        kpisHtml = `
+            <div class="kpi"><div class="kpi-l">Sessioni completate</div><div class="kpi-v">${all.length}</div></div>
+            <div class="kpi"><div class="kpi-l">Compliance %</div>
+                <div class="kpi-v" style="color:${compPct >= 80 ? 'var(--teal)' : 'var(--amber)'}">${compPct !== null ? compPct + '%' : '—'}</div></div>
+            <div class="kpi"><div class="kpi-l">Streak</div>
+                <div class="kpi-v" style="color:${streak >= 3 ? 'var(--teal)' : 'var(--text)'}">
+                    ${streak}<span style="font-size:14px;font-weight:500;color:var(--muted)"> gg</span>
+                </div></div>
+            <div class="kpi"><div class="kpi-l">Sessioni (30gg)</div><div class="kpi-v">${sess30}</div></div>`;
+    } else if (ath.goal === 'Fitness Generale') {
+        kpisHtml = `
+            <div class="kpi"><div class="kpi-l">Sessioni mese</div><div class="kpi-v">${all.filter(s=>s.date.startsWith(new Date().toISOString().slice(0,7))).length}</div></div>
+            <div class="kpi"><div class="kpi-l">Compliance %</div>
+                <div class="kpi-v" style="color:${compPct >= 80 ? 'var(--teal)' : 'var(--amber)'}">${compPct !== null ? compPct + '%' : '—'}</div></div>
+            <div class="kpi"><div class="kpi-l">Volume 30gg (t)</div>
+                <div class="kpi-v" style="color:var(--text)">${(vol30/1000).toFixed(1)}</div></div>
+            <div class="kpi"><div class="kpi-l">Streak</div>
+                <div class="kpi-v" style="color:${streak >= 3 ? 'var(--teal)' : 'var(--text)'}">
+                    ${streak}<span style="font-size:14px;font-weight:500;color:var(--muted)"> gg</span>
+                </div></div>`;
+    }
+
     const kpisEl = document.getElementById('ap-kpis');
-    if (kpisEl) kpisEl.innerHTML = `
-        <div class="kpi"><div class="kpi-l">Sessioni totali</div><div class="kpi-v">${all.length}</div></div>
-        <div class="kpi"><div class="kpi-l">Questa settimana</div>
-            <div class="kpi-v" style="color:${thisWeek.length >= freq ? 'var(--teal)' : 'var(--text)'}">
-                ${thisWeek.length}<span style="font-size:14px;font-weight:500;color:var(--muted)">/${freq}</span>
-            </div></div>
-        <div class="kpi"><div class="kpi-l">Miglior e1RM</div>
-            <div class="kpi-v" style="color:var(--amber)">${bestE1rm > 0 ? bestE1rm + ' kg' : '—'}</div></div>
-        <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>`;
+    if (kpisEl) kpisEl.innerHTML = kpisHtml;
+
+    // Mostra/nascondi grafico e1RM in base al goal
+    const e1rmWrap   = document.getElementById('ap-e1rm-wrap');
+    const e1rmFilter = document.getElementById('ap-e1rm-filter');
+    if (goalCfg?.hideE1rm) {
+        if (e1rmWrap)   e1rmWrap.style.display   = 'none';
+        if (e1rmFilter) e1rmFilter.style.display = 'none';
+    } else {
+        if (e1rmWrap)   e1rmWrap.style.display   = '';
+        if (e1rmFilter) e1rmFilter.style.display = '';
+    }
 
     // ── Questa settimana ─────────────────────────────────────
     const lastSess      = all.length ? all[all.length - 1] : null;

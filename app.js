@@ -1685,6 +1685,35 @@ export function renderAthHome() {
 
     _updateWellnessBadge();
 
+    // ── GAP 1: Card messaggio coach (coachNote / objective) ────
+    const coachNoteKey    = `coach_note_read_${athId}_${sch?.meso}`;
+    const coachNoteRead   = !!localStorage.getItem(coachNoteKey);
+    const hasCoachContent = !!(sch?.coachNote || sch?.objective);
+    window.toggleCoachNote = function(aId, meso) {
+        const body = document.getElementById(`cn-body-${meso}`);
+        const arr  = document.getElementById(`cn-arr-${meso}`);
+        if (!body) return;
+        const isHidden = body.style.display === 'none';
+        body.style.display = isHidden ? 'block' : 'none';
+        if (arr) arr.textContent = isHidden ? '▴' : '▾';
+        if (isHidden) localStorage.setItem(`coach_note_read_${aId}_${meso}`, '1');
+    };
+    const coachNoteHtml = hasCoachContent ? `
+      <div style="margin-bottom:14px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.3);border-radius:12px;overflow:hidden;">
+        <div onclick="toggleCoachNote('${escHtml(athId)}','${escHtml(sch.meso)}')"
+             style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;min-height:44px;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:14px">📋</span>
+            <span style="font-size:12px;font-weight:700;color:#A78BFA;">Messaggio del Coach — ${escHtml(sch.meso)}</span>
+          </div>
+          <span id="cn-arr-${escHtml(sch.meso)}" style="font-size:11px;color:var(--muted);">${coachNoteRead ? '▾' : '▴'}</span>
+        </div>
+        <div id="cn-body-${escHtml(sch.meso)}" style="padding:0 14px 14px;display:${coachNoteRead ? 'none' : 'block'};">
+          ${sch.objective ? `<div style="font-size:13px;font-style:italic;color:var(--muted);margin-bottom:8px;line-height:1.5;">${escHtml(sch.objective)}</div>` : ''}
+          ${sch.coachNote ? `<div style="font-size:13px;color:var(--text);line-height:1.6;">${escHtml(sch.coachNote)}</div>` : ''}
+        </div>
+      </div>` : '';
+
     el.innerHTML = `
     <div style="padding-bottom:100px">
 
@@ -1715,6 +1744,8 @@ export function renderAthHome() {
         <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${dateStr}</div>
         <div style="font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.5px">${greeting}, <span style="color:var(--teal)">${escHtml(ath?.name?.split(' ')[0] || 'Atleta')}</span></div>
       </div>
+
+      ${coachNoteHtml}
 
       <!-- SEZIONE B: Il tuo allenamento -->
       <div class="card" style="margin-bottom:14px;border:1px solid var(--border)">

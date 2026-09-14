@@ -52,6 +52,27 @@ window.liveE1rmDom  = 0;
 window.liveE1rmNDom = 0;
 
 
+// Istruzioni contestuali per ogni protocollo series_type
+const SERIES_TYPE_INSTRUCTIONS = {
+    myo_reps:        'Set di attivazione al cedimento relativo, poi mini-set da 3 reps con 20" di riposo. Smetti quando non riesci a completare 3 reps pulite.',
+    cluster:         'Dividi le rep in cluster con 15" di pausa intra-serie. Mantieni il carico alto — la pausa permette di recuperare ATP senza scaricare i muscoli.',
+    triphasic:       'Alterna fasi: eccentrica lenta (5s), isometrica (3s al punto di massima tensione), concentrica esplosiva. Una tecnica per settimana.',
+    wave_load:       'Schemi 3-2-1 con carico crescente. Al termine del ciclo, ricomincia con +2.5% rispetto all\'onda precedente.',
+    hyper_stretch:   'Esegui le ultime 4-5 reps con range ampliato in allungamento massimale. Controlla la discesa — non rimbalzare.',
+    amrap_top:       'Top set: vai a cedimento (AMRAP). Poi riduci del 20% e completa i back-off sets con le reps indicate.',
+    wendler_531:     'Schema 5/3/1: settimana 1 = 3×5, settimana 2 = 3×3, settimana 3 = 3×1+ (AMRAP sull\'ultimo set). Settimana 4 = deload.',
+    hyper_metabolic: 'Densità metabolica: brevi pause (20-30") tra i set per massimizzare il pump e la risposta ormonale.',
+    double_prog:     'Doppia progressione: aumenta le reps fino al range alto, poi aumenta il carico di 2.5 kg e ricomincia dal basso.',
+    linear_classic:  'Progressione lineare: aggiungi 2.5 kg ogni sessione fino al plateau, poi esegui un deload prima di ricominciare.',
+    step_load:       'Carico a gradini: aumenta ogni 2-3 settimane a scaglioni, poi uno scarico prima della fase successiva.',
+    overreach:       'Settimana di sovraccarico intenzionale. Tecnica rigorosa — il recupero avverrà nella settimana di scarico.',
+    wave_contrast:   'Alterna serie pesanti (3-5 reps) e serie esplosive/leggere (6-8 reps). Il contrasto attiva più unità motorie.',
+    french_contrast: 'Sequenza 4 esercizi: sforzo massimale → balistico → plyometrico → reattivo, senza pausa. Potenzia la forza esplosiva.',
+    hyper_block_dup: 'Duplicazione del blocco: ripeti le stesse sessioni due volte per blocco, aumentando il carico alla seconda ripetizione.',
+    block_period:    'Periodizzazione a blocchi: ogni fase è specializzata (accumulo, intensificazione, realizzazione). Segui l\'ordine della scheda.',
+    lin_taper:       'Taper lineare: volume decresce progressivamente avvicinandosi alla gara. Mantieni l\'intensità alta, riduci solo le serie.',
+};
+
 // ─────────────────────────────────────────────────────────────
 // 2. loadLive()
 //    Carica e renderizza la scheda della sessione selezionata.
@@ -154,6 +175,26 @@ export function loadLive() {
             selectWeek.innerHTML += `<option value="${w}">${w}</option>`;
         }
         selectWeek.value = targetWeekToSet;
+    }
+
+    // ── GAP 4: Badge fase mesociclo + obiettivo nell'header ──
+    let phaseObjEl = document.getElementById('lv-phase-obj');
+    if (!phaseObjEl) {
+        phaseObjEl = document.createElement('div');
+        phaseObjEl.id = 'lv-phase-obj';
+        phaseObjEl.style.cssText = 'padding:0 0 8px 0;';
+        const frRow = document.querySelector('#lv-sess')?.closest('.fr');
+        if (frRow) frRow.after(phaseObjEl);
+    }
+    if (phaseObjEl) {
+        const totalWeeks = sch.duration || 4;
+        const currentWeekVal = (selectWeek && selectWeek.value) ? selectWeek.value : '1';
+        phaseObjEl.innerHTML = `
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${sch.objective ? '4px' : '0'};">
+            ${sch.phase ? `<span style="border:1px solid var(--teal);color:var(--teal);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;">${escHtml(sch.phase)}</span>` : ''}
+            <span style="font-size:11px;color:var(--muted);">Settimana ${escHtml(currentWeekVal)} di ${totalWeeks}</span>
+          </div>
+          ${sch.objective ? `<div style="font-size:11px;color:var(--muted);font-style:italic;">Obiettivo: ${escHtml(sch.objective)}</div>` : ''}`;
     }
 
     // ── Inizializzazione stato pallini ───────────────────────
@@ -297,6 +338,22 @@ export function loadLive() {
                 ? `<span style="font-size:9px;background:#00E5A8;color:#000;padding:2px 6px;border-radius:6px;font-weight:800;letter-spacing:0.5px;">${_stLabels[ex.series_type] || ex.series_type.toUpperCase().slice(0,5)}</span>`
                 : '';
 
+            // ── GAP 2: Istruzioni protocollo collassabili ─────
+            const stInstr = ex.series_type && SERIES_TYPE_INSTRUCTIONS[ex.series_type];
+            const stLabel = ex.series_type ? (_stLabels[ex.series_type] || ex.series_type.toUpperCase().slice(0,5)) : '';
+            const seriesTypeInfoHtml = stInstr ? `
+              <div style="margin-top:8px;">
+                <div onclick="(function(el){var b=el.nextElementSibling;var a=el.querySelector('.st-arr');b.style.display=b.style.display==='none'?'block':'none';a.textContent=b.style.display==='none'?'▾':'▴';})(this)"
+                     style="display:flex;align-items:center;gap:6px;cursor:pointer;min-height:44px;padding:6px 10px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:6px;">
+                  <span style="font-size:12px;color:#A78BFA;">ℹ</span>
+                  <span style="font-size:11px;color:var(--muted);">Come eseguire: ${escHtml(stLabel)}</span>
+                  <span class="st-arr" style="font-size:10px;color:var(--muted);margin-left:auto;">▾</span>
+                </div>
+                <div style="display:none;padding:8px 10px;background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.15);border-top:none;border-radius:0 0 6px 6px;">
+                  <span style="font-size:11px;color:var(--muted);line-height:1.6;">${escHtml(stInstr)}</span>
+                </div>
+              </div>` : '';
+
             // ── Autoregolazione (Readiness + CNS + Ciclo) ─────
             let numKg       = parseFloat(targetKg) || 0;
             const isVBT     = (typeof targetKg === 'string' && targetKg.toLowerCase().includes('m/s'))
@@ -313,7 +370,25 @@ export function loadLive() {
                 const pct = Math.round((1 - mods.kgMultiplier) * 100);
                 const fc  = mods.warningType === 'critical' ? '#ef4444' : '#fbbf24';
                 const bg  = mods.warningType === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)';
-                autoRegBadge = `<div style="background:${bg};color:${fc};border:1px solid ${fc};font-size:10px;padding:4px 8px;border-radius:6px;margin-top:8px;font-weight:700;display:inline-block;">🤖 Carico autoregolato: <span style="text-decoration:line-through;opacity:0.6;">${numKg}kg</span> → <strong>${actualKg}kg</strong> (-${pct}%)</div>`;
+
+                // ── GAP 3: Messaggio empatico contestuale ────────
+                const _sleep  = DB.wellness?.sleep  ?? 3;
+                const _stress = DB.wellness?.stress ?? 3;
+                const _hasInj = Array.isArray(DB.injuries) && DB.injuries.some(
+                    inj => inj.athlete === appState.selAthId && inj.status === 'Attivo');
+                let _contextMsg = '';
+                if (mods.readiness < 50 && _sleep <= 2) {
+                    _contextMsg = `Hai dormito poco stanotte. Ho ridotto il carico del ${pct}% per proteggerti. Concentrati sulla tecnica oggi, non sulla quantità.`;
+                } else if (mods.readiness < 50 && _stress >= 4) {
+                    _contextMsg = `Lo stress è alto in questo periodo. Lavora sotto-soglia oggi — l'adattamento avviene anche così.`;
+                } else if (mods.readiness < 75 && _hasInj) {
+                    const _inj = DB.injuries.find(inj => inj.athlete === appState.selAthId && inj.status === 'Attivo');
+                    _contextMsg = `Zona ${_inj?.zone || 'sensibile'} sotto controllo. Carico ridotto precauzionalmente. Se senti dolore, fermati e contatta il coach.`;
+                } else if (mods.readiness >= 75) {
+                    _contextMsg = `Piccolo aggiustamento preventivo. Sei in buona forma — dai il massimo.`;
+                }
+
+                autoRegBadge = `${_contextMsg ? `<div style="font-size:11px;font-weight:500;font-style:italic;color:var(--muted);margin-top:8px;margin-bottom:4px;line-height:1.5;">${_contextMsg}</div>` : ''}<div style="background:${bg};color:${fc};border:1px solid ${fc};font-size:10px;padding:4px 8px;border-radius:6px;font-weight:700;display:inline-block;">🤖 Carico autoregolato: <span style="text-decoration:line-through;opacity:0.6;">${numKg}kg</span> → <strong>${actualKg}kg</strong> (-${pct}%)</div>`;
             }
 
             if (isHighCns && mods.setModifier < 0 && targetSet > 1) {
@@ -544,6 +619,8 @@ for (let l = 0; l < actualSet; l++) {
                   <span style="position:absolute; top:16px; right:16px; color:#00E5A8;
                                font-weight:700; font-size:15px;" id="lvol-${i}">0 kg</span>
                 </div>
+
+                ${seriesTypeInfoHtml}
 
                 <p style="color:#9CA3AF; font-size:13px; font-weight:500; margin:0; letter-spacing:0.3px;">
                   ${armLabel}${actualSet}x${targetRep}
