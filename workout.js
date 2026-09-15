@@ -2514,6 +2514,13 @@ export function endWorkout() {
         if (existing) { Object.assign(existing, sessObj); }
         else { DB.sessions.push(sessObj); }
         window.saveDB();
+        if (window.mySupabase) {
+            const cloud = { ...sessObj, athlete_id: athId, session_name: sessName,
+                session_type: 'Palestra', max_e1rm: maxE1rm,
+                e1rm_dom: window.liveE1rmDom||0, e1rm_ndom: window.liveE1rmNDom||0 };
+            window.mySupabase.from('sessions').upsert([cloud])
+                .then(({ error }) => { if (error) console.error('[session upsert]', error); });
+        }
         window._updateFeedbackBadge?.(athId);
 
         // Invia messaggio strutturato in chat al coach
@@ -2555,6 +2562,16 @@ export function endWorkout() {
             sRPE:0, rpe:0, qual:0, doms:'', flag: partial?'Parziale':'', notes:'', reply:''
         });
         window.saveDB();
+        if (window.mySupabase) {
+            const sk = DB.sessions.find(s => s.athlete === athId && s.session === sessName && s.date === today);
+            if (sk) {
+                const cloud = { ...sk, athlete_id: athId, session_name: sessName,
+                    session_type: 'Palestra', max_e1rm: sk.maxE1rm||maxE1rm,
+                    e1rm_dom: sk.e1rmDom||0, e1rm_ndom: sk.e1rmNDom||0 };
+                window.mySupabase.from('sessions').upsert([cloud])
+                    .then(({ error }) => { if (error) console.error('[session upsert skip]', error); });
+            }
+        }
         window._updateFeedbackBadge?.(athId);
         _closeSheet();
         window.go?.('ath-home');
