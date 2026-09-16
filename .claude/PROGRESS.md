@@ -84,6 +84,20 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ---
 
+**Design System v2 (Coach Console redesign)**
+- Importati Archivo + IBM Plex Mono da Google Fonts (aggiunti a link esistente in index.html)
+- Aggiornati tutti i token CSS in `:root`: palette più fredda/scura, nuove variabili `--s4`, `--nav-bg`, `--input-bg`, `--text2`, `--dim2`, `--dim3`, `--mono-dim`, `--green`, `--fmono`, `--radius-btn`
+- Border-radius card: 18px → 9px; button: 12px → 6px
+- Topbar: gradient `#14181E→#0F1318` + border-bottom + ombra profonda (non più glassmorphism)
+- Sidebar: `#0D1014`, nav items in Archivo 12.5px/500, left-border inset su `.on`
+- Tabelle: header `#171C23`, IBM Plex Mono, border-bottom `.10`, row separator `.04`
+- Bottone primario: gradient arancio con inset highlight + shadow
+- Card `.card-t`: padding-bottom + border-bottom come header sezione
+- KPI: IBM Plex Mono, gradient bg, letter-spacing -.02em
+- Tag/badge: 4px radius, IBM Plex Mono, bordo colorato
+- Scrollbar: 10px wide, `#262C34` thumb con border
+- Tutti gli elementi tipografici numeri/etichette migrati a `var(--fmono)`
+
 ## Prossimo passo
 
 Attivare e testare il flusso push notification end-to-end (permesso browser → salvataggio subscription → invio da edge function al coach/atleta).
