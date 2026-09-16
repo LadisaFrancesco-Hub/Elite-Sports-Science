@@ -61,7 +61,17 @@
       "Bash(pip3 install *)",
       "mcp__claude_ai_Figma__whoami",
       "mcp__claude_ai_Figma__create_new_file",
-      "mcp__claude_ai_Figma__use_figma"
+      "mcp__claude_ai_Figma__use_figma",
+      "Bash(lighthouse --version)",
+      "Bash(sudo npm install -g lighthouse)",
+      "WebFetch(domain:forgia.app)",
+      "WebSearch",
+      "Bash(npm --version)",
+      "mcp__claude_ai_Vercel__get_project",
+      "Bash(npm error *)",
+      "Bash(sudo chmod -R 755 /Users/ladisa/.npm/_cacache)",
+      "Bash(sudo rm -rf /Users/ladisa/.npm/_cacache)",
+      "mcp__claude_ai_Vercel__import-claude-design-from-url"
     ]
   }
 }

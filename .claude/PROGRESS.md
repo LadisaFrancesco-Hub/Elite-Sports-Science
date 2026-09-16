@@ -98,6 +98,17 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Scrollbar: 10px wide, `#262C34` thumb con border
 - Tutti gli elementi tipografici numeri/etichette migrati a `var(--fmono)`
 
+**Design System v3 — Redesign visivo completo Coach Console (da file HTML esportato)**
+- Token `:root` migrati a oklch: `--teal oklch(0.76 0.16 52)`, `--coral oklch(0.66 0.20 22)`, `--amber oklch(0.82 0.13 88)`, `--green oklch(0.74 0.11 175)`
+- Card header gradient (`#161A20→#12161B`) su tutti i pannelli coach tranne Editor schede (escluso con `:not(#p-editor)`)
+- Nav active: `inset 3px 0 0 var(--teal)`, background quasi trasparente, testo primario
+- Bottone primario: gradient oklch, shadow con `var(--teal-m)`, colore testo `#140A03`
+- Topbar: logo icon ES + badge COACH in IBM Plex Mono
+- Barre volume: altezza 168px, `border-top: 2px solid var(--teal)`
+- Grafici Chart.js: radar recovery (oklch arancio), radar performance (oklch teal), e1RM line (oklch), HRV trend, scatter HRV vs perf, peaking/tapering — tutti con IBM Plex Mono su assi e tooltip scuro `rgba(12,15,19,.95)`
+- Alert dashboard, triage, LSI, monotonia Foster: background e border in oklch semantico
+- Tag `.tg/.ta/.tc`, nav badge, insight box: oklch
+
 ## Prossimo passo
 
 Attivare e testare il flusso push notification end-to-end (permesso browser → salvataggio subscription → invio da edge function al coach/atleta).

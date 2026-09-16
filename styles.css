@@ -19,19 +19,19 @@
   --nav-bg:  #0D1014;   /* sidebar */
   --input-bg:#0C0F13;   /* inline inputs */
 
-  /* Brand */
-  --teal:    #F97316;
-  --teal-d:  rgba(249, 115, 22, 0.10);
-  --teal-m:  #ea6c0a;
-  --amber:   #F59E0B;
-  --amber-d: rgba(245, 158, 11, 0.10);
-  --coral:   #EF4444;
-  --coral-d: rgba(239, 68, 68, 0.10);
+  /* Brand — oklch semantic palette v2 */
+  --teal:    oklch(0.76 0.16 52);         /* accento primario */
+  --teal-d:  oklch(0.72 0.16 52 / .16);  /* accento bg dim */
+  --teal-m:  oklch(0.68 0.16 48);        /* bottone gradient bottom */
+  --amber:   oklch(0.82 0.13 88);        /* attenzione / warning */
+  --amber-d: oklch(0.26 0.06 88);        /* attenzione bg */
+  --coral:   oklch(0.66 0.20 22);        /* rischio / errore */
+  --coral-d: oklch(0.18 0.04 22);        /* rischio bg */
   --purple:  #8B5CF6;
   --purple-d:rgba(139, 92, 246, 0.10);
   --blue:    #3B82F6;
   --blue-d:  rgba(59, 130, 246, 0.10);
-  --green:   #2DB896;
+  --green:   oklch(0.74 0.11 175);       /* ottimale / sync */
 
   /* Typography */
   --text:     #E6E9ED;
@@ -61,7 +61,7 @@
   --transition-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --transition-snap:   cubic-bezier(0.22, 1, 0.36, 1);
   --transition-base:   0.15s ease;
-  --focus-ring: 0 0 0 3px rgba(249, 115, 22, 0.15);
+  --focus-ring: 0 0 0 3px oklch(0.76 0.16 52 / .18);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -244,10 +244,10 @@ body {
 
 .nav-btn { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: var(--radius-btn); width: 100%; border: none; background: none; color: var(--dim); font-family: var(--fm); font-size: 12.5px; font-weight: 500; cursor: pointer; text-align: left; transition: background .12s, color .12s; position: relative; }
 .nav-btn:hover   { background: #171C22; color: var(--text); }
-.nav-btn.on      { background: var(--teal-d); color: var(--teal); box-shadow: inset 2px 0 0 var(--teal); }
+.nav-btn.on      { background: rgba(255,255,255,.03); color: var(--text); box-shadow: inset 3px 0 0 var(--teal); }
 .nav-btn .ico    { font-size: 14px; width: 16px; text-align: center; flex-shrink: 0; }
-.nav-badge { margin-left: auto; background: rgba(239,68,68,.18); color: var(--coral); font-family: var(--fmono); font-size: 9px; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
-.nav-badge-warn { margin-left: 4px; background: rgba(245,158,11,.15); color: var(--amber); font-family: var(--fmono); font-size: 9px; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
+.nav-badge { margin-left: auto; background: oklch(0.18 0.04 22); color: var(--coral); font-family: var(--fmono); font-size: 9px; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
+.nav-badge-warn { margin-left: 4px; background: oklch(0.26 0.06 88); color: var(--amber); font-family: var(--fmono); font-size: 9px; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
 
 .sidebar-foot { margin-top: auto; padding: 10px 9px 2px; border-top: 1px solid rgba(255,255,255,.06); display: flex; flex-direction: column; gap: 4px; }
 .foot-btn { width: 100%; padding: 7px; border-radius: var(--radius-btn); border: 1px solid var(--border); background: none; color: var(--dim); font-family: var(--fm); font-size: 11px; cursor: pointer; transition: all .2s; text-align: center; }
@@ -324,6 +324,15 @@ body {
   border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
+/* Coach section header — gradient treatment (not Editor) */
+.panel:not(#p-editor) .card > .card-t {
+  background: linear-gradient(180deg, #161A20, #12161B);
+  margin: -16px -18px 12px;
+  padding: 11px 14px;
+  padding-bottom: 11px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
 /* ══════════════════════════════════════════════════════════════
    GRIGLIE
    ══════════════════════════════════════════════════════════════ */
@@ -343,11 +352,11 @@ body {
    TAG / BADGE
    ══════════════════════════════════════════════════════════════ */
 .tag { display: inline-flex; align-items: center; padding: 3px 7px; border-radius: 4px; font-family: var(--fmono); font-size: 9.5px; font-weight: 600; letter-spacing: .08em; }
-.tg  { background: var(--teal-d);   color: var(--teal);   border: 1px solid rgba(249,115,22,.22); }
-.ta  { background: var(--amber-d);  color: var(--amber);  border: 1px solid rgba(245,158,11,.22); }
-.tc  { background: var(--coral-d);  color: var(--coral);  border: 1px solid rgba(239,68,68,.22); }
-.tp  { background: var(--purple-d); color: var(--purple); border: 1px solid rgba(139,92,246,.22); }
-.tb  { background: var(--blue-d);   color: var(--blue);   border: 1px solid rgba(59,130,246,.22); }
+.tg  { background: oklch(0.36 0.09 52);  color: var(--teal);   border: 1px solid oklch(0.44 0.09 52); }
+.ta  { background: oklch(0.26 0.06 88);  color: var(--amber);  border: 1px solid oklch(0.40 0.08 88); }
+.tc  { background: oklch(0.18 0.04 22);  color: var(--coral);  border: 1px solid oklch(0.24 0.06 22); }
+.tp  { background: var(--purple-d);      color: var(--purple); border: 1px solid rgba(139,92,246,.22); }
+.tb  { background: var(--blue-d);        color: var(--blue);   border: 1px solid rgba(59,130,246,.22); }
 
 /* ══════════════════════════════════════════════════════════════
    FORM — Input, Select, Textarea
@@ -388,8 +397,8 @@ html body input:focus,
 html body select:focus,
 html body textarea:focus {
   border-color: var(--teal) !important;
-  background: rgba(249, 115, 22, 0.06) !important;
-  box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.15) !important;
+  background: oklch(0.76 0.16 52 / .06) !important;
+  box-shadow: var(--focus-ring) !important;
   outline: none;
 }
 
@@ -427,9 +436,9 @@ input[type=range]::-webkit-slider-thumb {
   transition: filter .15s, transform .15s;
 }
 .btn-p {
-  background: linear-gradient(180deg, #F5821F, #D8631A);
-  color: #120800;
-  box-shadow: 0 1px 0 rgba(255,255,255,.22) inset, 0 5px 12px -4px rgba(215,94,20,.50);
+  background: linear-gradient(180deg, var(--teal), var(--teal-m));
+  color: #140A03;
+  box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 6px 14px -8px var(--teal-m);
 }
 .btn-p:hover  { filter: brightness(1.08); }
 .btn-p:active { transform: scale(0.97) !important; filter: brightness(0.95) !important; }
@@ -631,9 +640,9 @@ tr:hover td { background: #171C22; }
    INSIGHT BOX
    ══════════════════════════════════════════════════════════════ */
 .ins     { border-left: 3px solid; border-radius: 0 6px 6px 0; padding: 10px 12px; margin-bottom: 7px; font-family: var(--fm); font-size: 11.5px; line-height: 1.6; }
-.ins-t   { background: var(--teal-d);  border-color: var(--teal);  color: #9FE8D4; }
-.ins-a   { background: var(--amber-d); border-color: var(--amber); color: #E8C868; }
-.ins-c   { background: var(--coral-d); border-color: var(--coral); color: #E89099; }
+.ins-t   { background: oklch(0.36 0.09 52 / .25);  border-color: var(--teal);  color: oklch(0.84 0.13 52); }
+.ins-a   { background: oklch(0.26 0.06 88 / .6);  border-color: var(--amber); color: oklch(0.82 0.13 88); }
+.ins-c   { background: oklch(0.18 0.04 22 / .8);  border-color: var(--coral); color: oklch(0.74 0.15 22); }
 .ins strong { display: block; margin-bottom: 2px; font-family: var(--fm); font-size: 12px; font-weight: 600; }
 
 /* ══════════════════════════════════════════════════════════════
@@ -650,9 +659,9 @@ tr:hover td { background: #171C22; }
 /* ══════════════════════════════════════════════════════════════
    BAR CHART — Tonnellaggio
    ══════════════════════════════════════════════════════════════ */
-.bc       { display: flex; align-items: flex-end; gap: 8px; height: 100px; }
+.bc       { display: flex; align-items: flex-end; gap: 6px; height: 168px; }
 .bc-col   { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; }
-.bc-bar   { width: 100%; border-radius: 3px 3px 0 0; min-height: 3px; transition: height .4s; }
+.bc-bar   { width: 100%; border-radius: 3px 3px 0 0; min-height: 3px; transition: height .4s; border-top: 2px solid var(--teal); }
 .bc-lbl   { font-family: var(--fmono); font-size: 9px; color: var(--dim2); text-align: center; }
 .bc-col .bc-val { font-family: var(--fmono); font-size: 9px; color: var(--teal); }
 

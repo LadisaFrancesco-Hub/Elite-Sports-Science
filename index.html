@@ -5,20 +5,20 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>Elite Sports Science</title>
 <!-- CACHE BUSTER: questo script gira PRIMA di qualsiasi SW o cache.
-     Aggiorna ESS_REQUIRED ad ogni deploy per forzare un reset pulito su tutti i dispositivi. -->
+  Aggiorna ESS_REQUIRED ad ogni deploy per forzare un reset pulito su tutti i dispositivi. -->
 <script>
 (function(){
   var ESS_REQUIRED = '6.56';
   if (localStorage.getItem('ess_cache_v') !== ESS_REQUIRED) {
-    localStorage.setItem('ess_cache_v', ESS_REQUIRED);
-    var p = ('serviceWorker' in navigator)
-      ? navigator.serviceWorker.getRegistrations()
-          .then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); })
-      : Promise.resolve();
-    var c = ('caches' in window)
-      ? caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); })
-      : Promise.resolve();
-    Promise.all([p, c]).then(function(){ location.reload(); });
+  localStorage.setItem('ess_cache_v', ESS_REQUIRED);
+  var p = ('serviceWorker' in navigator)
+  ? navigator.serviceWorker.getRegistrations()
+  .then(function(rs){ return Promise.all(rs.map(function(r){ return r.unregister(); })); })
+  : Promise.resolve();
+  var c = ('caches' in window)
+  ? caches.keys().then(function(ks){ return Promise.all(ks.map(function(k){ return caches.delete(k); })); })
+  : Promise.resolve();
+  Promise.all([p, c]).then(function(){ location.reload(); });
   }
 })();
 </script>
@@ -40,84 +40,84 @@
 <body>
 
 <div id="splash-screen">
-    <div style="font-size:24px; font-weight:800; color:#f97316; letter-spacing:1px; animation: splashPulse 1.5s infinite alternate; font-family:sans-serif;">
-        ELITE SPORTS SCIENCE
-    </div>
-    <div style="font-size:11px; color:#64748b; margin-top:10px; font-family:monospace;">
-        Caricamento dati in corso...
-    </div>
+  <div style="font-size:24px; font-weight:800; color:#f97316; letter-spacing:1px; animation: splashPulse 1.5s infinite alternate; font-family:sans-serif;">
+  ELITE SPORTS SCIENCE
+  </div>
+  <div style="font-size:11px; color:#64748b; margin-top:10px; font-family:monospace;">
+  Caricamento dati in corso...
+  </div>
 </div>
 
 <div id="custom-confirm-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); display:none; align-items:center; justify-content:center; z-index:9999; backdrop-filter: blur(4px); font-family:sans-serif;">
-    <div style="background:var(--s2); border:1px solid var(--border); border-radius:16px; padding:20px; width:90%; max-width:340px; text-align:center; box-sizing:border-box;">
-        <div style="font-size:16px; font-weight:700; margin-bottom:10px; color:var(--text);">Sei assolutamente sicuro?</div>
-        <div style="font-size:12px; color:var(--muted); margin-bottom:20px; line-height:1.4;">Questa azione è irreversibile. Tutti i dati, i mesocicli e lo storico di questo atleta verranno cancellati per sempre.</div>
-        <div style="display:flex; gap:10px; justify-content:center;">
-            <button class="btn btn-xs" id="confirm-cancel-btn" style="background:var(--s1); color:var(--text); border:1px solid var(--border); padding:8px 16px; border-radius:8px; cursor:pointer;">Annulla</button>
-            <button class="btn btn-xs" id="confirm-delete-btn" style="background:#ef4444; color:white; padding:8px 16px; border-radius:8px; font-weight:600; border:none; cursor:pointer;">Sì, Elimina</button>
-        </div>
-    </div>
+  <div style="background:var(--s2); border:1px solid var(--border); border-radius:16px; padding:20px; width:90%; max-width:340px; text-align:center; box-sizing:border-box;">
+  <div style="font-size:16px; font-weight:700; margin-bottom:10px; color:var(--text);">Sei assolutamente sicuro?</div>
+  <div style="font-size:12px; color:var(--muted); margin-bottom:20px; line-height:1.4;">Questa azione è irreversibile. Tutti i dati, i mesocicli e lo storico di questo atleta verranno cancellati per sempre.</div>
+  <div style="display:flex; gap:10px; justify-content:center;">
+  <button class="btn btn-xs" id="confirm-cancel-btn" style="background:var(--s1); color:var(--text); border:1px solid var(--border); padding:8px 16px; border-radius:8px; cursor:pointer;">Annulla</button>
+  <button class="btn btn-xs" id="confirm-delete-btn" style="background:#ef4444; color:white; padding:8px 16px; border-radius:8px; font-weight:600; border:none; cursor:pointer;">Sì, Elimina</button>
+  </div>
+  </div>
 </div>
 
 <button class="menu-toggle" onclick="toggleMobileMenu()">☰ Menu</button>
 
 <div id="login-screen" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:radial-gradient(ellipse at 50% 0%, rgba(249,115,22,0.12) 0%, #0a0f1d 60%); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px; z-index:99999; font-family:inherit;">
-    <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
-        <img src="/icons/icon-192.png" alt="Elite Sports Science" style="width:64px; height:64px; border-radius:16px; box-shadow:0 8px 24px rgba(249,115,22,0.3);">
-        <div style="font-size:11px; color:#f97316; letter-spacing:0.2em; text-transform:uppercase; font-weight:600;">Elite Sports Science</div>
-    </div>
-    <div id="login-card" style="position:relative; background:#111827; border: 1px solid rgba(255,255,255,0.08); padding: 36px 40px; border-radius: 16px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6); transition: all 0.3s ease;">
-        <div style="position:absolute; top:15px; right:20px; display:flex; gap:8px; font-size:12px;">
-            <span id="lang-it" onclick="setLoginLanguage('it')" style="color:#f97316; cursor:pointer; font-weight:700; transition:color 0.2s;">IT</span>
-            <span style="color:rgba(255,255,255,0.2);">|</span>
-            <span id="lang-en" onclick="setLoginLanguage('en')" style="color:#6b7280; cursor:pointer; font-weight:500; transition:color 0.2s;">EN</span>
-        </div>
-        <div style="font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; letter-spacing: -0.5px;">
-            Performance & Injury Prevention
-        </div>
-        <div style="color: #4b5563; font-size: 12px; margin-bottom: 28px; letter-spacing: 0.05em;">Accedi per continuare</div>
-        <div id="login-step-code">
-            <label id="lbl-login-code" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Codice Accesso Atleta</label>
-            <input type="text" id="input-login-code" placeholder="Inserisci il tuo codice" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 20px; outline:none; box-sizing:border-box;" onkeydown="if(event.key==='Enter')handleLoginStepCode()">
-            <button id="btn-login-code" onclick="handleLoginStepCode()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer; transition:background 0.2s;">Accedi</button>
-            <div style="margin-top:20px; text-align:center;">
-                <span onclick="showCoachLogin()" style="font-size:12px; color:#4b5563; cursor:pointer; text-decoration:underline; letter-spacing:0.3px;">Accesso Coach</span>
-            </div>
-            <div style="margin-top: 20px; font-size: 11px; color: #4b5563; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 500;">
-                Developed by <span style="color: #6b7280; font-weight: 600;">Francesco Ladisa</span>
-            </div>
-        </div>
-        <div id="login-step-athlete-password" style="display:none;">
-            <div id="lbl-ath-welcome" style="font-size:15px; font-weight:700; color:#fff; margin-bottom:6px; text-align:left;"></div>
-            <div style="font-size:12px; color:#6b7280; margin-bottom:20px; text-align:left;">Inserisci la tua password per accedere</div>
-            <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Password</label>
-            <input type="password" id="input-ath-password" name="password" autocomplete="current-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:20px; outline:none; box-sizing:border-box;" onkeydown="if(event.key==='Enter')handleAthletePasswordLogin()">
-            <button onclick="handleAthletePasswordLogin()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Accedi</button>
-            <button onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">← Torna indietro</button>
-        </div>
-        <div id="login-step-athlete-setup" style="display:none;">
-            <div style="background:#1f2937; border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:20px; text-align:left;">
-                <div style="font-size:12px; font-weight:700; color:#f59e0b; margin-bottom:4px;">PRIMA CONFIGURAZIONE</div>
-                <div style="font-size:12px; color:#9ca3af; line-height:1.5;">Crea le tue credenziali sicure. Da ora userai email e password al posto del codice.</div>
-            </div>
-            <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Email</label>
-            <input type="email" id="input-ath-setup-email" name="email" autocomplete="email" placeholder="tua@email.com" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:15px; outline:none; box-sizing:border-box;">
-            <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Password (min 8 caratteri)</label>
-            <input type="password" id="input-ath-setup-password" name="password" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:15px; outline:none; box-sizing:border-box;">
-            <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Conferma password</label>
-            <input type="password" id="input-ath-setup-confirm" name="password-confirm" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:20px; outline:none; box-sizing:border-box;">
-            <button onclick="handleAthleteFirstTimeSetup()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Crea account e accedi</button>
-            <button onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">← Torna indietro</button>
-        </div>
-        <div id="login-step-admin" style="display:none;">
-            <label id="lbl-admin-email" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Email Coach</label>
-            <input type="email" id="input-admin-email" placeholder="coach@elitesport.com" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 15px; outline:none; box-sizing:border-box;">
-            <label id="lbl-admin-pass" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Password</label>
-            <input type="password" id="input-admin-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 20px; outline:none; box-sizing:border-box;">
-            <button id="btn-login-admin" onclick="handleLoginAdmin()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer; transition:background 0.2s;">Accedi come Coach</button>
-            <button id="btn-admin-back" onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">Torna indietro</button>
-        </div>
-    </div>
+  <div style="display:flex; flex-direction:column; align-items:center; gap:10px;">
+  <img src="/icons/icon-192.png" alt="Elite Sports Science" style="width:64px; height:64px; border-radius:16px; box-shadow:0 8px 24px rgba(249,115,22,0.3);">
+  <div style="font-size:11px; color:#f97316; letter-spacing:0.2em; text-transform:uppercase; font-weight:600;">Elite Sports Science</div>
+  </div>
+  <div id="login-card" style="position:relative; background:#111827; border: 1px solid rgba(255,255,255,0.08); padding: 36px 40px; border-radius: 16px; width: 100%; max-width: 400px; text-align: center; box-shadow: 0 20px 60px rgba(0,0,0,0.6); transition: all 0.3s ease;">
+  <div style="position:absolute; top:15px; right:20px; display:flex; gap:8px; font-size:12px;">
+  <span id="lang-it" onclick="setLoginLanguage('it')" style="color:#f97316; cursor:pointer; font-weight:700; transition:color 0.2s;">IT</span>
+  <span style="color:rgba(255,255,255,0.2);">|</span>
+  <span id="lang-en" onclick="setLoginLanguage('en')" style="color:#6b7280; cursor:pointer; font-weight:500; transition:color 0.2s;">EN</span>
+  </div>
+  <div style="font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 4px; letter-spacing: -0.5px;">
+  Performance & Injury Prevention
+  </div>
+  <div style="color: #4b5563; font-size: 12px; margin-bottom: 28px; letter-spacing: 0.05em;">Accedi per continuare</div>
+  <div id="login-step-code">
+  <label id="lbl-login-code" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Codice Accesso Atleta</label>
+  <input type="text" id="input-login-code" placeholder="Inserisci il tuo codice" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 20px; outline:none; box-sizing:border-box;" onkeydown="if(event.key==='Enter')handleLoginStepCode()">
+  <button id="btn-login-code" onclick="handleLoginStepCode()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer; transition:background 0.2s;">Accedi</button>
+  <div style="margin-top:20px; text-align:center;">
+  <span onclick="showCoachLogin()" style="font-size:12px; color:#4b5563; cursor:pointer; text-decoration:underline; letter-spacing:0.3px;">Accesso Coach</span>
+  </div>
+  <div style="margin-top: 20px; font-size: 11px; color: #4b5563; letter-spacing: 0.5px; text-transform: uppercase; font-weight: 500;">
+  Developed by <span style="color: #6b7280; font-weight: 600;">Francesco Ladisa</span>
+  </div>
+  </div>
+  <div id="login-step-athlete-password" style="display:none;">
+  <div id="lbl-ath-welcome" style="font-size:15px; font-weight:700; color:#fff; margin-bottom:6px; text-align:left;"></div>
+  <div style="font-size:12px; color:#6b7280; margin-bottom:20px; text-align:left;">Inserisci la tua password per accedere</div>
+  <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Password</label>
+  <input type="password" id="input-ath-password" name="password" autocomplete="current-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:20px; outline:none; box-sizing:border-box;" onkeydown="if(event.key==='Enter')handleAthletePasswordLogin()">
+  <button onclick="handleAthletePasswordLogin()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Accedi</button>
+  <button onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">← Torna indietro</button>
+  </div>
+  <div id="login-step-athlete-setup" style="display:none;">
+  <div style="background:#1f2937; border:1px solid #f59e0b; border-radius:8px; padding:12px; margin-bottom:20px; text-align:left;">
+  <div style="font-size:12px; font-weight:700; color:#f59e0b; margin-bottom:4px;">PRIMA CONFIGURAZIONE</div>
+  <div style="font-size:12px; color:#9ca3af; line-height:1.5;">Crea le tue credenziali sicure. Da ora userai email e password al posto del codice.</div>
+  </div>
+  <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Email</label>
+  <input type="email" id="input-ath-setup-email" name="email" autocomplete="email" placeholder="tua@email.com" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:15px; outline:none; box-sizing:border-box;">
+  <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Password (min 8 caratteri)</label>
+  <input type="password" id="input-ath-setup-password" name="password" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:15px; outline:none; box-sizing:border-box;">
+  <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Conferma password</label>
+  <input type="password" id="input-ath-setup-confirm" name="password-confirm" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:20px; outline:none; box-sizing:border-box;">
+  <button onclick="handleAthleteFirstTimeSetup()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Crea account e accedi</button>
+  <button onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">← Torna indietro</button>
+  </div>
+  <div id="login-step-admin" style="display:none;">
+  <label id="lbl-admin-email" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Email Coach</label>
+  <input type="email" id="input-admin-email" placeholder="coach@elitesport.com" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 15px; outline:none; box-sizing:border-box;">
+  <label id="lbl-admin-pass" style="display:block; text-align:left; color:#9ca3af; font-size: 12px; font-weight: 600; text-transform: uppercase; margin-bottom: 8px;">Password</label>
+  <input type="password" id="input-admin-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom: 20px; outline:none; box-sizing:border-box;">
+  <button id="btn-login-admin" onclick="handleLoginAdmin()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer; transition:background 0.2s;">Accedi come Coach</button>
+  <button id="btn-admin-back" onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">Torna indietro</button>
+  </div>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -132,21 +132,21 @@
 <div class="mo-box">
   <div class="mo-t">Feedback Sessione <button class="mo-x" onclick="closeMo('mo-reply')">✕</button></div>
   <div class="fg">
-    <label class="fl">Note atleta</label>
-    <div id="mr-notes" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--purple);min-height:60px;white-space:pre-wrap;line-height:1.5;"></div>
+  <label class="fl">Note atleta</label>
+  <div id="mr-notes" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--purple);min-height:60px;white-space:pre-wrap;line-height:1.5;"></div>
   </div>
   <div id="mr-rpe-compare" style="display:none;margin-top:4px;"></div>
   <div class="fg" id="mr-vars-wrap" style="margin-top:4px;display:none">
-    <label class="fl">Variazioni apportate</label>
-    <div id="mr-vars" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--amber);min-height:40px;white-space:pre-wrap;line-height:1.5;"></div>
+  <label class="fl">Variazioni apportate</label>
+  <div id="mr-vars" style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:10px 12px;font-size:13px;color:var(--amber);min-height:40px;white-space:pre-wrap;line-height:1.5;"></div>
   </div>
   <div class="fg" style="margin-top:4px">
-    <label class="fl">Risposta coach</label>
-    <textarea id="mr-reply" placeholder="Scrivi il tuo feedback all'atleta..." style="min-height:80px"></textarea>
+  <label class="fl">Risposta coach</label>
+  <textarea id="mr-reply" placeholder="Scrivi il tuo feedback all'atleta..." style="min-height:80px"></textarea>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-    <button class="btn btn-g" onclick="closeMo('mo-reply')">Annulla</button>
-    <button class="btn btn-p" onclick="saveReply()">Invia risposta</button>
+  <button class="btn btn-g" onclick="closeMo('mo-reply')">Annulla</button>
+  <button class="btn btn-p" onclick="saveReply()">Invia risposta</button>
   </div>
 </div>
 </div>
@@ -158,14 +158,14 @@
   <div class="fr3"><div class="fg"><label class="fl">Sessione</label><select id="ms-sess"></select></div><div class="fg"><label class="fl">Settimana</label><input type="number" id="ms-week" min="1" max="52" value="1"></div><div class="fg"><label class="fl">Fase</label><select id="ms-phase"><option>Accumulo</option><option>Intensificazione</option><option>Scarico</option></select></div></div>
   <div class="fr"><div class="fg"><label class="fl">Volume kg</label><input type="number" id="ms-vol" placeholder="4500"></div><div class="fg"><label class="fl">Set lavorativi</label><input type="number" id="ms-sets" placeholder="15"></div></div>
   <div class="fr"><div class="fg"><label class="fl">Readiness pre (0-100)</label><input type="number" id="ms-r" min="0" max="100" placeholder="78"></div><div class="fg"><label class="fl">RPE (6-10)</label><input type="number" id="ms-rpe" min="6" max="10" step=".5" placeholder="7"></div></div>
-  <div class="fr"><div class="fg"><label class="fl">Qualità ★ (1-5)</label><input type="number" id="ms-q" min="1" max="5" placeholder="4"></div><div class="fg"><label class="fl">Intensità %1RM</label><input type="number" id="ms-int" placeholder="73"></div></div>
+  <div class="fr"><div class="fg"><label class="fl">Qualità (1-5)</label><input type="number" id="ms-q" min="1" max="5" placeholder="4"></div><div class="fg"><label class="fl">Intensità %1RM</label><input type="number" id="ms-int" placeholder="73"></div></div>
   <div class="fg"><label class="fl">DOMS</label><input type="text" id="ms-doms" placeholder="Petto · Spalle"></div>
   <div class="fg"><label class="fl">Flag</label><input type="text" id="ms-flag" placeholder="Dolore / Carico alto / ..."></div>
   <div class="fg"><label class="fl">Note atleta</label><textarea id="ms-notes" placeholder="Osservazioni tecnica..."></textarea></div>
   <div class="fg"><label class="fl">Risposta coach</label><textarea id="ms-reply" placeholder="Feedback..."></textarea></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-    <button class="btn btn-g" onclick="closeMo('mo-sess')">Annulla</button>
-    <button class="btn btn-p" onclick="saveSess()">Salva</button>
+  <button class="btn btn-g" onclick="closeMo('mo-sess')">Annulla</button>
+  <button class="btn btn-p" onclick="saveSess()">Salva</button>
   </div>
 </div>
 </div>
@@ -174,23 +174,23 @@
 <div class="mo-box">
   <div class="mo-t">Nuovo atleta <button class="mo-x" onclick="closeMo('mo-ath')">✕</button></div>
   <div class="fr">
-    <div class="fg"><label class="fl">Nome completo</label><input type="text" id="ma-name" placeholder="Mario Rossi"></div>
-    <div class="fg"><label class="fl">Livello</label><select id="ma-lvl"><option>Principiante</option><option>Intermedio</option><option selected>Intermedio avanzato</option><option>Avanzato</option></select></div>
+  <div class="fg"><label class="fl">Nome completo</label><input type="text" id="ma-name" placeholder="Mario Rossi"></div>
+  <div class="fg"><label class="fl">Livello</label><select id="ma-lvl"><option>Principiante</option><option>Intermedio</option><option selected>Intermedio avanzato</option><option>Avanzato</option></select></div>
   </div>
   <div class="fg"><label class="fl">Email atleta <span style="color:#f59e0b;font-size:10px;">— usata per il login</span></label><input type="email" id="ma-email" placeholder="atleta@email.com"></div>
   <div class="fr">
-    <div class="fg"><label class="fl">Obiettivo</label><select id="ma-goal"><option>Performance Atletica</option><option>Riabilitazione</option><option>Mobilità</option><option>Ipertrofia</option><option>Forza</option><option>Potenza</option></select></div>
-    <div class="fg"><label class="fl">Sessioni/settimana</label><select id="ma-freq"><option>2</option><option>3</option><option selected>4</option><option>5</option></select></div>
+  <div class="fg"><label class="fl">Obiettivo</label><select id="ma-goal"><option>Performance Atletica</option><option>Riabilitazione</option><option>Mobilità</option><option>Ipertrofia</option><option>Forza</option><option>Potenza</option></select></div>
+  <div class="fg"><label class="fl">Sessioni/settimana</label><select id="ma-freq"><option>2</option><option>3</option><option selected>4</option><option>5</option></select></div>
   </div>
   <div class="fr3">
-    <div class="fg"><label class="fl">Altezza (cm)</label><input type="number" id="ma-h" placeholder="180"></div>
-    <div class="fg"><label class="fl">Peso iniziale (kg)</label><input type="number" id="ma-w" placeholder="75"></div>
-    <div class="fg"><label class="fl">BF iniziale (%)</label><input type="number" id="ma-bf" placeholder="12"></div>
+  <div class="fg"><label class="fl">Altezza (cm)</label><input type="number" id="ma-h" placeholder="180"></div>
+  <div class="fg"><label class="fl">Peso iniziale (kg)</label><input type="number" id="ma-w" placeholder="75"></div>
+  <div class="fg"><label class="fl">BF iniziale (%)</label><input type="number" id="ma-bf" placeholder="12"></div>
   </div>
   <div class="fg"><label class="fl">Note Antropometriche / Infortuni</label><textarea id="ma-notes" placeholder="Storico infortuni, note d'interesse..."></textarea></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-    <button class="btn btn-g" onclick="closeMo('mo-ath')">Annulla</button>
-    <button class="btn btn-p" id="ma-save-btn" onclick="addAthlete()">Aggiungi</button>
+  <button class="btn btn-g" onclick="closeMo('mo-ath')">Annulla</button>
+  <button class="btn btn-p" id="ma-save-btn" onclick="addAthlete()">Aggiungi</button>
 </div>
 </div>
 </div>
@@ -200,13 +200,13 @@
   <div class="mo-t" style="justify-content:center">Atleta aggiunto ✓ <button class="mo-x" onclick="closeMo('mo-ath-code')">✕</button></div>
   <div id="mac-info" style="font-size:13px;color:var(--muted);margin-bottom:16px;text-align:left"></div>
   <div style="background:var(--s1);border:2px dashed var(--teal);border-radius:12px;padding:20px 16px;margin-bottom:16px">
-    <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Codice di accesso</div>
-    <div id="mac-code" style="font-size:30px;font-weight:800;color:var(--teal);font-family:monospace;letter-spacing:.1em"></div>
+  <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px">Codice di accesso</div>
+  <div id="mac-code" style="font-size:30px;font-weight:800;color:var(--teal);font-family:monospace;letter-spacing:.1em"></div>
   </div>
   <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;text-align:left">Comunica questo codice all'atleta. Al primo accesso lo inserisce e imposta email e password definitivi.</div>
   <div style="display:flex;gap:8px;justify-content:flex-end">
-    <button class="btn btn-g" onclick="closeMo('mo-ath-code')">Chiudi</button>
-    <button class="btn btn-p" id="mac-copy-btn" onclick="copyCodiceAtleta()">Copia codice</button>
+  <button class="btn btn-g" onclick="closeMo('mo-ath-code')">Chiudi</button>
+  <button class="btn btn-p" id="mac-copy-btn" onclick="copyCodiceAtleta()">Copia codice</button>
   </div>
 </div>
 </div>
@@ -216,8 +216,8 @@
   <div class="mo-t" style="justify-content:center">Conferma azione <button class="mo-x" onclick="closeMo('mo-confirm')">✕</button></div>
   <div id="mo-confirm-msg" style="font-size:14px;color:var(--text);margin:12px 0 20px;line-height:1.5"></div>
   <div style="display:flex;gap:8px;justify-content:center">
-    <button class="btn btn-g" onclick="closeMo('mo-confirm')">Annulla</button>
-    <button class="btn btn-d" id="mo-confirm-ok" onclick="_confirmOk()">Elimina</button>
+  <button class="btn btn-g" onclick="closeMo('mo-confirm')">Annulla</button>
+  <button class="btn btn-d" id="mo-confirm-ok" onclick="_confirmOk()">Elimina</button>
   </div>
 </div>
 </div>
@@ -228,12 +228,12 @@
   <div id="mma-info" style="font-size:13px;color:var(--muted);margin-bottom:16px;line-height:1.5"></div>
   <div class="fg"><label class="fl">Nome nuovo mesociclo</label><input type="text" id="mma-name" placeholder="Meso 2"></div>
   <div style="display:flex;align-items:center;gap:10px;margin-top:12px;padding:10px 12px;background:var(--s1);border-radius:8px;cursor:pointer" onclick="document.getElementById('mma-keep').click()">
-    <input type="checkbox" id="mma-keep" checked style="width:16px;height:16px;accent-color:var(--teal)" onclick="event.stopPropagation()">
-    <label for="mma-keep" style="font-size:13px;color:var(--text);cursor:pointer">Usa le sessioni correnti come punto di partenza</label>
+  <input type="checkbox" id="mma-keep" checked style="width:16px;height:16px;accent-color:var(--teal)" onclick="event.stopPropagation()">
+  <label for="mma-keep" style="font-size:13px;color:var(--text);cursor:pointer">Usa le sessioni correnti come punto di partenza</label>
   </div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:16px">
-    <button class="btn btn-g" onclick="closeMo('mo-meso-arch')">Annulla</button>
-    <button class="btn btn-p" onclick="confirmMesoArchive()">Archivia →</button>
+  <button class="btn btn-g" onclick="closeMo('mo-meso-arch')">Annulla</button>
+  <button class="btn btn-p" onclick="confirmMesoArchive()">Archivia →</button>
   </div>
 </div>
 </div>
@@ -245,174 +245,178 @@
   <div class="fg"><label class="fl">Scegli atleta</label><select id="exp-ath" onchange="updateExpInfo()"></select></div>
   <div class="fg"><label class="fl">Nota coach (opzionale — appare nell'app)</label><textarea id="exp-note" placeholder="Focus tecnico di questa settimana..."></textarea></div>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-    <button class="btn btn-g" onclick="closeMo('mo-exp')">Annulla</button>
-    <button class="btn btn-p" onclick="doExport()">⬇ Scarica app atleta</button>
+  <button class="btn btn-g" onclick="closeMo('mo-exp')">Annulla</button>
+  <button class="btn btn-p" onclick="doExport()"> Scarica app atleta</button>
   </div>
 </div>
 </div>
 <div class="mo" id="mo-prog">
   <div class="mo-box" style="max-width: 500px; background: var(--s1); border: 1px solid var(--border); border-radius: 14px; padding: 20px;">
-    <div class="mo-t" style="font-family: var(--fh); font-size: 16px; font-weight: 800; color: var(--text); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-      <span id="prog-title">Progressione Carico</span>
-      <button class="mo-x" onclick="closeMo('mo-prog')" style="background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer;">✕</button>
-    </div>
-        <div style="margin-bottom: 15px; background: var(--s1); padding: 10px 12px; border-radius: 8px; border: 1px dashed var(--teal);">
-      <label style="color: var(--teal); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 8px;">🤖 Smart Microcycles</label>
+  <div class="mo-t" style="font-family: var(--fh); font-size: 16px; font-weight: 800; color: var(--text); display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+  <span id="prog-title">Progressione Carico</span>
+  <button class="mo-x" onclick="closeMo('mo-prog')" style="background: none; border: none; color: var(--muted); font-size: 18px; cursor: pointer;">✕</button>
+  </div>
+  <div style="margin-bottom: 15px; background: var(--s1); padding: 10px 12px; border-radius: 8px; border: 1px dashed var(--teal);">
+  <label style="color: var(--teal); font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; display: block; margin-bottom: 8px;"> Smart Microcycles</label>
 <select id="smart-prog-select" onchange="applySmartMicrocycle(this.value)" style="background: var(--s2); font-weight: 600;">
-    <option value="manual">Scegli macro-algoritmo...</option>
-    
-       <optgroup label="🧬 IPERTROFIA (EVIDENCE-BASED)">
-        <option value="hyper_block_dup">📈 Block-DUP (Progressione MEV ➔ MRV + Scarico)</option>
-        <option value="hyper_stretch">📏 Stretch-Mediated (Focus Lengthened Partials)</option>
-        <option value="hyper_metabolic">🔥 DUP Metabolico (Myo-Reps / Rest-Pause)</option>
-    </optgroup>
-    
-    <optgroup label="🏛️ PERIODIZZAZIONE AVANZATA">
-        <option value="block_period">🧱 Block Periodization (Accumulo ➔ Trasformazione ➔ Realizzazione)</option>
-    </optgroup>
+  <option value="manual">Scegli macro-algoritmo...</option>
+   
+  <optgroup label=" IPERTROFIA (EVIDENCE-BASED)">
+  <option value="hyper_block_dup"> Block-DUP (Progressione MEV → MRV + Scarico)</option>
+  <option value="hyper_stretch"> Stretch-Mediated (Focus Lengthened Partials)</option>
+  <option value="hyper_metabolic"> DUP Metabolico (Myo-Reps / Rest-Pause)</option>
+  </optgroup>
+   
+  <optgroup label=" PERIODIZZAZIONE AVANZATA">
+  <option value="block_period"> Block Periodization (Accumulo → Trasformazione → Realizzazione)</option>
+  </optgroup>
 
-    <optgroup label="🦍 FORZA MAX">
-        <option value="lin_taper">📉 Peaking Lineare (Carico Su, Ripetizioni Giù)</option>
-        <option value="step_load">🪜 Progressione a Gradini (Consolidamento)</option>
-        <option value="wave_load">🌊 Wave Loading (Onde 3/2/1 a carico crescente)</option>
-    </optgroup>
+  <optgroup label=" FORZA MAX">
+  <option value="lin_taper"> Peaking Lineare (Carico Su, Ripetizioni Giù)</option>
+  <option value="step_load"> Progressione a Gradini (Consolidamento)</option>
+  <option value="wave_load"> Wave Loading (Onde 3/2/1 a carico crescente)</option>
+  </optgroup>
 
-    <optgroup label="🧱 IPERTROFIA FUNZIONALE">
-        <option value="double_prog">📈 Doppia Progressione (Volume ➔ Carico)</option>
-        <option value="overreach">🦍 Overreaching (Aumento Set Progressivo)</option>
-        <option value="myo_reps">🔥 Rest-Pause / Myo-Reps (Sforzi Ripetuti)</option>
-    </optgroup>
+  <optgroup label=" IPERTROFIA FUNZIONALE">
+  <option value="double_prog"> Doppia Progressione (Volume → Carico)</option>
+  <option value="overreach"> Overreaching (Aumento Set Progressivo)</option>
+  <option value="myo_reps"> Rest-Pause / Myo-Reps (Sforzi Ripetuti)</option>
+  </optgroup>
 
-    <optgroup label="⚡ POTENZA & RFD">
-        <option value="wave_contrast">🌊 Onde di Contrasto (Pesante / Esplosivo)</option>
-        <option value="cluster">⏱️ Cluster Sets (Rimodulazione intra-serie)</option>
-        <option value="french_contrast">🇫🇷 French Contrast (Cometti/Dietz PAP)</option>
-    </optgroup>
+  <optgroup label=" POTENZA & RFD">
+  <option value="wave_contrast"> Onde di Contrasto (Pesante / Esplosivo)</option>
+  <option value="cluster"> Cluster Sets (Rimodulazione intra-serie)</option>
+  <option value="french_contrast"> French Contrast (Cometti/Dietz PAP)</option>
+  </optgroup>
 
-    <optgroup label="🏛️ IBRIDI & PREVENZIONE">
-        <option value="wup">🔄 WUP (Ondulata Sett. Ip/Forza/Potenza)</option>
-        <option value="triphasic">🛡️ Triphasic Training (Dietz - Ecc/Iso/Conc)</option>
-    </optgroup>
+  <optgroup label=" IBRIDI & PREVENZIONE">
+  <option value="wup"> WUP (Ondulata Sett. Ip/Forza/Potenza)</option>
+  <option value="triphasic"> Triphasic Training (Dietz - Ecc/Iso/Conc)</option>
+  </optgroup>
 
-    <optgroup label="📐 CLASSICI & AUTOREGOLAZIONE">
-        <option value="wendler_531">5️⃣ 5/3/1 Wendler (Ciclo 3+1 Settimane)</option>
-        <option value="linear_classic">📈 Progressione Lineare Classica (+5%/sett)</option>
-        <option value="amrap_top">🔥 AMRAP Top Set + Back-Off (Autoregolazione)</option>
-    </optgroup>
+  <optgroup label=" CLASSICI & AUTOREGOLAZIONE">
+  <option value="wendler_531">5 5/3/1 Wendler (Ciclo 3+1 Settimane)</option>
+  <option value="linear_classic"> Progressione Lineare Classica (+5%/sett)</option>
+  <option value="amrap_top"> AMRAP Top Set + Back-Off (Autoregolazione)</option>
+  </optgroup>
 </select>
-    </div>
-    <div style="display: flex; flex-direction: column; gap: 10px;" id="prog-inputs-container">
-      </div>
-    
-    <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px;">
-      <button class="btn btn-g" onclick="closeMo('mo-prog')">Annulla</button>
-      <button class="btn btn-p" onclick="saveProgressionData()">Salva Progressione</button>
-    </div>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 10px;" id="prog-inputs-container">
+  </div>
+   
+  <div style="display: flex; gap: 8px; justify-content: flex-end; margin-top: 18px;">
+  <button class="btn btn-g" onclick="closeMo('mo-prog')">Annulla</button>
+  <button class="btn btn-p" onclick="saveProgressionData()">Salva Progressione</button>
+  </div>
   </div>
 </div>
 
 <div class="mo" id="mo-meso-archive">
   <div class="mo-box" style="max-width:620px;">
-    <div class="mo-t">
-      <span id="meso-archive-title">Storico Mesocicli</span>
-      <button class="mo-x" onclick="closeMo('mo-meso-archive')">✕</button>
-    </div>
-    <div style="max-height:65vh; overflow-y:auto; padding-right:4px;" id="meso-archive-list"></div>
-    <div style="display:flex; justify-content:flex-end; margin-top:16px;">
-      <button class="btn btn-g" onclick="closeMo('mo-meso-archive')">Chiudi</button>
-    </div>
+  <div class="mo-t">
+  <span id="meso-archive-title">Storico Mesocicli</span>
+  <button class="mo-x" onclick="closeMo('mo-meso-archive')">✕</button>
+  </div>
+  <div style="max-height:65vh; overflow-y:auto; padding-right:4px;" id="meso-archive-list"></div>
+  <div style="display:flex; justify-content:flex-end; margin-top:16px;">
+  <button class="btn btn-g" onclick="closeMo('mo-meso-archive')">Chiudi</button>
+  </div>
   </div>
 </div>
 
 <div class="mo" id="mo-reallog" style="z-index: 99999;">
-    <div class="mo-box" style="max-width: 320px; text-align: center; border: 1px solid var(--purple);">
-        <div class="mo-t" style="justify-content: center; margin-bottom: 5px; color: var(--purple);">Modifica Set <span id="rl-set-num"></span></div>
-        <div style="font-size:12px; color:var(--muted); margin-bottom:15px;" id="rl-target">Target: 8 rep @ 100 kg</div>
-        <input type="hidden" id="rl-ex-i">
-        <input type="hidden" id="rl-set-l">
+  <div class="mo-box" style="max-width: 320px; text-align: center; border: 1px solid var(--purple);">
+  <div class="mo-t" style="justify-content: center; margin-bottom: 5px; color: var(--purple);">Modifica Set <span id="rl-set-num"></span></div>
+  <div style="font-size:12px; color:var(--muted); margin-bottom:15px;" id="rl-target">Target: 8 rep @ 100 kg</div>
+  <input type="hidden" id="rl-ex-i">
+  <input type="hidden" id="rl-set-l">
 
-        <!-- Sezione normale: rep + kg -->
-        <div id="rl-normal-section">
-            <div class="fr">
-                <div class="fg">
-                    <label class="fl" style="color:var(--text)">Rep Eseguite</label>
-                    <input type="number" id="rl-rep" inputmode="numeric" style="font-size:24px; text-align:center; font-weight:800; color:var(--purple); padding:15px;">
-                </div>
-                <div class="fg">
-                    <label class="fl" style="color:var(--text)">Kg Sollevati</label>
-                    <input type="number" id="rl-kg" step="0.5" inputmode="decimal" style="font-size:24px; text-align:center; font-weight:800; color:var(--purple); padding:15px;">
-                </div>
-            </div>
-            <!-- RPE adattativo: selettore opzionale post-set -->
-            <div style="margin-top:12px;">
-                <div style="font-size:11px;color:var(--muted);margin-bottom:7px;text-align:left;">RPE percepita <span style="opacity:.55;font-weight:400;">(opzionale)</span></div>
-                <div class="rpe-row" id="rl-rpe-row" style="justify-content:center;"></div>
-                <div id="rl-rpe-adj" style="display:none;margin-top:8px;font-size:11px;padding:6px 10px;border-radius:8px;background:rgba(20,184,166,0.12);color:var(--teal);font-weight:700;text-align:center;"></div>
-            </div>
-            <div style="display:flex; gap:10px; margin-top:15px;">
-                <button class="btn btn-g" style="flex:1" onclick="closeMo('mo-reallog')">Annulla</button>
-                <button class="btn btn-p" style="flex:1; background:var(--purple); color:#fff;" onclick="saveRealLog()">Salva & Completa</button>
-            </div>
-        </div>
+  <!-- Sezione normale: rep + kg -->
+  <div id="rl-normal-section">
+  <div class="fr">
+  <div class="fg">
+  <label class="fl" style="color:var(--text)">Rep Eseguite</label>
+  <input type="number" id="rl-rep" inputmode="numeric" style="font-size:24px; text-align:center; font-weight:800; color:var(--purple); padding:15px;">
+  </div>
+  <div class="fg">
+  <label class="fl" style="color:var(--text)">Kg Sollevati</label>
+  <input type="number" id="rl-kg" step="0.5" inputmode="decimal" style="font-size:24px; text-align:center; font-weight:800; color:var(--purple); padding:15px;">
+  </div>
+  </div>
+  <!-- RPE adattativo: selettore opzionale post-set -->
+  <div style="margin-top:12px;">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:7px;text-align:left;">RPE percepita <span style="opacity:.55;font-weight:400;">(opzionale)</span></div>
+  <div class="rpe-row" id="rl-rpe-row" style="justify-content:center;"></div>
+  <div id="rl-rpe-adj" style="display:none;margin-top:8px;font-size:11px;padding:6px 10px;border-radius:8px;background:rgba(20,184,166,0.12);color:var(--teal);font-weight:700;text-align:center;"></div>
+  </div>
+  <div style="display:flex; gap:10px; margin-top:15px;">
+  <button class="btn btn-g" style="flex:1" onclick="closeMo('mo-reallog')">Annulla</button>
+  <button class="btn btn-p" style="flex:1; background:var(--purple); color:#fff;" onclick="saveRealLog()">Salva & Completa</button>
+  </div>
+  </div>
 
-        <!-- Sezione timer isometrico -->
-        <div id="rl-timer-section" style="display:none; text-align:center; padding:4px 0;">
-            <div id="rl-timer-display" style="font-size:80px; font-weight:900; color:var(--purple); line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-2px;">45</div>
-            <div style="font-size:12px; color:var(--muted); margin:4px 0 18px;">sec</div>
-            <button id="rl-timer-btn" onclick="toggleIsometricTimer()" style="width:100%; padding:16px; font-size:20px; font-weight:800; background:var(--purple); color:#fff; border:none; border-radius:14px; cursor:pointer; letter-spacing:1px;">▶ START</button>
-            <div style="display:flex; gap:10px; margin-top:12px;">
-                <button class="btn btn-g" style="flex:1" onclick="abortIsometricTimer()">Annulla</button>
-                <button class="btn btn-p" id="rl-timer-save" style="flex:1; background:var(--purple); color:#fff; opacity:0.35; pointer-events:none;" onclick="saveTimerSet()">Salva</button>
-            </div>
-        </div>
-    </div>
+  <!-- Sezione timer isometrico -->
+  <div id="rl-timer-section" style="display:none; text-align:center; padding:4px 0;">
+  <div id="rl-timer-display" style="font-size:80px; font-weight:900; color:var(--purple); line-height:1; font-variant-numeric:tabular-nums; letter-spacing:-2px;">45</div>
+  <div style="font-size:12px; color:var(--muted); margin:4px 0 18px;">sec</div>
+  <button id="rl-timer-btn" onclick="toggleIsometricTimer()" style="width:100%; padding:16px; font-size:20px; font-weight:800; background:var(--purple); color:#fff; border:none; border-radius:14px; cursor:pointer; letter-spacing:1px;">▶ START</button>
+  <div style="display:flex; gap:10px; margin-top:12px;">
+  <button class="btn btn-g" style="flex:1" onclick="abortIsometricTimer()">Annulla</button>
+  <button class="btn btn-p" id="rl-timer-save" style="flex:1; background:var(--purple); color:#fff; opacity:0.35; pointer-events:none;" onclick="saveTimerSet()">Salva</button>
+  </div>
+  </div>
+  </div>
 </div>
 <div class="shell">
 
 <header class="topbar">
+  <div style="display:flex;align-items:center;gap:9px">
+  <div style="width:22px;height:22px;border-radius:5px;background:linear-gradient(145deg,oklch(0.72 0.16 52),oklch(0.56 0.15 40));display:flex;align-items:center;justify-content:center;font:600 10px/1 'IBM Plex Mono',monospace;color:#120A04;flex-shrink:0">ES</div>
   <div class="logo">Elite Sports Science</div>
+  <div class="logo-sub" style="border:1px solid rgba(255,255,255,.09);border-radius:3px;padding:2px 5px">COACH</div>
+  </div>
   <div class="top-spacer"></div>
   <div class="ath-pill">
-    <div style="font-size:11px;color:var(--muted)">Atleta:</div>
-    <select id="g-ath" onchange="onAthChange()"></select>
+  <div style="font-size:11px;color:var(--muted)">Atleta:</div>
+  <select id="g-ath" onchange="onAthChange()"></select>
   </div>
   <div style="display:flex;align-items:center;gap:6px; transition: all 0.3s ease;">
-    <div class="save-dot" id="save-dot"></div>
-    <div class="save-txt" id="save-txt">Salvato</div>
+  <div class="save-dot" id="save-dot"></div>
+  <div class="save-txt" id="save-txt">Salvato</div>
   </div>
 </header>
 
 <nav class="sidebar">
   <div class="nav-group">
-    <span class="nav-lbl">Coach</span>
-    <button class="nav-btn on" onclick="go('dashboard',this)"><span class="ico">▦</span>Dashboard</button>
-    <button class="nav-btn" onclick="go('athletes',this)"><span class="ico">◉</span>Atleti <span class="nav-badge" id="nb-ath">0</span></button>
-    <button class="nav-btn" onclick="go('storico',this)"><span class="ico">≡</span>Storico <span class="nav-badge" id="nb-sto">0</span><span class="nav-badge-warn" id="nb-reply" style="display:none">0</span></button>
-    <button class="nav-btn" onclick="go('messaggi',this)"><span class="ico">💬</span>Messaggi <span class="nav-badge" id="nb-msg" style="display:none">0</span></button>
-    <button class="nav-btn" onclick="go('calendario',this)"><span class="ico">▦</span>Calendario</button>
-    <button class="nav-btn" onclick="go('editor',this)"><span class="ico">✎</span>Editor schede</button>
-    <button class="nav-btn" onclick="go('macro',this)"><span class="ico">📅</span>Macro Periodiz.</button>
+  <span class="nav-lbl">Coach</span>
+  <button class="nav-btn on" onclick="go('dashboard',this)"><span class="ico"></span>Dashboard</button>
+  <button class="nav-btn" onclick="go('athletes',this)"><span class="ico"></span>Atleti <span class="nav-badge" id="nb-ath">0</span></button>
+  <button class="nav-btn" onclick="go('storico',this)"><span class="ico"></span>Storico <span class="nav-badge" id="nb-sto">0</span><span class="nav-badge-warn" id="nb-reply" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="go('messaggi',this)"><span class="ico"></span>Messaggi <span class="nav-badge" id="nb-msg" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="go('calendario',this)"><span class="ico"></span>Calendario</button>
+  <button class="nav-btn" onclick="go('editor',this)"><span class="ico"></span>Editor schede</button>
+  <button class="nav-btn" onclick="go('macro',this)"><span class="ico"></span>Macro Periodiz.</button>
   </div>
   <!-- [RIMOSSO dalla sidebar coach] Wellness, Sessione, Feedback coach sono pannelli atleta.
-       Accessibili dall'atleta via bottom bar. Il coach accede al feedback atleta da Storico e Messaggi. -->
+  Accessibili dall'atleta via bottom bar. Il coach accede al feedback atleta da Storico e Messaggi. -->
   <div class="nav-group">
-    <span class="nav-lbl">Analisi</span>
-    <button class="nav-btn" onclick="go('analytics',this)"><span class="ico">↗</span>Analytics</button>
-    <button class="nav-btn" onclick="go('progressione',this)"><span class="ico">⬆</span>Progressione</button>
-    <button class="nav-btn" onclick="go('calcolatori',this)"><span class="ico">🧮</span>Calcolatori S&C</button>
+  <span class="nav-lbl">Analisi</span>
+  <button class="nav-btn" onclick="go('analytics',this)"><span class="ico"></span>Analytics</button>
+  <button class="nav-btn" onclick="go('progressione',this)"><span class="ico"></span>Progressione</button>
+  <button class="nav-btn" onclick="go('calcolatori',this)"><span class="ico"></span>Calcolatori S&C</button>
   </div>
   <div class="nav-group" id="nav-team-group" style="display:none">
-    <span class="nav-lbl">Team</span>
-    <button class="nav-btn" onclick="go('team',this)"><span class="ico">👥</span>Team & Coach</button>
-    <button class="nav-btn" onclick="go('branding',this)"><span class="ico">🎨</span>Branding</button>
+  <span class="nav-lbl">Team</span>
+  <button class="nav-btn" onclick="go('team',this)"><span class="ico"></span>Team & Coach</button>
+  <button class="nav-btn" onclick="go('branding',this)"><span class="ico"></span>Branding</button>
   </div>
   <div class="sidebar-foot">
-    <div id="plan-badge-wrap" style="text-align:center;padding:6px 0 4px;cursor:pointer;" onclick="window._showUpgradeModal && window._showUpgradeModal()">
-      <span id="plan-badge-label" style="display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(160,168,180,.12);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;">FREE</span>
-      <div id="plan-badge-sub" style="font-size:9px;color:var(--muted);margin-top:2px;display:none;">→ Passa a Pro</div>
-    </div>
-    <button class="foot-btn" onclick="exportJSON()">⬇ Backup JSON</button>
-    <button class="foot-btn danger" onclick="confirmReset()">⚠ Reset dati</button>
+  <div id="plan-badge-wrap" style="text-align:center;padding:6px 0 4px;cursor:pointer;" onclick="window._showUpgradeModal && window._showUpgradeModal()">
+  <span id="plan-badge-label" style="display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(160,168,180,.12);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;">FREE</span>
+  <div id="plan-badge-sub" style="font-size:9px;color:var(--muted);margin-top:2px;display:none;">→ Passa a Pro</div>
+  </div>
+  <button class="foot-btn" onclick="exportJSON()"> Backup JSON</button>
+  <button class="foot-btn danger" onclick="confirmReset()"> Reset dati</button>
   </div>
 </nav>
 
@@ -423,36 +427,36 @@
   <div class="ps" id="dh-sub">Vista globale</div>
   <div class="g4" id="dh-kpis"></div>
   <div class="g2">
-    <div class="card"><div class="card-t">Volume — ultime 8 sessioni</div><div class="bc" id="dh-bc"></div></div>
-    <div class="card"><div class="card-t">Alert automatici & Sports Science</div><div id="dh-alerts"></div></div>
+  <div class="card"><div class="card-t">Volume — ultime 8 sessioni</div><div class="bc" id="dh-bc"></div></div>
+  <div class="card"><div class="card-t">Alert automatici & Sports Science</div><div id="dh-alerts"></div></div>
   </div>
   <div id="dh-inattivi" style="display:none" class="card"></div>
   <div class="card" id="dh-compliance" style="margin-bottom:10px"></div>
   <div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:14px 20px !important;">
-    <div>
-      <div style="font-size:12px;font-weight:700;color:var(--text);">📄 Report Mensile Atleta</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:3px;">Genera un PDF con sessioni, volume, e1RM, ACWR e wellness</div>
-    </div>
-    <button class="btn btn-g btn-sm" onclick="exportAthleteReport()" style="color:var(--teal);border-color:rgba(249,115,22,.3);white-space:nowrap;">Esporta PDF</button>
+  <div>
+  <div style="font-size:12px;font-weight:700;color:var(--text);"> Report Mensile Atleta</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:3px;">Genera un PDF con sessioni, volume, e1RM, ACWR e wellness</div>
+  </div>
+  <button class="btn btn-g btn-sm" onclick="exportAthleteReport()" style="color:var(--teal);border-color:rgba(249,115,22,.3);white-space:nowrap;">Esporta PDF</button>
   </div>
   <div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:14px 20px !important;">
-    <div>
-      <div style="font-size:12px;font-weight:700;color:var(--text);">🌅 Reminder Wellness</div>
-      <div style="font-size:11px;color:var(--muted);margin-top:3px;">Invia un promemoria agli atleti che non hanno ancora fatto il check-in oggi</div>
-    </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span id="wellness-reminder-status" style="font-size:10px;color:var(--muted);"></span>
-      <button class="btn btn-g btn-sm" onclick="sendWellnessReminders()" style="color:var(--amber);border-color:var(--amber);white-space:nowrap;">Invia Reminder</button>
-    </div>
+  <div>
+  <div style="font-size:12px;font-weight:700;color:var(--text);"> Reminder Wellness</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:3px;">Invia un promemoria agli atleti che non hanno ancora fatto il check-in oggi</div>
+  </div>
+  <div style="display:flex;align-items:center;gap:8px;">
+  <span id="wellness-reminder-status" style="font-size:10px;color:var(--muted);"></span>
+  <button class="btn btn-g btn-sm" onclick="sendWellnessReminders()" style="color:var(--amber);border-color:var(--amber);white-space:nowrap;">Invia Reminder</button>
+  </div>
   </div>
   <div class="card" style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px !important;">
-    <div>
-      <div style="font-size:12px; font-weight:700; color:var(--text);">🔔 Notifiche Push</div>
-      <div style="font-size:11px; color:var(--muted); margin-top:3px;">Verifica che il sistema di notifiche funzioni correttamente</div>
-    </div>
-    <button class="btn btn-g btn-sm" onclick="testPushNotification()" style="color:var(--teal); border-color:var(--teal); white-space:nowrap;">
-      Test Push
-    </button>
+  <div>
+  <div style="font-size:12px; font-weight:700; color:var(--text);"> Notifiche Push</div>
+  <div style="font-size:11px; color:var(--muted); margin-top:3px;">Verifica che il sistema di notifiche funzioni correttamente</div>
+  </div>
+  <button class="btn btn-g btn-sm" onclick="testPushNotification()" style="color:var(--teal); border-color:var(--teal); white-space:nowrap;">
+  Test Push
+  </button>
   </div>
 </div>
 
@@ -460,13 +464,13 @@
   <div class="ph">Messaggi</div>
   <div class="ps">Chat diretta coach ↔ atleta</div>
   <div class="fg" style="max-width:280px;margin-bottom:14px">
-    <label class="fl">Seleziona atleta</label>
-    <select id="msg-ath-select" style="width:100%"></select>
+  <label class="fl">Seleziona atleta</label>
+  <select id="msg-ath-select" style="width:100%"></select>
   </div>
   <div id="msg-thread" style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:200px;max-height:420px;overflow-y:auto;margin-bottom:12px;display:flex;flex-direction:column"></div>
   <div style="display:flex;gap:8px">
-    <input type="text" id="msg-input" placeholder="Scrivi un messaggio..." style="flex:1;padding:10px 14px;font-size:13px" onkeydown="if(event.key==='Enter')sendMessageCoach()">
-    <button class="btn btn-p" onclick="sendMessageCoach()">Invia</button>
+  <input type="text" id="msg-input" placeholder="Scrivi un messaggio..." style="flex:1;padding:10px 14px;font-size:13px" onkeydown="if(event.key==='Enter')sendMessageCoach()">
+  <button class="btn btn-p" onclick="sendMessageCoach()">Invia</button>
   </div>
 </div>
 
@@ -474,9 +478,9 @@
   <div class="ph">Atleti</div>
   <div class="ps">Gestisci il roster — clicca su una card per selezionare</div>
   <div style="display:flex;gap:8px;margin-bottom:14px;align-items:center;flex-wrap:wrap">
-    <button class="btn btn-p" onclick="openNewAthleteModal()">+ Nuovo atleta</button>
-    <button class="btn btn-sm btn-del-soft" onclick="deleteSelectedAthlete()">✕ Elimina selezionato</button>
-    <span id="ath-limit-badge" style="margin-left:auto;font-size:10px;font-family:var(--fm);color:var(--muted);"></span>
+  <button class="btn btn-p" onclick="openNewAthleteModal()">+ Nuovo atleta</button>
+  <button class="btn btn-sm btn-del-soft" onclick="deleteSelectedAthlete()">✕ Elimina selezionato</button>
+  <span id="ath-limit-badge" style="margin-left:auto;font-size:10px;font-family:var(--fm);color:var(--muted);"></span>
   </div>
   <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px;margin-bottom:14px" id="ath-grid"></div>
 </div>
@@ -485,15 +489,15 @@
   <div class="ph">Storico sessioni</div>
   <div class="ps">Database completo di tutte le sessioni</div>
   <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-    <select id="sf-ath" onchange="renderStorico()" style="width:auto;padding:6px 10px;font-size:11px"><option value="">Tutti</option></select>
-    <select id="sf-sess" onchange="renderStorico()" style="width:auto;padding:6px 10px;font-size:11px"><option value="">Tutte le sessioni</option></select>
-    <select id="sf-phase" onchange="renderStorico()" style="width:auto;padding:6px 10px;font-size:11px"><option value="">Tutte le fasi</option><option>Accumulo</option><option>Intensificazione</option><option>Scarico</option></select>
-    <input type="text" id="sf-q" placeholder="Cerca..." oninput="renderStorico()" style="width:160px;padding:6px 10px;font-size:11px">
-    <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--s1);white-space:nowrap">
-      <input type="checkbox" id="sf-unanswered" onchange="renderStorico()" style="accent-color:var(--amber)">
-      Da rispondere
-    </label>
-    <button class="btn btn-p btn-sm" onclick="openMo('mo-sess')">+ Sessione</button>
+  <select id="sf-ath" onchange="renderStorico()" style="width:auto;padding:6px 10px;font-size:11px"><option value="">Tutti</option></select>
+  <select id="sf-sess" onchange="renderStorico()" style="width:auto;padding:6px 10px;font-size:11px"><option value="">Tutte le sessioni</option></select>
+  <select id="sf-phase" onchange="renderStorico()" style="width:auto;padding:6px 10px;font-size:11px"><option value="">Tutte le fasi</option><option>Accumulo</option><option>Intensificazione</option><option>Scarico</option></select>
+  <input type="text" id="sf-q" placeholder="Cerca..." oninput="renderStorico()" style="width:160px;padding:6px 10px;font-size:11px">
+  <label style="display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted);cursor:pointer;padding:6px 10px;border:1px solid var(--border);border-radius:6px;background:var(--s1);white-space:nowrap">
+  <input type="checkbox" id="sf-unanswered" onchange="renderStorico()" style="accent-color:var(--amber)">
+  Da rispondere
+  </label>
+  <button class="btn btn-p btn-sm" onclick="openMo('mo-sess')">+ Sessione</button>
   </div>
   <div class="tw"><table id="sto-table"><thead><tr><th>Data</th><th>Sessione</th><th>Atleta</th><th>W</th><th>Fase</th><th>Read.</th><th>Vol kg</th><th>sRPE</th><th>RPE (P→A)</th><th>e1RM</th><th>DOMS</th><th>Flag</th><th>Risposta</th><th>Var.</th><th></th></tr></thead><tbody id="sto-body"></tbody></table></div>
   <div style="text-align:right;margin-top:8px;font-size:10px;color:var(--muted)" id="sto-count"></div>
@@ -501,16 +505,16 @@
 
 <div class="panel" id="p-calendario">
   <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
-    <div class="ph" style="margin:0">Calendario settimana</div>
-    <div style="display:flex;align-items:center;gap:8px">
-      <button id="cal-today-btn" onclick="calToday()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--muted);cursor:pointer;opacity:.35">Oggi</button>
-      <button onclick="calPrev()" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
-      <button onclick="calNext()" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
-    </div>
+  <div class="ph" style="margin:0">Calendario settimana</div>
+  <div style="display:flex;align-items:center;gap:8px">
+  <button id="cal-today-btn" onclick="calToday()" style="font-size:11px;padding:4px 10px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--muted);cursor:pointer;opacity:.35">Oggi</button>
+  <button onclick="calPrev()" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">‹</button>
+  <button onclick="calNext()" style="width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:var(--s1);color:var(--text);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center">›</button>
+  </div>
   </div>
   <div class="ps" id="cal-range">—</div>
   <div style="overflow-x:auto;margin-top:12px">
-    <table id="cal-table" style="border-collapse:collapse;width:100%;min-width:300px"></table>
+  <table id="cal-table" style="border-collapse:collapse;width:100%;min-width:300px"></table>
   </div>
 </div>
 
@@ -518,111 +522,111 @@
   <div class="ph">Editor schede</div>
   <div class="ps">Costruisci e rinomina le tue sessioni liberamente — si salvano automaticamente</div>
   <div class="card" style="margin-bottom:12px">
-    <div class="card-t">Atleta e contesto</div>
-    
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
-      <div class="fg"><label class="fl">Atleta</label><select id="ed-ath" onchange="loadEditorForAthlete()"></select></div>
-      <div class="fg"><label class="fl">Mesociclo</label><input type="text" id="ed-meso" placeholder="Es: Prep. Challenger"></div>
-      <div class="fg"><label class="fl">Durata (Settimane)</label><input type="number" id="ed-duration" min="1" value="4" oninput="syncEdDuration(+this.value); updatePredictiveACWR()"></div>
-      <div class="fg">
-          <label class="fl">Fase Microciclo (Target)</label>
-          <select id="ed-phase" onchange="updatePhaseStyle(this.value)" style="background:var(--s2); border:1px solid var(--border); padding:8px; border-radius:8px; width:100%; color:var(--text); font-family:var(--fm); font-size:12px;">
-            <option value="Accumulo">🟩 Accumulo (Volume)</option>
-            <option value="Intensificazione">🟧 Intensificazione (Carico)</option>
-            <option value="Picco">🟥 Picco (Performance)</option>
-            <option value="Scarico">🟦 Scarico (Recupero)</option>
-          </select>
-      </div>
-    </div>
-    <div class="fr">
-      <div class="fg"><label class="fl">Note coach (visibili all'atleta)</label><textarea id="ed-coachnote" rows="2" placeholder="Focus tecnico, variazioni autorizzate..." oninput="syncEdCoachNote(this.value)"></textarea></div>
-      <div class="fg"><label class="fl">Obiettivo seduta</label><textarea id="ed-obj" rows="2" placeholder="Es: focus accelerazione, riabilitazione spalla..."></textarea></div>
-    </div>
-    <div class="fr">
-      <div class="fg" style="flex-basis:100%">
-        <label class="fl">Giorni allenamento atleta (per vista settimanale)</label>
-        <div id="ed-scheduled-days" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="1" style="accent-color:var(--teal);width:14px;height:14px"> Lun</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="2" style="accent-color:var(--teal);width:14px;height:14px"> Mar</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="3" style="accent-color:var(--teal);width:14px;height:14px"> Mer</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="4" style="accent-color:var(--teal);width:14px;height:14px"> Gio</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="5" style="accent-color:var(--teal);width:14px;height:14px"> Ven</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="6" style="accent-color:var(--teal);width:14px;height:14px"> Sab</label>
-          <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="0" style="accent-color:var(--teal);width:14px;height:14px"> Dom</label>
-        </div>
-      </div>
-    </div>
+  <div class="card-t">Atleta e contesto</div>
+   
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px;">
+  <div class="fg"><label class="fl">Atleta</label><select id="ed-ath" onchange="loadEditorForAthlete()"></select></div>
+  <div class="fg"><label class="fl">Mesociclo</label><input type="text" id="ed-meso" placeholder="Es: Prep. Challenger"></div>
+  <div class="fg"><label class="fl">Durata (Settimane)</label><input type="number" id="ed-duration" min="1" value="4" oninput="syncEdDuration(+this.value); updatePredictiveACWR()"></div>
+  <div class="fg">
+  <label class="fl">Fase Microciclo (Target)</label>
+  <select id="ed-phase" onchange="updatePhaseStyle(this.value)" style="background:var(--s2); border:1px solid var(--border); padding:8px; border-radius:8px; width:100%; color:var(--text); font-family:var(--fm); font-size:12px;">
+  <option value="Accumulo"> Accumulo (Volume)</option>
+  <option value="Intensificazione"> Intensificazione (Carico)</option>
+  <option value="Picco"> Picco (Performance)</option>
+  <option value="Scarico"> Scarico (Recupero)</option>
+  </select>
+  </div>
+  </div>
+  <div class="fr">
+  <div class="fg"><label class="fl">Note coach (visibili all'atleta)</label><textarea id="ed-coachnote" rows="2" placeholder="Focus tecnico, variazioni autorizzate..." oninput="syncEdCoachNote(this.value)"></textarea></div>
+  <div class="fg"><label class="fl">Obiettivo seduta</label><textarea id="ed-obj" rows="2" placeholder="Es: focus accelerazione, riabilitazione spalla..."></textarea></div>
+  </div>
+  <div class="fr">
+  <div class="fg" style="flex-basis:100%">
+  <label class="fl">Giorni allenamento atleta (per vista settimanale)</label>
+  <div id="ed-scheduled-days" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="1" style="accent-color:var(--teal);width:14px;height:14px"> Lun</label>
+  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="2" style="accent-color:var(--teal);width:14px;height:14px"> Mar</label>
+  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="3" style="accent-color:var(--teal);width:14px;height:14px"> Mer</label>
+  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="4" style="accent-color:var(--teal);width:14px;height:14px"> Gio</label>
+  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="5" style="accent-color:var(--teal);width:14px;height:14px"> Ven</label>
+  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="6" style="accent-color:var(--teal);width:14px;height:14px"> Sab</label>
+  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="0" style="accent-color:var(--teal);width:14px;height:14px"> Dom</label>
+  </div>
+  </div>
+  </div>
   </div>
   <div style="display:flex;justify-content:between;align-items:center;gap:10px;margin-bottom:10px">
-    <div class="sess-tabs" id="ed-tabs" style="margin-bottom:0; flex:1"></div>
-    <button class="btn btn-p btn-sm" onclick="addNewSessionToSchedule()">+ Nuova Sessione</button>
+  <div class="sess-tabs" id="ed-tabs" style="margin-bottom:0; flex:1"></div>
+  <button class="btn btn-p btn-sm" onclick="addNewSessionToSchedule()">+ Nuova Sessione</button>
   </div>
   <div class="card" id="ed-session-details-card" style="display:none">
-    <div class="fr" style="align-items:end">
-      <div class="fg" style="margin-bottom:0"><label class="fl">Nome Sessione Selezionata</label><input type="text" id="ed-sess-name" oninput="renameCurrentSession(this.value)"></div>
-      <div class="fg" style="margin-bottom:0;max-width:220px"><label class="fl">Tipo Sessione</label><select id="ed-sess-type" onchange="updateSessionType(this.value)">
-        <option value="Palestra">🏋️ Palestra — Forza / Meccanica</option>
-        <option value="Campo">⚽ Campo — Tecnica / Tattica</option>
-        <option value="Corsa">🏃 Corsa — Endurance / Resistenza</option>
-        <option value="Sprint">⚡ Sprint — Velocità / Potenza</option>
-        <option value="Condizionamento">🔥 Condizionamento — Metabolico</option>
-      </select></div>
-      <button class="btn btn-d btn-sm" onclick="deleteCurrentSession()">✕ Elimina Questa Sessione</button>
-    </div>
+  <div class="fr" style="align-items:end">
+  <div class="fg" style="margin-bottom:0"><label class="fl">Nome Sessione Selezionata</label><input type="text" id="ed-sess-name" oninput="renameCurrentSession(this.value)"></div>
+  <div class="fg" style="margin-bottom:0;max-width:220px"><label class="fl">Tipo Sessione</label><select id="ed-sess-type" onchange="updateSessionType(this.value)">
+  <option value="Palestra"> Palestra — Forza / Meccanica</option>
+  <option value="Campo"> Campo — Tecnica / Tattica</option>
+  <option value="Corsa"> Corsa — Endurance / Resistenza</option>
+  <option value="Sprint"> Sprint — Velocità / Potenza</option>
+  <option value="Condizionamento"> Condizionamento — Metabolico</option>
+  </select></div>
+  <button class="btn btn-d btn-sm" onclick="deleteCurrentSession()">✕ Elimina Questa Sessione</button>
+  </div>
   </div>
   <div class="card">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
-      <div class="card-t" id="ed-sess-label" style="margin-bottom:0;">Esercizi</div>
-      <div id="ed-pred-acwr"></div>
-    </div>
-    <div class="ex-hdr">
-      <span>Esercizio</span><span>W-SET</span><span>SET</span><span>REP</span>
-      <span>KG</span><span>RIR</span><span>REST</span><span>T.U.T.</span><span>Note/CUE</span><span></span>
-    </div>
-        <div id="ed-exercises"></div>
-    
-    <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 12px;">
+  <div class="card-t" id="ed-sess-label" style="margin-bottom:0;">Esercizi</div>
+  <div id="ed-pred-acwr"></div>
+  </div>
+  <div class="ex-hdr">
+  <span>Esercizio</span><span>W-SET</span><span>SET</span><span>REP</span>
+  <span>KG</span><span>RIR</span><span>REST</span><span>T.U.T.</span><span>Note/CUE</span><span></span>
+  </div>
+  <div id="ed-exercises"></div>
+   
+  <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px;display:flex;flex-direction:column;gap:8px;">
 
-      <!-- Riga 1: Aggiungi esercizi -->
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;row-gap:6px;">
+  <!-- Riga 1: Aggiungi esercizi -->
+  <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;row-gap:6px;">
 
-        <!-- Base -->
-        <button class="btn btn-g btn-sm" onclick="addExType('normal')">+ Esercizio</button>
-        <button class="btn btn-g btn-sm" onclick="addExType('superset')" style="color:var(--purple);border-color:rgba(139,92,246,0.4)">+ Superset</button>
-        <button class="btn btn-g btn-sm" onclick="openCustomTypeModal()" style="color:var(--muted);border-color:var(--border)">+ Custom</button>
+  <!-- Base -->
+  <button class="btn btn-g btn-sm" onclick="addExType('normal')">+ Esercizio</button>
+  <button class="btn btn-g btn-sm" onclick="addExType('superset')" style="color:var(--purple);border-color:rgba(139,92,246,0.4)">+ Superset</button>
+  <button class="btn btn-g btn-sm" onclick="openCustomTypeModal()" style="color:var(--muted);border-color:var(--border)">+ Custom</button>
 
-        <div style="width:1px;height:18px;background:var(--border);margin:0 4px;flex-shrink:0;"></div>
+  <div style="width:1px;height:18px;background:var(--border);margin:0 4px;flex-shrink:0;"></div>
 
-        <!-- Metodi intensità -->
-        <span style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;">Intensità</span>
-        <button class="btn btn-g btn-sm" onclick="addExType('max effort')"    style="color:var(--coral);border-color:rgba(249,115,22,0.35)">Max Effort</button>
-        <button class="btn btn-g btn-sm" onclick="addExType('dynamic effort')" style="color:var(--blue);border-color:rgba(96,165,250,0.35)">Dynamic Effort</button>
-        <button class="btn btn-g btn-sm" onclick="addExType('repetition')"    style="color:var(--teal);border-color:rgba(0,229,168,0.35)">Repetition</button>
-        <button class="btn btn-g btn-sm" onclick="addExType('tempo')"         style="color:#fbbf24;border-color:rgba(251,191,36,0.35)">Tempo Run</button>
+  <!-- Metodi intensità -->
+  <span style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;">Intensità</span>
+  <button class="btn btn-g btn-sm" onclick="addExType('max effort')" style="color:var(--coral);border-color:rgba(249,115,22,0.35)">Max Effort</button>
+  <button class="btn btn-g btn-sm" onclick="addExType('dynamic effort')" style="color:var(--blue);border-color:rgba(96,165,250,0.35)">Dynamic Effort</button>
+  <button class="btn btn-g btn-sm" onclick="addExType('repetition')" style="color:var(--teal);border-color:rgba(0,229,168,0.35)">Repetition</button>
+  <button class="btn btn-g btn-sm" onclick="addExType('tempo')" style="color:#fbbf24;border-color:rgba(251,191,36,0.35)">Tempo Run</button>
 
-        <div style="width:1px;height:18px;background:var(--border);margin:0 4px;flex-shrink:0;"></div>
+  <div style="width:1px;height:18px;background:var(--border);margin:0 4px;flex-shrink:0;"></div>
 
-        <!-- Blocchi condizionamento — stessa categoria, stesso colore -->
-        <span style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;">Blocchi</span>
-        <button class="btn btn-g btn-sm" onclick="addCircuit()" style="color:#a78bfa;border-color:rgba(167,139,250,0.35)">Circuito</button>
-        <button class="btn btn-g btn-sm" onclick="addEmom()"    style="color:#a78bfa;border-color:rgba(167,139,250,0.35)">EMOM</button>
-        <button class="btn btn-g btn-sm" onclick="addAmrap()"   style="color:#a78bfa;border-color:rgba(167,139,250,0.35)">AMRAP</button>
-        <button class="btn btn-g btn-sm" onclick="addTabata()"  style="color:#a78bfa;border-color:rgba(167,139,250,0.35)">Tabata</button>
+  <!-- Blocchi condizionamento — stessa categoria, stesso colore -->
+  <span style="font-size:9px;color:var(--muted);font-weight:800;letter-spacing:.6px;text-transform:uppercase;flex-shrink:0;">Blocchi</span>
+  <button class="btn btn-g btn-sm" onclick="addCircuit()" style="color:#a78bfa;border-color:rgba(167,139,250,0.35)">Circuito</button>
+  <button class="btn btn-g btn-sm" onclick="addEmom()" style="color:#a78bfa;border-color:rgba(167,139,250,0.35)">EMOM</button>
+  <button class="btn btn-g btn-sm" onclick="addAmrap()" style="color:#a78bfa;border-color:rgba(167,139,250,0.35)">AMRAP</button>
+  <button class="btn btn-g btn-sm" onclick="addTabata()" style="color:#a78bfa;border-color:rgba(167,139,250,0.35)">Tabata</button>
 
-      </div>
+  </div>
 
-      <!-- Riga 2: Azioni scheda -->
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
-        <button class="btn btn-g btn-sm" onclick="archiveAndNewMeso()" style="color:var(--muted);border-color:var(--border)">Archivia & Nuovo Meso</button>
-        <button class="btn btn-g btn-sm" onclick="openMesocycleArchive()" style="color:var(--muted);border-color:var(--border)">Storico Meso</button>
-        <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-          <button class="btn btn-g btn-sm" onclick="exportProgramPDF()" style="color:var(--muted);border-color:var(--border)">Esporta PDF</button>
-          <button class="btn btn-p btn-sm" onclick="saveSchedule()">Salva scheda</button>
-        </div>
-      </div>
+  <!-- Riga 2: Azioni scheda -->
+  <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;">
+  <button class="btn btn-g btn-sm" onclick="archiveAndNewMeso()" style="color:var(--muted);border-color:var(--border)">Archivia & Nuovo Meso</button>
+  <button class="btn btn-g btn-sm" onclick="openMesocycleArchive()" style="color:var(--muted);border-color:var(--border)">Storico Meso</button>
+  <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+  <button class="btn btn-g btn-sm" onclick="exportProgramPDF()" style="color:var(--muted);border-color:var(--border)">Esporta PDF</button>
+  <button class="btn btn-p btn-sm" onclick="saveSchedule()">Salva scheda</button>
+  </div>
+  </div>
 
-    </div>
-    
+  </div>
+   
 
   </div>
 </div>
@@ -632,25 +636,25 @@
   <div class="ps">Pre-workout — Monitoraggio clinico e fisiologico</div>
 
   <div class="hero-readiness">
-    <div class="ring-wrap" style="transform: scale(1.2); margin-bottom: 16px;">
-      <svg width="110" height="110" viewBox="0 0 110 110">
-        <circle class="ring-bg" cx="55" cy="55" r="46"/>
-        <circle class="ring-f" id="ring-f" cx="55" cy="55" r="46" stroke-dasharray="289" stroke-dashoffset="289"/>
-      </svg>
-      <div class="ring-c">
-        <div class="ring-n" id="ring-n" style="color:var(--teal)">80</div>
-        <div class="ring-l" style="letter-spacing: 1px; text-transform: uppercase;">readiness</div>
-      </div>
-    </div>
-    
-    <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px;" id="r-verd">Pronto</div>
-    <div style="font-size: 13px; color: var(--muted); margin-bottom: 16px;" id="r-rec">Sessione standard.</div>
-    
-    <div style="display: flex; gap: 24px; justify-content: center; width: 100%; border-top: 1px solid var(--border); padding-top: 16px;">
-      <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">SNC</div><div style="font-size:14px;font-weight:700" id="r-snc">Ottimo</div></div>
-      <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Muscoli</div><div style="font-size:14px;font-weight:700" id="r-musc">Parziale</div></div>
-      <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Stato</div><div style="font-size:14px;font-weight:700" id="r-emo">Attivato</div></div>
-    </div>
+  <div class="ring-wrap" style="transform: scale(1.2); margin-bottom: 16px;">
+  <svg width="110" height="110" viewBox="0 0 110 110">
+  <circle class="ring-bg" cx="55" cy="55" r="46"/>
+  <circle class="ring-f" id="ring-f" cx="55" cy="55" r="46" stroke-dasharray="289" stroke-dashoffset="289"/>
+  </svg>
+  <div class="ring-c">
+  <div class="ring-n" id="ring-n" style="color:var(--teal)">80</div>
+  <div class="ring-l" style="letter-spacing: 1px; text-transform: uppercase;">readiness</div>
+  </div>
+  </div>
+   
+  <div style="font-family: -apple-system, BlinkMacSystemFont, sans-serif; font-size: 22px; font-weight: 800; margin-bottom: 4px;" id="r-verd">Pronto</div>
+  <div style="font-size: 13px; color: var(--muted); margin-bottom: 16px;" id="r-rec">Sessione standard.</div>
+   
+  <div style="display: flex; gap: 24px; justify-content: center; width: 100%; border-top: 1px solid var(--border); padding-top: 16px;">
+  <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">SNC</div><div style="font-size:14px;font-weight:700" id="r-snc">Ottimo</div></div>
+  <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Muscoli</div><div style="font-size:14px;font-weight:700" id="r-musc">Parziale</div></div>
+  <div><div style="font-size:10px;color:var(--muted);text-transform:uppercase;">Stato</div><div style="font-size:14px;font-weight:700" id="r-emo">Attivato</div></div>
+  </div>
   </div>
 
   <div class="card"><div class="card-t">Indicazione coach & Considerazioni Ormonali</div><div id="w-coach-msg" style="font-size:14px;line-height:1.5;color:var(--text);font-weight:600;"></div></div>
@@ -658,149 +662,149 @@
   <div style="margin-top: 24px; margin-bottom: 12px; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 1px;">Parametri Soggettivi</div>
   
   <div style="display:grid;grid-template-columns:1fr;gap:12px;margin-bottom:24px">
-    
-    <div class="wc">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div><span class="wc-name" style="font-size:14px;">Sonno</span></div>
-        <div class="wc-desc" id="wd-sl" style="font-weight:700; font-size:13px; color:var(--teal)">Buono</div>
-      </div>
-      
-      <div style="margin: 12px 0 8px 0; display:flex; align-items:center; justify-content:space-between; background:rgba(0,0,0,0.2); border-radius:8px; padding:6px 12px; border:1px solid var(--border);">
-        <span style="font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase;">Quantità (Ore)</span>
-        <input type="number" id="w-sleep-hours" value="7.5" step="0.5" min="0" max="14" onchange="upW()" style="width:70px; padding:4px; text-align:center; font-size:16px; font-weight:800; background:transparent; border:none; color:var(--teal); margin:0; box-shadow:none;">
-      </div>
-      <div style="font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Qualità Percezione</div>
-      
-      <input type="hidden" id="w-sleep" value="4">
-      <div class="w-pill-group" id="pg-sleep">
-        <div class="w-pill" id="btn-sleep-1" onclick="setW('sleep', 1, 'good-high')">1</div>
-        <div class="w-pill" id="btn-sleep-2" onclick="setW('sleep', 2, 'good-high')">2</div>
-        <div class="w-pill" id="btn-sleep-3" onclick="setW('sleep', 3, 'good-high')">3</div>
-        <div class="w-pill active-t" id="btn-sleep-4" onclick="setW('sleep', 4, 'good-high')">4</div>
-        <div class="w-pill" id="btn-sleep-5" onclick="setW('sleep', 5, 'good-high')">5</div>
-      </div>
-    </div>
+   
+  <div class="wc">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+  <div><span class="wc-name" style="font-size:14px;">Sonno</span></div>
+  <div class="wc-desc" id="wd-sl" style="font-weight:700; font-size:13px; color:var(--teal)">Buono</div>
+  </div>
+   
+  <div style="margin: 12px 0 8px 0; display:flex; align-items:center; justify-content:space-between; background:rgba(0,0,0,0.2); border-radius:8px; padding:6px 12px; border:1px solid var(--border);">
+  <span style="font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase;">Quantità (Ore)</span>
+  <input type="number" id="w-sleep-hours" value="7.5" step="0.5" min="0" max="14" onchange="upW()" style="width:70px; padding:4px; text-align:center; font-size:16px; font-weight:800; background:transparent; border:none; color:var(--teal); margin:0; box-shadow:none;">
+  </div>
+  <div style="font-size:11px; color:var(--muted); font-weight:700; text-transform:uppercase; margin-bottom:6px;">Qualità Percezione</div>
+   
+  <input type="hidden" id="w-sleep" value="4">
+  <div class="w-pill-group" id="pg-sleep">
+  <div class="w-pill" id="btn-sleep-1" onclick="setW('sleep', 1, 'good-high')">1</div>
+  <div class="w-pill" id="btn-sleep-2" onclick="setW('sleep', 2, 'good-high')">2</div>
+  <div class="w-pill" id="btn-sleep-3" onclick="setW('sleep', 3, 'good-high')">3</div>
+  <div class="w-pill active-t" id="btn-sleep-4" onclick="setW('sleep', 4, 'good-high')">4</div>
+  <div class="w-pill" id="btn-sleep-5" onclick="setW('sleep', 5, 'good-high')">5</div>
+  </div>
+  </div>
 
-    <div class="wc">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div><span class="wc-name" style="font-size:14px;">Stress</span></div>
-        <div class="wc-desc" id="wd-st" style="font-weight:700; font-size:13px; color:var(--teal)">Lieve</div>
-      </div>
-      <input type="hidden" id="w-stress" value="2">
-      <div class="w-pill-group" id="pg-stress">
-        <div class="w-pill" id="btn-stress-1" onclick="setW('stress', 1, 'good-low')">1</div>
-        <div class="w-pill active-t" id="btn-stress-2" onclick="setW('stress', 2, 'good-low')">2</div>
-        <div class="w-pill" id="btn-stress-3" onclick="setW('stress', 3, 'good-low')">3</div>
-        <div class="w-pill" id="btn-stress-4" onclick="setW('stress', 4, 'good-low')">4</div>
-        <div class="w-pill" id="btn-stress-5" onclick="setW('stress', 5, 'good-low')">5</div>
-      </div>
-    </div>
+  <div class="wc">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+  <div><span class="wc-name" style="font-size:14px;">Stress</span></div>
+  <div class="wc-desc" id="wd-st" style="font-weight:700; font-size:13px; color:var(--teal)">Lieve</div>
+  </div>
+  <input type="hidden" id="w-stress" value="2">
+  <div class="w-pill-group" id="pg-stress">
+  <div class="w-pill" id="btn-stress-1" onclick="setW('stress', 1, 'good-low')">1</div>
+  <div class="w-pill active-t" id="btn-stress-2" onclick="setW('stress', 2, 'good-low')">2</div>
+  <div class="w-pill" id="btn-stress-3" onclick="setW('stress', 3, 'good-low')">3</div>
+  <div class="w-pill" id="btn-stress-4" onclick="setW('stress', 4, 'good-low')">4</div>
+  <div class="w-pill" id="btn-stress-5" onclick="setW('stress', 5, 'good-low')">5</div>
+  </div>
+  </div>
 
-    <div class="wc">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div><span class="wc-name" style="font-size:14px;">Soreness</span></div>
-        <div class="wc-desc" id="wd-so" style="font-weight:700; font-size:13px; color:var(--teal)">Lieve fastidio</div>
-      </div>
-      <input type="hidden" id="w-sore" value="2">
-      <div class="w-pill-group" id="pg-sore">
-        <div class="w-pill" id="btn-sore-1" onclick="setW('sore', 1, 'good-low')">1</div>
-        <div class="w-pill active-t" id="btn-sore-2" onclick="setW('sore', 2, 'good-low')">2</div>
-        <div class="w-pill" id="btn-sore-3" onclick="setW('sore', 3, 'good-low')">3</div>
-        <div class="w-pill" id="btn-sore-4" onclick="setW('sore', 4, 'good-low')">4</div>
-        <div class="w-pill" id="btn-sore-5" onclick="setW('sore', 5, 'good-low')">5</div>
-      </div>
-    </div>
+  <div class="wc">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+  <div><span class="wc-name" style="font-size:14px;">Soreness</span></div>
+  <div class="wc-desc" id="wd-so" style="font-weight:700; font-size:13px; color:var(--teal)">Lieve fastidio</div>
+  </div>
+  <input type="hidden" id="w-sore" value="2">
+  <div class="w-pill-group" id="pg-sore">
+  <div class="w-pill" id="btn-sore-1" onclick="setW('sore', 1, 'good-low')">1</div>
+  <div class="w-pill active-t" id="btn-sore-2" onclick="setW('sore', 2, 'good-low')">2</div>
+  <div class="w-pill" id="btn-sore-3" onclick="setW('sore', 3, 'good-low')">3</div>
+  <div class="w-pill" id="btn-sore-4" onclick="setW('sore', 4, 'good-low')">4</div>
+  <div class="w-pill" id="btn-sore-5" onclick="setW('sore', 5, 'good-low')">5</div>
+  </div>
+  </div>
 
-    <div class="wc">
-      <div style="display:flex; justify-content:space-between; align-items:center;">
-        <div><span class="wc-name" style="font-size:14px;">Motivazione</span></div>
-        <div class="wc-desc" id="wd-mo" style="font-weight:700; font-size:13px; color:var(--teal)">Alta</div>
-      </div>
-      <input type="hidden" id="w-motiv" value="4">
-      <div class="w-pill-group" id="pg-motiv">
-        <div class="w-pill" id="btn-motiv-1" onclick="setW('motiv', 1, 'good-high')">1</div>
-        <div class="w-pill" id="btn-motiv-2" onclick="setW('motiv', 2, 'good-high')">2</div>
-        <div class="w-pill" id="btn-motiv-3" onclick="setW('motiv', 3, 'good-high')">3</div>
-        <div class="w-pill active-t" id="btn-motiv-4" onclick="setW('motiv', 4, 'good-high')">4</div>
-        <div class="w-pill" id="btn-motiv-5" onclick="setW('motiv', 5, 'good-high')">5</div>
-      </div>
-    </div>
+  <div class="wc">
+  <div style="display:flex; justify-content:space-between; align-items:center;">
+  <div><span class="wc-name" style="font-size:14px;">Motivazione</span></div>
+  <div class="wc-desc" id="wd-mo" style="font-weight:700; font-size:13px; color:var(--teal)">Alta</div>
+  </div>
+  <input type="hidden" id="w-motiv" value="4">
+  <div class="w-pill-group" id="pg-motiv">
+  <div class="w-pill" id="btn-motiv-1" onclick="setW('motiv', 1, 'good-high')">1</div>
+  <div class="w-pill" id="btn-motiv-2" onclick="setW('motiv', 2, 'good-high')">2</div>
+  <div class="w-pill" id="btn-motiv-3" onclick="setW('motiv', 3, 'good-high')">3</div>
+  <div class="w-pill active-t" id="btn-motiv-4" onclick="setW('motiv', 4, 'good-high')">4</div>
+  <div class="w-pill" id="btn-motiv-5" onclick="setW('motiv', 5, 'good-high')">5</div>
+  </div>
+  </div>
 
   </div>
 
   <div class="card" style="margin-bottom:12px">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div class="card-t" style="margin-bottom:0;">Dati Fisiologici</div>
-    </div>
-    <!-- Piattaforme wearable connesse/da connettere -->
-    <div id="wearable-platform-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
-    <!-- Badge ultima sincronizzazione -->
-    <div id="wearable-sync-badge" style="display:none;font-size:11px;font-weight:700;color:var(--teal);background:rgba(20,184,166,.1);border-radius:8px;padding:5px 10px;margin-bottom:10px;"></div>
-    <!-- Campi HRV / RHR (auto-compilati dal wearable o inseribili manualmente) -->
-    <div class="fr">
-      <div class="fg">
-        <label class="fl">HRV (ms)</label>
-        <input type="number" id="w-hrv" placeholder="Es: 65" onchange="upW()" style="font-size: 16px; font-weight:700; text-align:center;">
-      </div>
-      <div class="fg">
-        <label class="fl">RHR (bpm)</label>
-        <input type="number" id="w-rhr" placeholder="Es: 48" style="font-size: 16px; font-weight:700; text-align:center;">
-      </div>
-    </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+  <div class="card-t" style="margin-bottom:0;">Dati Fisiologici</div>
+  </div>
+  <!-- Piattaforme wearable connesse/da connettere -->
+  <div id="wearable-platform-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
+  <!-- Badge ultima sincronizzazione -->
+  <div id="wearable-sync-badge" style="display:none;font-size:11px;font-weight:700;color:var(--teal);background:rgba(20,184,166,.1);border-radius:8px;padding:5px 10px;margin-bottom:10px;"></div>
+  <!-- Campi HRV / RHR (auto-compilati dal wearable o inseribili manualmente) -->
+  <div class="fr">
+  <div class="fg">
+  <label class="fl">HRV (ms)</label>
+  <input type="number" id="w-hrv" placeholder="Es: 65" onchange="upW()" style="font-size: 16px; font-weight:700; text-align:center;">
+  </div>
+  <div class="fg">
+  <label class="fl">RHR (bpm)</label>
+  <input type="number" id="w-rhr" placeholder="Es: 48" style="font-size: 16px; font-weight:700; text-align:center;">
+  </div>
+  </div>
   </div>
   <!-- [TEMPORANEAMENTE DISATTIVATO] CNS Finger Tap Test
-       Feature completa e funzionante — nascosta su richiesta del 2026-09-14.
-       Per riattivare: rimuovere i tag di commento HTML che racchiudono questo blocco.
+  Feature completa e funzionante — nascosta su richiesta del 2026-09-14.
+  Per riattivare: rimuovere i tag di commento HTML che racchiudono questo blocco.
   <div class="card" style="margin-bottom:12px; background: linear-gradient(145deg, var(--s1), var(--s2)); border: 1px solid rgba(59, 130, 246, 0.2) !important;">
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
-      <div class="card-t" style="margin-bottom:0; color: var(--blue);">CNS Finger Tap Test (10s)</div>
-      <div id="cns-status" style="font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; background:var(--bg); padding:4px 8px; border-radius:6px;">Da eseguire</div>
-    </div>
-    <div class="ps" style="margin-bottom:14px; font-size:11px;">Misura oggettivamente la stanchezza del Sistema Nervoso. Tocca il pulsante blu il più velocemente possibile con l'indice dominante.</div>
-    <div id="cns-test-area" style="text-align:center;">
-      <div id="cns-score-display" style="font-family:var(--fh); font-size:42px; font-weight:800; color:var(--text); line-height:1;">0</div>
-      <div id="cns-time-display" style="font-size:13px; color:var(--amber); font-weight:700; margin-bottom:15px; font-variant-numeric: tabular-nums;">Timer: 10.0s</div>
-      <button id="cns-start-btn" class="btn btn-p" style="width:100%; height:54px; font-size:16px; background:var(--blue); color:#fff;" onclick="startCnsTest()">▶ INIZIA TEST</button>
-      <button id="cns-tap-btn" class="btn" style="display:none; width:100%; height:140px; border-radius:24px; background:var(--blue); color:var(--bg); font-family:var(--fh); font-size:32px; font-weight:800; box-shadow:0 10px 30px rgba(59, 130, 246, 0.4); touch-action:manipulation;" onpointerdown="registerCnsTap(event)">TAP!</button>
-    </div>
-    <div id="cns-result-area" style="display:none; margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1); text-align:center;">
-        <div style="font-size:11px; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Risultato Test</div>
-        <div id="cns-feedback" style="font-size:13px; font-weight:700;"></div>
-    </div>
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+  <div class="card-t" style="margin-bottom:0; color: var(--blue);">CNS Finger Tap Test (10s)</div>
+  <div id="cns-status" style="font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; background:var(--bg); padding:4px 8px; border-radius:6px;">Da eseguire</div>
+  </div>
+  <div class="ps" style="margin-bottom:14px; font-size:11px;">Misura oggettivamente la stanchezza del Sistema Nervoso. Tocca il pulsante blu il più velocemente possibile con l'indice dominante.</div>
+  <div id="cns-test-area" style="text-align:center;">
+  <div id="cns-score-display" style="font-family:var(--fh); font-size:42px; font-weight:800; color:var(--text); line-height:1;">0</div>
+  <div id="cns-time-display" style="font-size:13px; color:var(--amber); font-weight:700; margin-bottom:15px; font-variant-numeric: tabular-nums;">Timer: 10.0s</div>
+  <button id="cns-start-btn" class="btn btn-p" style="width:100%; height:54px; font-size:16px; background:var(--blue); color:#fff;" onclick="startCnsTest()">▶ INIZIA TEST</button>
+  <button id="cns-tap-btn" class="btn" style="display:none; width:100%; height:140px; border-radius:24px; background:var(--blue); color:var(--bg); font-family:var(--fh); font-size:32px; font-weight:800; box-shadow:0 10px 30px rgba(59, 130, 246, 0.4); touch-action:manipulation;" onpointerdown="registerCnsTap(event)">TAP!</button>
+  </div>
+  <div id="cns-result-area" style="display:none; margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.1); text-align:center;">
+  <div style="font-size:11px; color:var(--muted); text-transform:uppercase; margin-bottom:6px;">Risultato Test</div>
+  <div id="cns-feedback" style="font-size:13px; font-weight:700;"></div>
+  </div>
   </div>
   -->
 
   <div class="fr3" style="margin-bottom:12px">
-    <div class="wc" style="padding:16px">
-      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-        <div>
-          <span class="wc-name">Inizio Ultimo Ciclo</span>
-        </div>
-        <div id="w-cycle-badge" style="font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; background:var(--s1); padding:4px 8px; border-radius:6px;">N/A</div>
-      </div>
-      <div style="display:flex; align-items:center; gap:8px;">
-        <input type="date" id="w-cycle-start" onchange="upW()" style="width:100%; text-align:center; font-size:14px; font-weight:700; color:var(--text); background:var(--s2); border:1px solid var(--border); border-radius:8px; padding:8px;">
-      </div>
-    </div>
-    
-    <div class="wc" style="padding:16px"><div class="wc-name" style="margin-bottom:8px">Peso</div><input type="number" id="w-weight" step="0.1" oninput="upW()" placeholder="kg"></div>
-    <div class="wc" style="padding:16px"><div class="wc-name" style="margin-bottom:8px">BF %</div><input type="number" id="w-bf" step="0.1" oninput="upW()" placeholder="%"></div>
+  <div class="wc" style="padding:16px">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+  <div>
+  <span class="wc-name">Inizio Ultimo Ciclo</span>
+  </div>
+  <div id="w-cycle-badge" style="font-size:10px; font-weight:800; color:var(--muted); text-transform:uppercase; background:var(--s1); padding:4px 8px; border-radius:6px;">N/A</div>
+  </div>
+  <div style="display:flex; align-items:center; gap:8px;">
+  <input type="date" id="w-cycle-start" onchange="upW()" style="width:100%; text-align:center; font-size:14px; font-weight:700; color:var(--text); background:var(--s2); border:1px solid var(--border); border-radius:8px; padding:8px;">
+  </div>
+  </div>
+   
+  <div class="wc" style="padding:16px"><div class="wc-name" style="margin-bottom:8px">Peso</div><input type="number" id="w-weight" step="0.1" oninput="upW()" placeholder="kg"></div>
+  <div class="wc" style="padding:16px"><div class="wc-name" style="margin-bottom:8px">BF %</div><input type="number" id="w-bf" step="0.1" oninput="upW()" placeholder="%"></div>
   </div>
 
   <div class="card" style="margin-top:24px;">
-    <div class="card-t">Mappa Topografica Infortuni</div>
-    <div class="ps" style="margin-bottom:10px;">Seleziona l'articolazione per registrare un dolore (VAS).</div>
-    <div style="position: relative; width: 100%; max-width: 300px; margin: 0 auto 20px auto; background: var(--s2); border-radius: 16px; padding: 20px; border: 1px solid var(--border);">
-    <svg viewBox="0 0 100 200" style="width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(249,115,22,0.1));">
-        <path d="M40 20 C40 10, 60 10, 60 20 C60 30, 40 30, 40 20 Z" fill="#2A3040" /> <path d="M30 35 Q50 30 70 35 L75 80 L60 80 L50 120 L40 80 L25 80 Z" fill="#2A3040" /> <path d="M40 120 L35 190 L45 190 L50 120 Z" fill="#2A3040" /> <path d="M60 120 L65 190 L55 190 L50 120 Z" fill="#2A3040" /> <path d="M25 35 L10 80 L18 80 L30 50 Z" fill="#2A3040" /> <path d="M75 35 L90 80 L82 80 L70 50 Z" fill="#2A3040" /> <circle cx="28" cy="38" r="6" fill="rgba(239,68,68,0.5)" cursor="pointer" onclick="openInjuryMo('Spalla_SX')" /> <circle cx="72" cy="38" r="6" fill="rgba(239,68,68,0.5)" cursor="pointer" onclick="openInjuryMo('Spalla_DX')" /> <circle cx="15" cy="60" r="5" fill="rgba(245,158,11,0.5)" cursor="pointer" onclick="openInjuryMo('Gomito_SX')" /> <circle cx="85" cy="60" r="5" fill="rgba(245,158,11,0.5)" cursor="pointer" onclick="openInjuryMo('Gomito_DX')" /> <ellipse cx="50" cy="95" rx="12" ry="8" fill="rgba(139,92,246,0.5)" cursor="pointer" onclick="openInjuryMo('Zona_Lombare')" /> <circle cx="38" cy="150" r="6" fill="rgba(59,130,246,0.5)" cursor="pointer" onclick="openInjuryMo('Ginocchio_SX')" /> <circle cx="62" cy="150" r="6" fill="rgba(59,130,246,0.5)" cursor="pointer" onclick="openInjuryMo('Ginocchio_DX')" /> <circle cx="36" cy="185" r="5" fill="rgba(16,185,129,0.5)" cursor="pointer" onclick="openInjuryMo('Caviglia_SX')" /> <circle cx="64" cy="185" r="5" fill="rgba(16,185,129,0.5)" cursor="pointer" onclick="openInjuryMo('Caviglia_DX')" /> </svg>
-    <div style="font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;">Tocca un'articolazione per mappare il dolore</div>
+  <div class="card-t">Mappa Topografica Infortuni</div>
+  <div class="ps" style="margin-bottom:10px;">Seleziona l'articolazione per registrare un dolore (VAS).</div>
+  <div style="position: relative; width: 100%; max-width: 300px; margin: 0 auto 20px auto; background: var(--s2); border-radius: 16px; padding: 20px; border: 1px solid var(--border);">
+  <svg viewBox="0 0 100 200" style="width: 100%; height: auto; filter: drop-shadow(0 0 10px rgba(249,115,22,0.1));">
+  <path d="M40 20 C40 10, 60 10, 60 20 C60 30, 40 30, 40 20 Z" fill="#2A3040" /> <path d="M30 35 Q50 30 70 35 L75 80 L60 80 L50 120 L40 80 L25 80 Z" fill="#2A3040" /> <path d="M40 120 L35 190 L45 190 L50 120 Z" fill="#2A3040" /> <path d="M60 120 L65 190 L55 190 L50 120 Z" fill="#2A3040" /> <path d="M25 35 L10 80 L18 80 L30 50 Z" fill="#2A3040" /> <path d="M75 35 L90 80 L82 80 L70 50 Z" fill="#2A3040" /> <circle cx="28" cy="38" r="6" fill="rgba(239,68,68,0.5)" cursor="pointer" onclick="openInjuryMo('Spalla_SX')" /> <circle cx="72" cy="38" r="6" fill="rgba(239,68,68,0.5)" cursor="pointer" onclick="openInjuryMo('Spalla_DX')" /> <circle cx="15" cy="60" r="5" fill="rgba(245,158,11,0.5)" cursor="pointer" onclick="openInjuryMo('Gomito_SX')" /> <circle cx="85" cy="60" r="5" fill="rgba(245,158,11,0.5)" cursor="pointer" onclick="openInjuryMo('Gomito_DX')" /> <ellipse cx="50" cy="95" rx="12" ry="8" fill="rgba(139,92,246,0.5)" cursor="pointer" onclick="openInjuryMo('Zona_Lombare')" /> <circle cx="38" cy="150" r="6" fill="rgba(59,130,246,0.5)" cursor="pointer" onclick="openInjuryMo('Ginocchio_SX')" /> <circle cx="62" cy="150" r="6" fill="rgba(59,130,246,0.5)" cursor="pointer" onclick="openInjuryMo('Ginocchio_DX')" /> <circle cx="36" cy="185" r="5" fill="rgba(16,185,129,0.5)" cursor="pointer" onclick="openInjuryMo('Caviglia_SX')" /> <circle cx="64" cy="185" r="5" fill="rgba(16,185,129,0.5)" cursor="pointer" onclick="openInjuryMo('Caviglia_DX')" /> </svg>
+  <div style="font-size: 10px; color: var(--muted); text-align: center; margin-top: 10px; text-transform: uppercase; letter-spacing: 1px;">Tocca un'articolazione per mappare il dolore</div>
 </div>
-    <div id="active-injuries-list" style="margin-top:14px; display:flex; flex-direction:column; gap:6px;"></div>
+  <div id="active-injuries-list" style="margin-top:14px; display:flex; flex-direction:column; gap:6px;"></div>
   </div>
-    <div style="margin-top: 24px; padding: 0 4px;">
-     <button class="btn btn-p" style="width:100%; height:54px; font-size:16px; background:linear-gradient(135deg, var(--teal) 0%, var(--teal-m) 100%); color:var(--bg); font-weight:850; letter-spacing:0.5px; box-shadow: 0 8px 24px rgba(249, 115, 22, 0.25);" onclick="confermaWellnessLive()">
-        CONFERMA STATO & INIZIA ALLENAMENTO →
-     </button>
+  <div style="margin-top: 24px; padding: 0 4px;">
+  <button class="btn btn-p" style="width:100%; height:54px; font-size:16px; background:linear-gradient(135deg, var(--teal) 0%, var(--teal-m) 100%); color:var(--bg); font-weight:850; letter-spacing:0.5px; box-shadow: 0 8px 24px rgba(249, 115, 22, 0.25);" onclick="confermaWellnessLive()">
+  CONFERMA STATO & INIZIA ALLENAMENTO →
+  </button>
   </div>
 </div>
 
@@ -821,62 +825,62 @@
   <div class="ps">Traccia i set in tempo reale</div>
   <div id="week-widget" style="margin-bottom:12px"></div>
   <div class="card" style="margin-bottom:10px">
-    <div class="fr"><div class="fg"><label class="fl">Sessione</label><select id="lv-sess" onchange="loadLive()"></select></div><div class="fg"><label class="fl">Settimana</label><select id="lv-week" onchange="loadLive()"><option>1</option><option>2</option><option>3</option><option>4</option></select></div></div>
+  <div class="fr"><div class="fg"><label class="fl">Sessione</label><select id="lv-sess" onchange="loadLive()"></select></div><div class="fg"><label class="fl">Settimana</label><select id="lv-week" onchange="loadLive()"><option>1</option><option>2</option><option>3</option><option>4</option></select></div></div>
   </div>
   <div class="card" style="margin-bottom:10px"><div class="card-t">Set tracker</div><div id="lv-exs"></div></div>
   <div class="g4">
-    <div class="kpi"><div class="kpi-l">Volume Totale</div><div class="kpi-v" id="lv-vol" style="color:var(--teal)">0 kg</div></div>
-    <div class="kpi"><div class="kpi-l">e1RM Max</div><div class="kpi-v" id="lv-e1rm" style="color:var(--amber)">0 kg</div></div>
-    <div class="kpi"><div class="kpi-l">Max e1RM (DOM)</div><div class="kpi-v" id="lv-edom" style="color:var(--blue)">0 kg</div></div>
-    <div class="kpi"><div class="kpi-l">Max e1RM (NDOM)</div><div class="kpi-v" id="lv-endom" style="color:var(--purple)">0 kg</div></div>
+  <div class="kpi"><div class="kpi-l">Volume Totale</div><div class="kpi-v" id="lv-vol" style="color:var(--teal)">0 kg</div></div>
+  <div class="kpi"><div class="kpi-l">e1RM Max</div><div class="kpi-v" id="lv-e1rm" style="color:var(--amber)">0 kg</div></div>
+  <div class="kpi"><div class="kpi-l">Max e1RM (DOM)</div><div class="kpi-v" id="lv-edom" style="color:var(--blue)">0 kg</div></div>
+  <div class="kpi"><div class="kpi-l">Max e1RM (NDOM)</div><div class="kpi-v" id="lv-endom" style="color:var(--purple)">0 kg</div></div>
   </div>
 
   <div class="card" style="margin-top: 12px; margin-bottom: 12px;">
-    <div class="card-t" style="text-align: center;">Evoluzione Forza Massima Stimata (e1RM) nel Tempo</div>
-    <div id="e1rm-ex-filter" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"></div>
-    <div style="position: relative; height: 220px; width: 100%;">
-      <canvas id="chart-e1rm"></canvas>
-    </div>
-    <div id="e1rm-chart-subtitle" style="font-size: 10px; color: var(--muted); margin-top: 6px; text-align: center;">
-      Il grafico mostra il picco massimo di e1RM registrato settimana per settimana.
-    </div>
+  <div class="card-t" style="text-align: center;">Evoluzione Forza Massima Stimata (e1RM) nel Tempo</div>
+  <div id="e1rm-ex-filter" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"></div>
+  <div style="position: relative; height: 220px; width: 100%;">
+  <canvas id="chart-e1rm"></canvas>
+  </div>
+  <div id="e1rm-chart-subtitle" style="font-size: 10px; color: var(--muted); margin-top: 6px; text-align: center;">
+  Il grafico mostra il picco massimo di e1RM registrato settimana per settimana.
+  </div>
   </div>
 
   <!-- Pulsante Fine Allenamento -->
   <button onclick="endWorkout()" style="
-    width:100%; padding:16px; margin-top:4px; margin-bottom:8px;
-    background:var(--s1); border:2px solid var(--teal);
-    border-radius:14px; color:var(--teal);
-    font-size:16px; font-weight:800; letter-spacing:0.3px;
-    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
-    <span>✓</span> Fine Allenamento
+  width:100%; padding:16px; margin-top:4px; margin-bottom:8px;
+  background:var(--s1); border:2px solid var(--teal);
+  border-radius:14px; color:var(--teal);
+  font-size:16px; font-weight:800; letter-spacing:0.3px;
+  cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px;">
+  <span>✓</span> Fine Allenamento
   </button>
 </div>
 
 <div class="panel" id="p-feedback">
   <div class="ph">Post-Workout Log</div>
   <div class="ps">Compila dopo ogni sessione</div>
-    <div class="card" style="margin-bottom:10px">
-    <div class="card-t">Seleziona Tipo Sessione (Dual-Tracking)</div>
-    <select id="pw-type" style="background:var(--s2); color:var(--teal); font-weight:800; font-size:14px; padding:10px; border-color:var(--teal);">
-      <option value="Palestra">🏋️ Palestra — Forza / Meccanica</option>
-      <option value="Campo">⚽ Campo — Tecnica / Tattica</option>
-      <option value="Corsa">🏃 Corsa — Endurance / Resistenza</option>
-      <option value="Sprint">⚡ Sprint — Velocità / Potenza</option>
-      <option value="Condizionamento">🔥 Condizionamento — Metabolico</option>
-    </select>
+  <div class="card" style="margin-bottom:10px">
+  <div class="card-t">Seleziona Tipo Sessione (Dual-Tracking)</div>
+  <select id="pw-type" style="background:var(--s2); color:var(--teal); font-weight:800; font-size:14px; padding:10px; border-color:var(--teal);">
+  <option value="Palestra"> Palestra — Forza / Meccanica</option>
+  <option value="Campo"> Campo — Tecnica / Tattica</option>
+  <option value="Corsa"> Corsa — Endurance / Resistenza</option>
+  <option value="Sprint"> Sprint — Velocità / Potenza</option>
+  <option value="Condizionamento"> Condizionamento — Metabolico</option>
+  </select>
   </div>
   <div class="card" style="margin-bottom:10px">
-    <div class="card-t">RPE sessione percepita</div>
-    <div class="rpe-row" id="pw-rpe"></div>
-    <div style="font-size:11px;color:var(--muted);margin-top:8px" id="pw-rpe-d">Seleziona</div>
+  <div class="card-t">RPE sessione percepita</div>
+  <div class="rpe-row" id="pw-rpe"></div>
+  <div style="font-size:11px;color:var(--muted);margin-top:8px" id="pw-rpe-d">Seleziona</div>
   </div>
   <div class="card" style="margin-bottom:10px">
-    <div class="card-t">Durata e Carico Interno</div>
-    <div class="fr">
-      <div class="fg"><label class="fl">Durata (minuti)</label><input type="number" id="pw-dur" placeholder="90" oninput="calcSrpe()"></div>
-      <div class="fg"><label class="fl">Carico Interno (sRPE)</label><div id="pw-srpe-val" style="font-family:var(--fh);font-size:20px;font-weight:700;color:var(--purple)">0 UA</div></div>
-    </div>
+  <div class="card-t">Durata e Carico Interno</div>
+  <div class="fr">
+  <div class="fg"><label class="fl">Durata (minuti)</label><input type="number" id="pw-dur" placeholder="90" oninput="calcSrpe()"></div>
+  <div class="fg"><label class="fl">Carico Interno (sRPE)</label><div id="pw-srpe-val" style="font-family:var(--fh);font-size:20px;font-weight:700;color:var(--purple)">0 UA</div></div>
+  </div>
   </div>
   <div class="card" style="margin-bottom:10px"><div class="card-t">Qualità sessione</div><div style="display:flex;gap:5px" id="pw-stars"></div><div style="font-size:11px;color:var(--muted);margin-top:5px" id="pw-star-d">Quanto sei soddisfatto?</div></div>
   <div class="card" style="margin-bottom:10px"><div class="card-t">Muscoli più affaticati</div><div class="pill-g" id="pw-musc"></div></div>
@@ -889,13 +893,13 @@
 <div class="panel" id="p-coach-reply">
   <div class="ph">Feedback Coach</div>
   <div class="ps">Chat e risposte del tuo coach</div>
-  <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">💬 Messaggi diretti</div>
+  <div style="font-size:11px;font-weight:700;color:var(--teal);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px"> Messaggi diretti</div>
   <div id="athlete-chat-thread" style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:140px;max-height:300px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column"></div>
   <div style="display:flex;gap:8px;margin-bottom:20px">
-    <input type="text" id="athlete-chat-input" placeholder="Scrivi al coach..." style="flex:1;padding:10px 14px;font-size:13px" onkeydown="if(event.key==='Enter')sendMessageAthleta()">
-    <button class="btn btn-p" onclick="sendMessageAthleta()">Invia</button>
+  <input type="text" id="athlete-chat-input" placeholder="Scrivi al coach..." style="flex:1;padding:10px 14px;font-size:13px" onkeydown="if(event.key==='Enter')sendMessageAthleta()">
+  <button class="btn btn-p" onclick="sendMessageAthleta()">Invia</button>
   </div>
-  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-top:16px;border-top:1px solid var(--border)">📋 Risposte alle sessioni</div>
+  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;padding-top:16px;border-top:1px solid var(--border)"> Risposte alle sessioni</div>
   <div id="cr-list"></div>
 </div>
 
@@ -905,24 +909,24 @@
   <div id="ap-month" style="margin-bottom:12px"></div>
   <div class="g4" id="ap-kpis" style="margin-bottom:14px"></div>
   <div class="card" style="margin-bottom:12px">
-    <div class="card-t">Questa settimana</div>
-    <div id="ap-week"></div>
+  <div class="card-t">Questa settimana</div>
+  <div id="ap-week"></div>
   </div>
   <div class="card" style="margin-bottom:12px">
-    <div class="card-t">Volume — ultime 8 sessioni</div>
-    <div class="bc" id="ap-vol-bc"></div>
+  <div class="card-t">Volume — ultime 8 sessioni</div>
+  <div class="bc" id="ap-vol-bc"></div>
   </div>
   <div class="card" style="margin-bottom:12px">
-    <div class="card-t">Andamento e1RM</div>
-    <div id="ap-e1rm-filter" style="margin-bottom:8px"></div>
-    <div style="position:relative;height:180px" id="ap-e1rm-wrap">
-      <canvas id="ap-e1rm-chart"></canvas>
-    </div>
+  <div class="card-t">Andamento e1RM</div>
+  <div id="ap-e1rm-filter" style="margin-bottom:8px"></div>
+  <div style="position:relative;height:180px" id="ap-e1rm-wrap">
+  <canvas id="ap-e1rm-chart"></canvas>
+  </div>
   </div>
   <div id="ap-bodcomp" style="margin-bottom:12px"></div>
   <div class="card">
-    <div class="card-t">I miei record</div>
-    <div id="ap-records"></div>
+  <div class="card-t">I miei record</div>
+  <div id="ap-records"></div>
   </div>
   <div id="ap-nutrition" style="margin-top:12px"></div>
   <div id="ap-badges" style="margin-top:12px"></div>
@@ -931,49 +935,49 @@
 <div class="panel" id="p-analytics">
   <div class="ph">Analytics & Trend Biomeccanici</div>
   <div class="ps" id="an-sub">Statistiche atleta</div>
-    
+   
   <div id="radar-wrapper" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 12px;">
-    <div class="card">
-      <div class="card-t">Recovery & Readiness (Oggi)</div>
-      <div style="position: relative; height: 250px; width: 100%;">
-        <canvas id="chart-radar-recovery"></canvas>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-t">Performance & Efficienza (Ultima Sessione)</div>
-      <div style="position: relative; height: 250px; width: 100%;">
-        <canvas id="chart-radar-performance"></canvas>
-      </div>
-    </div>
+  <div class="card">
+  <div class="card-t">Recovery & Readiness (Oggi)</div>
+  <div style="position: relative; height: 250px; width: 100%;">
+  <canvas id="chart-radar-recovery"></canvas>
+  </div>
+  </div>
+  <div class="card">
+  <div class="card-t">Performance & Efficienza (Ultima Sessione)</div>
+  <div style="position: relative; height: 250px; width: 100%;">
+  <canvas id="chart-radar-performance"></canvas>
+  </div>
+  </div>
   </div>
 
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-bottom:12px" id="an-sparks"></div>
   
   <div class="card">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-      <div class="card-t" style="margin-bottom:0;">Composizione Corporea</div>
-      <button class="btn btn-p btn-sm" onclick="openBodyCompModal()">+ Nuova Misurazione</button>
-    </div>
-    <div id="an-bc-kpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;"></div>
-    <div style="position:relative;height:180px;margin-bottom:12px;"><canvas id="an-bc-chart"></canvas></div>
-    <div id="an-bc-history" style="font-size:12px;max-height:140px;overflow-y:auto;color:var(--text);"></div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+  <div class="card-t" style="margin-bottom:0;">Composizione Corporea</div>
+  <button class="btn btn-p btn-sm" onclick="openBodyCompModal()">+ Nuova Misurazione</button>
+  </div>
+  <div id="an-bc-kpis" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;"></div>
+  <div style="position:relative;height:180px;margin-bottom:12px;"><canvas id="an-bc-chart"></canvas></div>
+  <div id="an-bc-history" style="font-size:12px;max-height:140px;overflow-y:auto;color:var(--text);"></div>
   </div>
   
   <!-- Test Atletici -->
   <div class="card" style="margin-bottom:10px;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-      <div class="card-t" style="margin-bottom:0;">Test Atletici</div>
-      <button class="btn btn-p btn-sm" onclick="openTestModal()">+ Nuovo Test</button>
-    </div>
-    <div id="an-test-cats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
-    <div id="an-test-list"></div>
-    <div id="an-test-chart-wrap" style="display:none;margin-top:12px;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span id="an-test-chart-title" style="font-size:12px;font-weight:700;color:var(--text);"></span>
-        <button onclick="closeTestChart()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
-      </div>
-      <div style="position:relative;height:160px;"><canvas id="an-test-chart"></canvas></div>
-    </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+  <div class="card-t" style="margin-bottom:0;">Test Atletici</div>
+  <button class="btn btn-p btn-sm" onclick="openTestModal()">+ Nuovo Test</button>
+  </div>
+  <div id="an-test-cats" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;"></div>
+  <div id="an-test-list"></div>
+  <div id="an-test-chart-wrap" style="display:none;margin-top:12px;">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+  <span id="an-test-chart-title" style="font-size:12px;font-weight:700;color:var(--text);"></span>
+  <button onclick="closeTestChart()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:16px;">✕</button>
+  </div>
+  <div style="position:relative;height:160px;"><canvas id="an-test-chart"></canvas></div>
+  </div>
   </div>
 
   <div class="card"><div class="card-t">Insight automatici</div><div id="an-insights"></div></div>
@@ -981,20 +985,20 @@
   <div id="peaking-wrapper"></div>
 
   <div class="card" id="hrv-trend-wrapper" style="margin-top: 12px;">
-    <div class="card-t">Trend HRV (Ultimi 30 giorni vs Media Mobile 7gg)</div>
-    <div style="position: relative; height: 220px; width: 100%;">
-      <canvas id="chart-hrv-trend"></canvas>
-    </div>
+  <div class="card-t">Trend HRV (Ultimi 30 giorni vs Media Mobile 7gg)</div>
+  <div style="position: relative; height: 220px; width: 100%;">
+  <canvas id="chart-hrv-trend"></canvas>
+  </div>
   </div>
 
   <div class="card" style="margin-top: 12px; display: none;" id="card-hrv-perf">
-    <div class="card-t">Correlazione HRV vs Performance (e1RM Max)</div>
-    <div style="position: relative; height: 220px; width: 100%;">
-      <canvas id="chart-hrv-perf"></canvas>
-    </div>
-    <div style="font-size: 10px; color: var(--muted); margin-top: 6px; text-align: center;">
-      Come il recupero del Sistema Nervoso Autonomo (HRV) impatta la forza massima.
-    </div>
+  <div class="card-t">Correlazione HRV vs Performance (e1RM Max)</div>
+  <div style="position: relative; height: 220px; width: 100%;">
+  <canvas id="chart-hrv-perf"></canvas>
+  </div>
+  <div style="font-size: 10px; color: var(--muted); margin-top: 6px; text-align: center;">
+  Come il recupero del Sistema Nervoso Autonomo (HRV) impatta la forza massima.
+  </div>
   </div>
 </div>
 
@@ -1004,86 +1008,86 @@
 
   <!-- 1RM -->
   <div class="card" style="margin-bottom:10px">
-    <div class="card-t">🏋️ Massimale (1RM)</div>
-    <div class="fr" style="margin-bottom:10px">
-      <div class="fg"><label class="fl">Peso sollevato (kg)</label><input type="number" id="c1rm-kg" placeholder="100" step="0.5" oninput="calc1RM()"></div>
-      <div class="fg"><label class="fl">Ripetizioni eseguite</label><input type="number" id="c1rm-rep" placeholder="5" min="1" max="15" oninput="calc1RM()"></div>
-    </div>
-    <div id="c1rm-result" style="display:none">
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px" id="c1rm-formulas"></div>
-      <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Tabella % del massimale</div>
-      <div id="c1rm-table" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:12px;"></div>
-    </div>
+  <div class="card-t"> Massimale (1RM)</div>
+  <div class="fr" style="margin-bottom:10px">
+  <div class="fg"><label class="fl">Peso sollevato (kg)</label><input type="number" id="c1rm-kg" placeholder="100" step="0.5" oninput="calc1RM()"></div>
+  <div class="fg"><label class="fl">Ripetizioni eseguite</label><input type="number" id="c1rm-rep" placeholder="5" min="1" max="15" oninput="calc1RM()"></div>
+  </div>
+  <div id="c1rm-result" style="display:none">
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px" id="c1rm-formulas"></div>
+  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">Tabella % del massimale</div>
+  <div id="c1rm-table" style="display:grid;grid-template-columns:repeat(4,1fr);gap:4px;font-size:12px;"></div>
+  </div>
   </div>
 
   <!-- Zone FC -->
   <div class="card" style="margin-bottom:10px">
-    <div class="card-t">❤️ Zone Frequenza Cardiaca</div>
-    <div class="fr" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
-      <div class="fg" style="min-width:100px"><label class="fl">Età</label><input type="number" id="chr-age" placeholder="30" oninput="calcHRZones()"></div>
-      <div class="fg" style="min-width:100px"><label class="fl">FCmax (opz.)</label><input type="number" id="chr-hrmax" placeholder="auto" oninput="calcHRZones()"></div>
-      <div class="fg" style="min-width:100px"><label class="fl">FC riposo (opz.)</label><input type="number" id="chr-hrrest" placeholder="—" oninput="calcHRZones()"></div>
-    </div>
-    <div id="chr-result"></div>
+  <div class="card-t"> Zone Frequenza Cardiaca</div>
+  <div class="fr" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
+  <div class="fg" style="min-width:100px"><label class="fl">Età</label><input type="number" id="chr-age" placeholder="30" oninput="calcHRZones()"></div>
+  <div class="fg" style="min-width:100px"><label class="fl">FCmax (opz.)</label><input type="number" id="chr-hrmax" placeholder="auto" oninput="calcHRZones()"></div>
+  <div class="fg" style="min-width:100px"><label class="fl">FC riposo (opz.)</label><input type="number" id="chr-hrrest" placeholder="—" oninput="calcHRZones()"></div>
+  </div>
+  <div id="chr-result"></div>
   </div>
 
   <!-- VO2max -->
   <div class="card" style="margin-bottom:10px">
-    <div class="card-t">🫁 VO2max</div>
-    <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-      <button id="vo2-tab-cooper" onclick="setVO2Tab('cooper')" class="btn btn-p btn-sm">Cooper 12'</button>
-      <button id="vo2-tab-rockport" onclick="setVO2Tab('rockport')" class="btn btn-g btn-sm">Rockport Walk</button>
-      <button id="vo2-tab-15k" onclick="setVO2Tab('15k')" class="btn btn-g btn-sm">1.5km Run</button>
-    </div>
-    <div id="vo2-section-cooper">
-      <div class="fr">
-        <div class="fg"><label class="fl">Distanza percorsa (m)</label><input type="number" id="vo2-cooper-dist" placeholder="2800" oninput="calcVO2()"></div>
-      </div>
-    </div>
-    <div id="vo2-section-rockport" style="display:none">
-      <div class="fr" style="flex-wrap:wrap;gap:8px">
-        <div class="fg"><label class="fl">Tempo 1 miglio (mm:ss)</label><input type="text" id="vo2-rp-time" placeholder="15:00" oninput="calcVO2()"></div>
-        <div class="fg"><label class="fl">FC a fine test</label><input type="number" id="vo2-rp-hr" placeholder="130" oninput="calcVO2()"></div>
-        <div class="fg"><label class="fl">Peso (kg)</label><input type="number" id="vo2-rp-kg" placeholder="75" oninput="calcVO2()"></div>
-        <div class="fg"><label class="fl">Sesso</label><select id="vo2-rp-sex" onchange="calcVO2()"><option value="1">M</option><option value="0">F</option></select></div>
-      </div>
-    </div>
-    <div id="vo2-section-15k" style="display:none">
-      <div class="fr">
-        <div class="fg"><label class="fl">Tempo 1.5km (mm:ss)</label><input type="text" id="vo2-15k-time" placeholder="07:30" oninput="calcVO2()"></div>
-      </div>
-    </div>
-    <div id="vo2-result" style="margin-top:10px;"></div>
+  <div class="card-t"> VO2max</div>
+  <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+  <button id="vo2-tab-cooper" onclick="setVO2Tab('cooper')" class="btn btn-p btn-sm">Cooper 12'</button>
+  <button id="vo2-tab-rockport" onclick="setVO2Tab('rockport')" class="btn btn-g btn-sm">Rockport Walk</button>
+  <button id="vo2-tab-15k" onclick="setVO2Tab('15k')" class="btn btn-g btn-sm">1.5km Run</button>
+  </div>
+  <div id="vo2-section-cooper">
+  <div class="fr">
+  <div class="fg"><label class="fl">Distanza percorsa (m)</label><input type="number" id="vo2-cooper-dist" placeholder="2800" oninput="calcVO2()"></div>
+  </div>
+  </div>
+  <div id="vo2-section-rockport" style="display:none">
+  <div class="fr" style="flex-wrap:wrap;gap:8px">
+  <div class="fg"><label class="fl">Tempo 1 miglio (mm:ss)</label><input type="text" id="vo2-rp-time" placeholder="15:00" oninput="calcVO2()"></div>
+  <div class="fg"><label class="fl">FC a fine test</label><input type="number" id="vo2-rp-hr" placeholder="130" oninput="calcVO2()"></div>
+  <div class="fg"><label class="fl">Peso (kg)</label><input type="number" id="vo2-rp-kg" placeholder="75" oninput="calcVO2()"></div>
+  <div class="fg"><label class="fl">Sesso</label><select id="vo2-rp-sex" onchange="calcVO2()"><option value="1">M</option><option value="0">F</option></select></div>
+  </div>
+  </div>
+  <div id="vo2-section-15k" style="display:none">
+  <div class="fr">
+  <div class="fg"><label class="fl">Tempo 1.5km (mm:ss)</label><input type="text" id="vo2-15k-time" placeholder="07:30" oninput="calcVO2()"></div>
+  </div>
+  </div>
+  <div id="vo2-result" style="margin-top:10px;"></div>
   </div>
 
   <!-- Daniels VDOT -->
   <div class="card" style="margin-bottom:10px">
-    <div class="card-t">🏃 Zone di Corsa — Daniels VDOT</div>
-    <div class="fr" style="flex-wrap:wrap;gap:8px;margin-bottom:10px">
-      <div class="fg" style="min-width:120px"><label class="fl">Tempo gara (mm:ss o h:mm:ss)</label><input type="text" id="vdot-time" placeholder="22:30" oninput="calcVDOT()"></div>
-      <div class="fg" style="max-width:160px"><label class="fl">Distanza</label>
-        <select id="vdot-dist" onchange="calcVDOT()">
-          <option value="1500">1500m</option>
-          <option value="3000">3000m</option>
-          <option value="5000" selected>5km</option>
-          <option value="10000">10km</option>
-          <option value="21097">Mezza maratona</option>
-          <option value="42195">Maratona</option>
-        </select>
-      </div>
-    </div>
-    <div id="vdot-result"></div>
+  <div class="card-t"> Zone di Corsa — Daniels VDOT</div>
+  <div class="fr" style="flex-wrap:wrap;gap:8px;margin-bottom:10px">
+  <div class="fg" style="min-width:120px"><label class="fl">Tempo gara (mm:ss o h:mm:ss)</label><input type="text" id="vdot-time" placeholder="22:30" oninput="calcVDOT()"></div>
+  <div class="fg" style="max-width:160px"><label class="fl">Distanza</label>
+  <select id="vdot-dist" onchange="calcVDOT()">
+  <option value="1500">1500m</option>
+  <option value="3000">3000m</option>
+  <option value="5000" selected>5km</option>
+  <option value="10000">10km</option>
+  <option value="21097">Mezza maratona</option>
+  <option value="42195">Maratona</option>
+  </select>
+  </div>
+  </div>
+  <div id="vdot-result"></div>
   </div>
 
   <!-- Pace Converter -->
   <div class="card">
-    <div class="card-t">⏱ Convertitore Pace</div>
-    <div class="fr" style="align-items:flex-end;gap:8px;flex-wrap:wrap">
-      <div class="fg"><label class="fl">km/h</label><input type="number" id="pace-kmh" step="0.1" placeholder="12.0" oninput="calcPace('kmh')"></div>
-      <div style="padding-bottom:8px;color:var(--muted);font-weight:700">↔</div>
-      <div class="fg"><label class="fl">min/km</label><input type="text" id="pace-minkm" placeholder="5:00" oninput="calcPace('minkm')"></div>
-      <div class="fg"><label class="fl">min/miglio</label><input type="text" id="pace-minmi" placeholder="8:03" oninput="calcPace('minmi')"></div>
-    </div>
+  <div class="card-t"> Convertitore Pace</div>
+  <div class="fr" style="align-items:flex-end;gap:8px;flex-wrap:wrap">
+  <div class="fg"><label class="fl">km/h</label><input type="number" id="pace-kmh" step="0.1" placeholder="12.0" oninput="calcPace('kmh')"></div>
+  <div style="padding-bottom:8px;color:var(--muted);font-weight:700">↔</div>
+  <div class="fg"><label class="fl">min/km</label><input type="text" id="pace-minkm" placeholder="5:00" oninput="calcPace('minkm')"></div>
+  <div class="fg"><label class="fl">min/miglio</label><input type="text" id="pace-minmi" placeholder="8:03" oninput="calcPace('minmi')"></div>
+  </div>
   </div>
 </div>
 
@@ -1112,43 +1116,43 @@
   <div class="ph">Macro Periodizzazione</div>
   <div class="ps">Pianificazione multi-settimana — Accumulo → Intensificazione → Picco → Scarico</div>
   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:16px">
-    <div class="fg" style="margin-bottom:0;min-width:140px">
-      <label class="fl">Atleta</label>
-      <select id="macro-ath" onchange="appState.selAthId=this.value;renderMacro()"></select>
-    </div>
-    <div class="fg" style="margin-bottom:0;min-width:110px">
-      <label class="fl">Durata</label>
-      <select id="macro-weeks" onchange="setMacroWeeks(+this.value)">
-        <option value="8">8 settimane</option>
-        <option value="10">10 settimane</option>
-        <option value="12" selected>12 settimane</option>
-        <option value="14">14 settimane</option>
-        <option value="16">16 settimane</option>
-      </select>
-    </div>
-    <div class="fg" style="margin-bottom:0;min-width:180px">
-      <label class="fl">Template rapido</label>
-      <select id="macro-tpl" onchange="applyMacroTemplate(this.value);this.value=''">
-        <option value="">Applica template...</option>
-        <option value="linear">📈 Lineare (Acc→Int→Pic→Sca)</option>
-        <option value="block">🧱 Block (Acc block + Int block + Pic)</option>
-        <option value="undulating">🌊 Ondulante (cicli 3+1 sett)</option>
-        <option value="competition">🏆 Gara (peak finale)</option>
-      </select>
-    </div>
-    <button class="btn btn-p btn-sm" onclick="saveMacroPlan()" style="align-self:flex-end;margin-bottom:2px">💾 Salva piano</button>
+  <div class="fg" style="margin-bottom:0;min-width:140px">
+  <label class="fl">Atleta</label>
+  <select id="macro-ath" onchange="appState.selAthId=this.value;renderMacro()"></select>
+  </div>
+  <div class="fg" style="margin-bottom:0;min-width:110px">
+  <label class="fl">Durata</label>
+  <select id="macro-weeks" onchange="setMacroWeeks(+this.value)">
+  <option value="8">8 settimane</option>
+  <option value="10">10 settimane</option>
+  <option value="12" selected>12 settimane</option>
+  <option value="14">14 settimane</option>
+  <option value="16">16 settimane</option>
+  </select>
+  </div>
+  <div class="fg" style="margin-bottom:0;min-width:180px">
+  <label class="fl">Template rapido</label>
+  <select id="macro-tpl" onchange="applyMacroTemplate(this.value);this.value=''">
+  <option value="">Applica template...</option>
+  <option value="linear"> Lineare (Acc→Int→Pic→Sca)</option>
+  <option value="block"> Block (Acc block + Int block + Pic)</option>
+  <option value="undulating"> Ondulante (cicli 3+1 sett)</option>
+  <option value="competition"> Gara (peak finale)</option>
+  </select>
+  </div>
+  <button class="btn btn-p btn-sm" onclick="saveMacroPlan()" style="align-self:flex-end;margin-bottom:2px"> Salva piano</button>
   </div>
 
   <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-    <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--teal);display:inline-block"></span>Accumulo</span>
-    <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--amber);display:inline-block"></span>Intensificazione</span>
-    <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--coral);display:inline-block"></span>Picco</span>
-    <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--blue);display:inline-block"></span>Scarico</span>
-    <span style="font-size:11px;color:var(--muted);margin-left:8px">💡 Clicca sulla fase per cambiarla</span>
+  <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--teal);display:inline-block"></span>Accumulo</span>
+  <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--amber);display:inline-block"></span>Intensificazione</span>
+  <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--coral);display:inline-block"></span>Picco</span>
+  <span style="display:flex;align-items:center;gap:5px;font-size:11px"><span style="width:12px;height:12px;border-radius:3px;background:var(--blue);display:inline-block"></span>Scarico</span>
+  <span style="font-size:11px;color:var(--muted);margin-left:8px"> Clicca sulla fase per cambiarla</span>
   </div>
 
   <div style="overflow-x:auto;padding-bottom:8px">
-    <div id="macro-grid"></div>
+  <div id="macro-grid"></div>
   </div>
 
   <div id="macro-summary" style="margin-top:16px"></div>
@@ -1159,120 +1163,120 @@
 
 <div id="onboarding-screen" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: var(--bg); z-index: 20000; overflow-y: auto;">
   <div style="max-width: 450px; margin: 40px auto; padding: 20px;">
-    
-    <div style="width: 100%; height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 30px;">
-      <div id="onb-progress" style="width: 20%; height: 100%; background: var(--teal); transition: width 0.3s ease;"></div>
-    </div>
+   
+  <div style="width: 100%; height: 4px; background: var(--border); border-radius: 2px; margin-bottom: 30px;">
+  <div id="onb-progress" style="width: 20%; height: 100%; background: var(--teal); transition: width 0.3s ease;"></div>
+  </div>
 
-    <div class="onb-step" id="onb-step-1">
-      <h2 style="font-family: var(--fh); margin-bottom: 20px; border-left:none; padding-left:0;">Qual è il tuo sport principale?</h2>
-      
-      <select id="onb-sport" onchange="toggleOtherSport(this.value)" style="background: var(--s1); padding: 14px; font-size: 16px; width: 100%; margin-bottom: 12px; color: #fff; border-radius: 6px;">
-        <option value="" disabled selected>Seleziona uno sport...</option>
-        <option value="Calcio">⚽ Calcio</option>
-        <option value="Tennis">🎾 Tennis</option>
-        <option value="Padel">🏸 Padel</option>
-        <option value="Pallavolo">🏐 Pallavolo</option>
-        <option value="Basket">🏀 Pallacanestro</option>
-        <option value="Atletica">🏃‍♂️ Atletica Leggera</option>
-        <option value="Rugby">🏉 Rugby</option>
-        <option value="Functional">🏋️‍♂️ Prep. Atletica / Crossfit</option>
-        <option value="Altro">✍️ Altro (Specifica...)</option>
-      </select>
-      
-      <input type="text" id="onb-sport-other" placeholder="Scrivi il tuo sport..." style="display: none; background: var(--s1); padding: 14px; font-size: 16px; width: 100%; color: #fff; border-radius: 6px; border: 1px solid var(--teal);">
-      
-      <button class="btn btn-p" style="width: 100%; margin-top: 30px;" onclick="nextOnbStep(2)">Avanti</button>
-    </div>
+  <div class="onb-step" id="onb-step-1">
+  <h2 style="font-family: var(--fh); margin-bottom: 20px; border-left:none; padding-left:0;">Qual è il tuo sport principale?</h2>
+   
+  <select id="onb-sport" onchange="toggleOtherSport(this.value)" style="background: var(--s1); padding: 14px; font-size: 16px; width: 100%; margin-bottom: 12px; color: #fff; border-radius: 6px;">
+  <option value="" disabled selected>Seleziona uno sport...</option>
+  <option value="Calcio"> Calcio</option>
+  <option value="Tennis"> Tennis</option>
+  <option value="Padel"> Padel</option>
+  <option value="Pallavolo"> Pallavolo</option>
+  <option value="Basket"> Pallacanestro</option>
+  <option value="Atletica">‍ Atletica Leggera</option>
+  <option value="Rugby"> Rugby</option>
+  <option value="Functional"> Prep. Atletica / Crossfit</option>
+  <option value="Altro"> Altro (Specifica...)</option>
+  </select>
+   
+  <input type="text" id="onb-sport-other" placeholder="Scrivi il tuo sport..." style="display: none; background: var(--s1); padding: 14px; font-size: 16px; width: 100%; color: #fff; border-radius: 6px; border: 1px solid var(--teal);">
+   
+  <button class="btn btn-p" style="width: 100%; margin-top: 30px;" onclick="nextOnbStep(2)">Avanti</button>
+  </div>
 
-      <div class="onb-step" id="onb-step-2" style="display: none;">
-      <h2 style="font-family: var(--fh); margin-bottom: 10px; border-left:none; padding-left:0;">Dati Personali & Biometrici</h2>
-      <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Parametri essenziali per calibrare i volumi di lavoro.</p>
-      
-      <div style="display: flex; gap: 15px; margin-bottom: 15px;">
-        <div style="flex: 1;">
-          <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Età</label>
-          <input type="number" id="onb-age" placeholder="es. 25" inputmode="numeric" style="background: var(--s1); padding: 12px; font-size: 16px; text-align: center; color: #fff; border-radius: 6px; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
-        </div>
-        <div style="flex: 1;">
-          <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Sesso</label>
-          <select id="onb-gender" style="background: var(--s1); padding: 12px; font-size: 15px; color: #fff; border-radius: 6px; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
-            <option value="" disabled selected>Seleziona</option>
-            <option value="Uomo">Uomo</option>
-            <option value="Donna">Donna</option>
-            <option value="Non Specificato">Non voglio specificare</option>
-          </select>
-        </div>
-      </div>
+  <div class="onb-step" id="onb-step-2" style="display: none;">
+  <h2 style="font-family: var(--fh); margin-bottom: 10px; border-left:none; padding-left:0;">Dati Personali & Biometrici</h2>
+  <p style="color: var(--muted); font-size: 13px; margin-bottom: 25px;">Parametri essenziali per calibrare i volumi di lavoro.</p>
+   
+  <div style="display: flex; gap: 15px; margin-bottom: 15px;">
+  <div style="flex: 1;">
+  <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Età</label>
+  <input type="number" id="onb-age" placeholder="es. 25" inputmode="numeric" style="background: var(--s1); padding: 12px; font-size: 16px; text-align: center; color: #fff; border-radius: 6px; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
+  </div>
+  <div style="flex: 1;">
+  <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Sesso</label>
+  <select id="onb-gender" style="background: var(--s1); padding: 12px; font-size: 15px; color: #fff; border-radius: 6px; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
+  <option value="" disabled selected>Seleziona</option>
+  <option value="Uomo">Uomo</option>
+  <option value="Donna">Donna</option>
+  <option value="Non Specificato">Non voglio specificare</option>
+  </select>
+  </div>
+  </div>
 
-      <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-        <div style="flex: 1;">
-          <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Altezza (cm)</label>
-          <input type="number" id="onb-height" placeholder="es. 180" inputmode="numeric" pattern="[0-9]*" style="background: var(--s1); padding: 12px; font-size: 16px; text-align: center; color: #fff; border-radius: 6px; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
-        </div>
-        <div style="flex: 1;">
-          <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Peso (kg)</label>
-          <input type="number" id="onb-weight" placeholder="es. 75" inputmode="decimal" step="0.1" style="background: var(--s1); padding: 12px; font-size: 16px; text-align: center; color: #fff; border-radius: 6px; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
-        </div>
-      </div>
-      <button class="btn btn-p" style="width: 100%; margin-top: 10px;" onclick="nextOnbStep(3)">Avanti</button>
-    </div>
+  <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+  <div style="flex: 1;">
+  <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Altezza (cm)</label>
+  <input type="number" id="onb-height" placeholder="es. 180" inputmode="numeric" pattern="[0-9]*" style="background: var(--s1); padding: 12px; font-size: 16px; text-align: center; color: #fff; border-radius: 6px; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
+  </div>
+  <div style="flex: 1;">
+  <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Peso (kg)</label>
+  <input type="number" id="onb-weight" placeholder="es. 75" inputmode="decimal" step="0.1" style="background: var(--s1); padding: 12px; font-size: 16px; text-align: center; color: #fff; border-radius: 6px; width: 100%; border: 1px solid rgba(255,255,255,0.1);">
+  </div>
+  </div>
+  <button class="btn btn-p" style="width: 100%; margin-top: 10px;" onclick="nextOnbStep(3)">Avanti</button>
+  </div>
 
-    <div class="onb-step" id="onb-step-3" style="display: none;">
-      <h2 style="font-family: var(--fh); margin-bottom: 10px; border-left:none; padding-left:0;">Stile di Vita & Allenamento</h2>
-      <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Aiutaci a stimare il tuo dispendio energetico quotidiano.</p>
-      
-      <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Stile di vita</label>
-      <select id="onb-lifestyle" style="background: var(--s1); padding: 14px; font-size: 15px; width: 100%; color: #fff; border-radius: 6px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);">
-        <option value="" disabled selected>Seleziona il tuo stile di vita...</option>
-        <option value="Sedentario">Sedentario (Lavoro alla scrivania)</option>
-        <option value="Moderatamente Attivo">Moderatamente Attivo (Lavoro dinamico, cammino spesso)</option>
-        <option value="Molto Attivo">Molto Attivo (Lavoro fisico leggero)</option>
-        <option value="Lavoro Pesante">Lavoro Fisico Pesante (Muratore, Agricoltore, ecc.)</option>
-      </select>
+  <div class="onb-step" id="onb-step-3" style="display: none;">
+  <h2 style="font-family: var(--fh); margin-bottom: 10px; border-left:none; padding-left:0;">Stile di Vita & Allenamento</h2>
+  <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Aiutaci a stimare il tuo dispendio energetico quotidiano.</p>
+   
+  <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Stile di vita</label>
+  <select id="onb-lifestyle" style="background: var(--s1); padding: 14px; font-size: 15px; width: 100%; color: #fff; border-radius: 6px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);">
+  <option value="" disabled selected>Seleziona il tuo stile di vita...</option>
+  <option value="Sedentario">Sedentario (Lavoro alla scrivania)</option>
+  <option value="Moderatamente Attivo">Moderatamente Attivo (Lavoro dinamico, cammino spesso)</option>
+  <option value="Molto Attivo">Molto Attivo (Lavoro fisico leggero)</option>
+  <option value="Lavoro Pesante">Lavoro Fisico Pesante (Muratore, Agricoltore, ecc.)</option>
+  </select>
 
-      <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Frequenza Allenamento</label>
-      <select id="onb-freq" style="background: var(--s1); padding: 14px; font-size: 15px; width: 100%; color: #fff; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
-        <option value="" disabled selected>Quante volte a settimana puoi allenarti?</option>
-        <option value="2">2 Sessioni a settimana</option>
-        <option value="3">3 Sessioni a settimana</option>
-        <option value="4">4 Sessioni a settimana</option>
-        <option value="5">5+ Sessioni a settimana</option>
-      </select>
-      <button class="btn btn-p" style="width: 100%; margin-top: 30px;" onclick="nextOnbStep(4)">Avanti</button>
-    </div>
+  <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Frequenza Allenamento</label>
+  <select id="onb-freq" style="background: var(--s1); padding: 14px; font-size: 15px; width: 100%; color: #fff; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+  <option value="" disabled selected>Quante volte a settimana puoi allenarti?</option>
+  <option value="2">2 Sessioni a settimana</option>
+  <option value="3">3 Sessioni a settimana</option>
+  <option value="4">4 Sessioni a settimana</option>
+  <option value="5">5+ Sessioni a settimana</option>
+  </select>
+  <button class="btn btn-p" style="width: 100%; margin-top: 30px;" onclick="nextOnbStep(4)">Avanti</button>
+  </div>
 
-    <div class="onb-step" id="onb-step-4" style="display: none;">
-      <h2 style="font-family: var(--fh); margin-bottom: 10px; border-left:none; padding-left:0;">Salute Medica & Infortuni</h2>
-      <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Dati fondamentali per garantire la tua sicurezza.</p>
-      
-      <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Stato di salute attuale</label>
-      <select id="onb-health" style="background: var(--s1); padding: 14px; font-size: 15px; width: 100%; color: #fff; border-radius: 6px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);">
-        <option value="" disabled selected>Come valuti la tua salute?</option>
-        <option value="Ottimo">Ottimo (Nessun problema rilevante)</option>
-        <option value="Buono">Buono (Qualche piccolo acciacco passato)</option>
-        <option value="Da Monitorare">Da Monitorare (Patologie croniche gestite)</option>
-      </select>
+  <div class="onb-step" id="onb-step-4" style="display: none;">
+  <h2 style="font-family: var(--fh); margin-bottom: 10px; border-left:none; padding-left:0;">Salute Medica & Infortuni</h2>
+  <p style="color: var(--muted); font-size: 13px; margin-bottom: 20px;">Dati fondamentali per garantire la tua sicurezza.</p>
+   
+  <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Stato di salute attuale</label>
+  <select id="onb-health" style="background: var(--s1); padding: 14px; font-size: 15px; width: 100%; color: #fff; border-radius: 6px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.1);">
+  <option value="" disabled selected>Come valuti la tua salute?</option>
+  <option value="Ottimo">Ottimo (Nessun problema rilevante)</option>
+  <option value="Buono">Buono (Qualche piccolo acciacco passato)</option>
+  <option value="Da Monitorare">Da Monitorare (Patologie croniche gestite)</option>
+  </select>
 
-      <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Assumi farmaci regolarmente?</label>
-      <input type="text" id="onb-meds" placeholder="Scrivi quali, altrimenti lascia vuoto o scrivi 'No'" style="background: var(--s1); padding: 14px; font-size: 15px; width: 100%; color: #fff; border-radius: 6px; margin-bottom: 15px; box-sizing:border-box; border: 1px solid rgba(255,255,255,0.1);">
+  <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Assumi farmaci regolarmente?</label>
+  <input type="text" id="onb-meds" placeholder="Scrivi quali, altrimenti lascia vuoto o scrivi 'No'" style="background: var(--s1); padding: 14px; font-size: 15px; width: 100%; color: #fff; border-radius: 6px; margin-bottom: 15px; box-sizing:border-box; border: 1px solid rgba(255,255,255,0.1);">
 
-      <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Storico Infortuni & Fastidi</label>
-      <textarea id="onb-injuries" placeholder="Hai fastidi o zone delicate? (es. spalla sx, ernia l5-s1, ecc.)" style="background: var(--s1); height: 80px; padding: 12px; font-size: 14px; color: #fff; border-radius: 6px; width: 100%; resize: none; box-sizing:border-box; border: 1px solid rgba(255,255,255,0.1);"></textarea>
-      
-      <button class="btn btn-p" style="width: 100%; margin-top: 20px;" onclick="nextOnbStep(5)">Avanti</button>
-    </div>
+  <label style="font-size: 11px; text-transform: uppercase; color: var(--teal); font-weight: 700;">Storico Infortuni & Fastidi</label>
+  <textarea id="onb-injuries" placeholder="Hai fastidi o zone delicate? (es. spalla sx, ernia l5-s1, ecc.)" style="background: var(--s1); height: 80px; padding: 12px; font-size: 14px; color: #fff; border-radius: 6px; width: 100%; resize: none; box-sizing:border-box; border: 1px solid rgba(255,255,255,0.1);"></textarea>
+   
+  <button class="btn btn-p" style="width: 100%; margin-top: 20px;" onclick="nextOnbStep(5)">Avanti</button>
+  </div>
 
-    <div class="onb-step" id="onb-step-5" style="display: none;">
-      <h2 style="font-family: var(--fh); margin-bottom: 20px; border-left:none; padding-left:0;">Qual è il tuo focus attuale?</h2>
-      <select id="onb-goal" style="background: var(--s1); padding: 14px; font-size: 16px; width: 100%; color: #fff; border-radius: 6px;">
-        <option value="Forza">⚡ Sviluppo Forza Massima / Esplosiva</option>
-        <option value="Prevenzione">🛡️ Prevenzione Infortuni & Stabilità</option>
-        <option value="Ipertrofia">💪 Ipertrofia Meccanica / Massa</option>
-        <option value="Ricondizionamento">🔄 Ricondizionamento Post-Infortunio</option>
-      </select>
-      <button class="btn btn-p" style="width: 100%; margin-top: 40px; background: var(--teal); color: #000; font-weight: bold;" onclick="submitOnboarding()">Completa Profilo 🚀</button>
-    </div>
+  <div class="onb-step" id="onb-step-5" style="display: none;">
+  <h2 style="font-family: var(--fh); margin-bottom: 20px; border-left:none; padding-left:0;">Qual è il tuo focus attuale?</h2>
+  <select id="onb-goal" style="background: var(--s1); padding: 14px; font-size: 16px; width: 100%; color: #fff; border-radius: 6px;">
+  <option value="Forza"> Sviluppo Forza Massima / Esplosiva</option>
+  <option value="Prevenzione"> Prevenzione Infortuni & Stabilità</option>
+  <option value="Ipertrofia"> Ipertrofia Meccanica / Massa</option>
+  <option value="Ricondizionamento"> Ricondizionamento Post-Infortunio</option>
+  </select>
+  <button class="btn btn-p" style="width: 100%; margin-top: 40px; background: var(--teal); color: #000; font-weight: bold;" onclick="submitOnboarding()">Completa Profilo </button>
+  </div>
 
   </div>
 </div>
@@ -1285,135 +1289,135 @@
 </div>
 
 <div id="athlete-bottom-bar" class="bottom-bar">
-    <div class="bb-item on" id="bb-oggi" onclick="go('ath-home')"><div class="bb-icon">⊙</div><div class="bb-lbl">Oggi</div></div>
-    <div class="bb-item" id="bb-week" onclick="go('ath-week')"><div class="bb-icon">📅</div><div class="bb-lbl">Settimana</div></div>
-    <div class="bb-item" id="bb-well" onclick="go('wellness')" style="position:relative"><div class="bb-icon">♡</div><div class="bb-lbl">Wellness</div><span id="bb-well-badge" style="display:none;position:absolute;top:4px;right:8px;width:8px;height:8px;background:var(--coral);border-radius:50%;border:2px solid var(--bg)"></span></div>
-    <div class="bb-item" id="bb-sess" onclick="go('sessione')" style="position:relative"><div class="bb-icon">▶</div><div class="bb-lbl">Sessione</div><span id="bb-fb-badge" style="display:none;position:absolute;top:4px;right:8px;background:var(--coral);color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:1px 5px;line-height:1.4">!</span></div>
-    <div class="bb-item" id="bb-prog" onclick="go('ath-progressi')" style="position:relative"><div class="bb-icon">📈</div><div class="bb-lbl">Progressi</div></div>
-    <div class="bb-item" id="bb-coach" onclick="go('coach-reply')" style="position:relative"><div class="bb-icon">💬</div><div class="bb-lbl">Coach</div><span id="bb-msg-badge" style="display:none;position:absolute;top:4px;right:8px;background:var(--coral);color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:1px 5px;line-height:1.4">0</span></div>
+  <div class="bb-item on" id="bb-oggi" onclick="go('ath-home')"><div class="bb-icon">⊙</div><div class="bb-lbl">Oggi</div></div>
+  <div class="bb-item" id="bb-week" onclick="go('ath-week')"><div class="bb-icon"></div><div class="bb-lbl">Settimana</div></div>
+  <div class="bb-item" id="bb-well" onclick="go('wellness')" style="position:relative"><div class="bb-icon"></div><div class="bb-lbl">Wellness</div><span id="bb-well-badge" style="display:none;position:absolute;top:4px;right:8px;width:8px;height:8px;background:var(--coral);border-radius:50%;border:2px solid var(--bg)"></span></div>
+  <div class="bb-item" id="bb-sess" onclick="go('sessione')" style="position:relative"><div class="bb-icon">▶</div><div class="bb-lbl">Sessione</div><span id="bb-fb-badge" style="display:none;position:absolute;top:4px;right:8px;background:var(--coral);color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:1px 5px;line-height:1.4">!</span></div>
+  <div class="bb-item" id="bb-prog" onclick="go('ath-progressi')" style="position:relative"><div class="bb-icon"></div><div class="bb-lbl">Progressi</div></div>
+  <div class="bb-item" id="bb-coach" onclick="go('coach-reply')" style="position:relative"><div class="bb-icon"></div><div class="bb-lbl">Coach</div><span id="bb-msg-badge" style="display:none;position:absolute;top:4px;right:8px;background:var(--coral);color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:1px 5px;line-height:1.4">0</span></div>
 </div>
 
 <!-- ── Modale Test Atletici ───────────────────────── -->
 <div class="mo" id="mo-test">
   <div class="mo-box" style="max-width:360px;">
-    <div class="mo-hdr">
-      <span class="mo-title">🏆 Nuovo Test Atletico</span>
-      <button class="mo-x" onclick="closeMo('mo-test')">✕</button>
-    </div>
-    <div class="fr">
-      <div class="fg"><label class="fl">Data</label><input type="date" id="tst-date"></div>
-      <div class="fg"><label class="fl">Atleta</label><select id="tst-ath"></select></div>
-    </div>
-    <div class="fr">
-      <div class="fg"><label class="fl">Categoria</label>
-        <select id="tst-cat" onchange="onTestCategoryChange()">
-          <option value="">Seleziona...</option>
-          <option>Velocità</option>
-          <option>Potenza</option>
-          <option>Agilità</option>
-          <option>Resistenza</option>
-          <option>Forza</option>
-          <option>Mobilità</option>
-          <option>Personalizzato</option>
-        </select>
-      </div>
-      <div class="fg"><label class="fl">Test</label>
-        <select id="tst-name" onchange="onTestNameChange()"><option value="">—</option></select>
-      </div>
-    </div>
-    <div id="tst-custom-name-row" style="display:none" class="fg">
-      <label class="fl">Nome test personalizzato</label>
-      <input type="text" id="tst-custom-name" placeholder="es. Illinois Agility">
-    </div>
-    <div class="fr">
-      <div class="fg"><label class="fl">Valore</label><input type="number" id="tst-value" step="0.01" placeholder="0.00"></div>
-      <div class="fg"><label class="fl">Unità</label><input type="text" id="tst-unit" placeholder="s / cm / kg" style="max-width:80px;"></div>
-    </div>
-    <div class="fg"><label class="fl">Note</label><input type="text" id="tst-notes" placeholder="condizioni, attrezzatura..."></div>
-    <button class="btn btn-p" style="width:100%;margin-top:8px;" onclick="saveTest()">💾 Salva</button>
+  <div class="mo-hdr">
+  <span class="mo-title"> Nuovo Test Atletico</span>
+  <button class="mo-x" onclick="closeMo('mo-test')">✕</button>
+  </div>
+  <div class="fr">
+  <div class="fg"><label class="fl">Data</label><input type="date" id="tst-date"></div>
+  <div class="fg"><label class="fl">Atleta</label><select id="tst-ath"></select></div>
+  </div>
+  <div class="fr">
+  <div class="fg"><label class="fl">Categoria</label>
+  <select id="tst-cat" onchange="onTestCategoryChange()">
+  <option value="">Seleziona...</option>
+  <option>Velocità</option>
+  <option>Potenza</option>
+  <option>Agilità</option>
+  <option>Resistenza</option>
+  <option>Forza</option>
+  <option>Mobilità</option>
+  <option>Personalizzato</option>
+  </select>
+  </div>
+  <div class="fg"><label class="fl">Test</label>
+  <select id="tst-name" onchange="onTestNameChange()"><option value="">—</option></select>
+  </div>
+  </div>
+  <div id="tst-custom-name-row" style="display:none" class="fg">
+  <label class="fl">Nome test personalizzato</label>
+  <input type="text" id="tst-custom-name" placeholder="es. Illinois Agility">
+  </div>
+  <div class="fr">
+  <div class="fg"><label class="fl">Valore</label><input type="number" id="tst-value" step="0.01" placeholder="0.00"></div>
+  <div class="fg"><label class="fl">Unità</label><input type="text" id="tst-unit" placeholder="s / cm / kg" style="max-width:80px;"></div>
+  </div>
+  <div class="fg"><label class="fl">Note</label><input type="text" id="tst-notes" placeholder="condizioni, attrezzatura..."></div>
+  <button class="btn btn-p" style="width:100%;margin-top:8px;" onclick="saveTest()"> Salva</button>
   </div>
 </div>
 
 <!-- ── Modale Body Composition ─────────────────────── -->
 <div class="mo" id="mo-body-comp">
   <div class="mo-box" style="max-width:380px;">
-    <div class="mo-hdr">
-      <span class="mo-title">📏 Nuova Misurazione</span>
-      <button class="mo-x" onclick="closeMo('mo-body-comp')">✕</button>
-    </div>
-    <div class="fg"><label class="fl">Data</label><input type="date" id="bc-date"></div>
-    <div class="fr">
-      <div class="fg"><label class="fl">Peso (kg)</label><input type="number" id="bc-weight" step="0.1" placeholder="78.5"></div>
-      <div class="fg"><label class="fl">BF%</label><input type="number" id="bc-bf" step="0.1" placeholder="12.0"></div>
-    </div>
-    <div style="margin:10px 0 6px;">
-      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);">
-        <input type="checkbox" id="bc-skinfold-toggle" onchange="toggleSkinfoldInputs()" style="accent-color:var(--teal);">
-        Calcola BF% da pliche cutanee (Jackson-Pollock 3 siti)
-      </label>
-    </div>
-    <div id="bc-skinfold-section" style="display:none;background:var(--s1);border-radius:8px;padding:10px;margin-bottom:8px;">
-      <div class="fr" style="margin-bottom:6px;">
-        <div class="fg" style="flex:0 0 auto;max-width:80px;">
-          <label class="fl">Sesso</label>
-          <select id="bc-sex" onchange="calcBFFromSkinfolds()">
-            <option value="M">M</option>
-            <option value="F">F</option>
-          </select>
-        </div>
-        <div class="fg" style="flex:0 0 auto;max-width:80px;">
-          <label class="fl">Età</label>
-          <input type="number" id="bc-age" placeholder="25" min="15" max="80" oninput="calcBFFromSkinfolds()">
-        </div>
-      </div>
-      <div id="bc-site-labels" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px;font-size:10px;font-weight:700;color:var(--muted);text-align:center;">
-        <span id="bc-lbl-1">PETTO</span><span id="bc-lbl-2">ADDOME</span><span id="bc-lbl-3">COSCIA</span>
-      </div>
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
-        <input type="number" id="bc-sf1" placeholder="mm" step="0.5" oninput="calcBFFromSkinfolds()">
-        <input type="number" id="bc-sf2" placeholder="mm" step="0.5" oninput="calcBFFromSkinfolds()">
-        <input type="number" id="bc-sf3" placeholder="mm" step="0.5" oninput="calcBFFromSkinfolds()">
-      </div>
-      <div id="bc-jp-result" style="font-size:11px;color:var(--teal);font-weight:700;text-align:center;margin-top:8px;"></div>
-    </div>
-    <div class="fg"><label class="fl">Note</label><input type="text" id="bc-notes" placeholder="es. mattino a digiuno"></div>
-    <button class="btn btn-p" style="width:100%;margin-top:8px;" onclick="saveBodyComp()">💾 Salva</button>
+  <div class="mo-hdr">
+  <span class="mo-title"> Nuova Misurazione</span>
+  <button class="mo-x" onclick="closeMo('mo-body-comp')">✕</button>
+  </div>
+  <div class="fg"><label class="fl">Data</label><input type="date" id="bc-date"></div>
+  <div class="fr">
+  <div class="fg"><label class="fl">Peso (kg)</label><input type="number" id="bc-weight" step="0.1" placeholder="78.5"></div>
+  <div class="fg"><label class="fl">BF%</label><input type="number" id="bc-bf" step="0.1" placeholder="12.0"></div>
+  </div>
+  <div style="margin:10px 0 6px;">
+  <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;color:var(--muted);">
+  <input type="checkbox" id="bc-skinfold-toggle" onchange="toggleSkinfoldInputs()" style="accent-color:var(--teal);">
+  Calcola BF% da pliche cutanee (Jackson-Pollock 3 siti)
+  </label>
+  </div>
+  <div id="bc-skinfold-section" style="display:none;background:var(--s1);border-radius:8px;padding:10px;margin-bottom:8px;">
+  <div class="fr" style="margin-bottom:6px;">
+  <div class="fg" style="flex:0 0 auto;max-width:80px;">
+  <label class="fl">Sesso</label>
+  <select id="bc-sex" onchange="calcBFFromSkinfolds()">
+  <option value="M">M</option>
+  <option value="F">F</option>
+  </select>
+  </div>
+  <div class="fg" style="flex:0 0 auto;max-width:80px;">
+  <label class="fl">Età</label>
+  <input type="number" id="bc-age" placeholder="25" min="15" max="80" oninput="calcBFFromSkinfolds()">
+  </div>
+  </div>
+  <div id="bc-site-labels" style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:4px;font-size:10px;font-weight:700;color:var(--muted);text-align:center;">
+  <span id="bc-lbl-1">PETTO</span><span id="bc-lbl-2">ADDOME</span><span id="bc-lbl-3">COSCIA</span>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:6px;">
+  <input type="number" id="bc-sf1" placeholder="mm" step="0.5" oninput="calcBFFromSkinfolds()">
+  <input type="number" id="bc-sf2" placeholder="mm" step="0.5" oninput="calcBFFromSkinfolds()">
+  <input type="number" id="bc-sf3" placeholder="mm" step="0.5" oninput="calcBFFromSkinfolds()">
+  </div>
+  <div id="bc-jp-result" style="font-size:11px;color:var(--teal);font-weight:700;text-align:center;margin-top:8px;"></div>
+  </div>
+  <div class="fg"><label class="fl">Note</label><input type="text" id="bc-notes" placeholder="es. mattino a digiuno"></div>
+  <button class="btn btn-p" style="width:100%;margin-top:8px;" onclick="saveBodyComp()"> Salva</button>
   </div>
 </div>
 
 <!-- ── Modale Nutrition Log ──────────────────────────── -->
 <div class="mo" id="mo-nutrition">
   <div class="mo-box" style="max-width:360px;">
-    <div class="mo-hdr">
-      <span class="mo-title">🥗 Log Nutrizione</span>
-      <button class="mo-x" onclick="closeMo('mo-nutrition')">✕</button>
-    </div>
-    <div class="fg"><label class="fl">Data</label><input type="date" id="nut-date"></div>
-    <div class="fg"><label class="fl">Calorie totali (kcal)</label><input type="number" id="nut-kcal" placeholder="es. 2400" min="0" max="10000"></div>
-    <div class="fr">
-      <div class="fg"><label class="fl">Proteine (g)</label><input type="number" id="nut-prot" placeholder="180" min="0" step="0.5"></div>
-      <div class="fg"><label class="fl">Carboidrati (g)</label><input type="number" id="nut-carb" placeholder="300" min="0" step="0.5"></div>
-      <div class="fg"><label class="fl">Grassi (g)</label><input type="number" id="nut-fat" placeholder="70" min="0" step="0.5"></div>
-    </div>
-    <div class="fg"><label class="fl">Note (opzionale)</label><input type="text" id="nut-note" placeholder="es. giorno di gara"></div>
-    <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="saveNutritionLog()">💾 Salva</button>
+  <div class="mo-hdr">
+  <span class="mo-title"> Log Nutrizione</span>
+  <button class="mo-x" onclick="closeMo('mo-nutrition')">✕</button>
+  </div>
+  <div class="fg"><label class="fl">Data</label><input type="date" id="nut-date"></div>
+  <div class="fg"><label class="fl">Calorie totali (kcal)</label><input type="number" id="nut-kcal" placeholder="es. 2400" min="0" max="10000"></div>
+  <div class="fr">
+  <div class="fg"><label class="fl">Proteine (g)</label><input type="number" id="nut-prot" placeholder="180" min="0" step="0.5"></div>
+  <div class="fg"><label class="fl">Carboidrati (g)</label><input type="number" id="nut-carb" placeholder="300" min="0" step="0.5"></div>
+  <div class="fg"><label class="fl">Grassi (g)</label><input type="number" id="nut-fat" placeholder="70" min="0" step="0.5"></div>
+  </div>
+  <div class="fg"><label class="fl">Note (opzionale)</label><input type="text" id="nut-note" placeholder="es. giorno di gara"></div>
+  <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="saveNutritionLog()"> Salva</button>
   </div>
 </div>
 
 <!-- ── Modale Video Esercizio ────────────────────────── -->
 <div class="mo" id="mo-video">
   <div class="mo-box" style="max-width:520px;padding:0;overflow:hidden;background:#000;">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--border);">
-      <span id="mo-video-title" style="font-size:13px;font-weight:700;color:var(--text);">Video esercizio</span>
-      <button class="mo-x" onclick="closeVideoModal()">✕</button>
-    </div>
-    <div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;">
-      <iframe id="mo-video-iframe"
-        src="" allowfullscreen frameborder="0"
-        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-        style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;">
-      </iframe>
-    </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:var(--s2);border-bottom:1px solid var(--border);">
+  <span id="mo-video-title" style="font-size:13px;font-weight:700;color:var(--text);">Video esercizio</span>
+  <button class="mo-x" onclick="closeVideoModal()">✕</button>
+  </div>
+  <div style="position:relative;width:100%;padding-bottom:56.25%;background:#000;">
+  <iframe id="mo-video-iframe"
+  src="" allowfullscreen frameborder="0"
+  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+  style="position:absolute;top:0;left:0;width:100%;height:100%;border:none;">
+  </iframe>
+  </div>
   </div>
 </div>
 
