@@ -212,6 +212,12 @@ document.addEventListener('DOMContentLoaded', async () => {
                 document.querySelector('.content').style.paddingBottom = '90px';
                 const athPill = document.querySelector('.ath-pill');
                 if (athPill) athPill.style.setProperty('display', 'none', 'important');
+                const saveDot = document.getElementById('save-dot');
+                const saveTxt = document.getElementById('save-txt');
+                if (saveDot) saveDot.style.setProperty('display', 'none', 'important');
+                if (saveTxt) saveTxt.style.setProperty('display', 'none', 'important');
+                const roleBadge = document.getElementById('role-badge');
+                if (roleBadge) roleBadge.textContent = 'ATLETA';
                 document.getElementById('athlete-bottom-bar').classList.add('show');
                 go('ath-home');
             }

@@ -109,6 +109,12 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Alert dashboard, triage, LSI, monotonia Foster: background e border in oklch semantico
 - Tag `.tg/.ta/.tc`, nav badge, insight box: oklch
 
+**Fix UI Profilo Atleta (2026-09-16)**
+- Badge topbar cambiato da "COACH" a "ATLETA" nella vista atleta (id `role-badge`, gestito via JS in `main.js`)
+- Nascosti `save-dot` e `save-txt` nella vista atleta (erano visibili e tagliati in top-right)
+- Bottom bar atleta: aggiunte icone geometriche a tutti i tab — Settimana: ⊞, Wellness: ◎, Progressi: ▲, Coach: ◇ (coerenti con ⊙/▶ già presenti)
+- `.bb-icon` CSS: aggiunto `height:22px; display:flex; align-items:center; justify-content:center` per allineamento uniforme
+
 ## Prossimo passo
 
 Attivare e testare il flusso push notification end-to-end (permesso browser → salvataggio subscription → invio da edge function al coach/atleta).
