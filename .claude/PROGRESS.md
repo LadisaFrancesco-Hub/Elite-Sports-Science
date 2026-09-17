@@ -147,6 +147,21 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Prossimo passo
 
+**Espansione Exercise Library (2026-09-17)**
+- Aggiunti 83 nuovi esercizi a `EXERCISE_LIBRARY` in `state.js` (da 122 a 206 totali) e relativi mapping in `CAT_MAP` in `library.js`
+- Categorie ampliate: push (+6), pull (+6), legs (+10), hinge (+4), olympic (+8), isolation (+11), core (+5), mobility (+6), conditioning (+12) — tutte le categorie bilanciate
+- Ogni video verificato live con oEmbed API prima dell'inserimento
+- Verifica finale: 0 duplicati, 206/206 IDs allineati tra EXERCISE_LIBRARY e CAT_MAP
+- Deploy v6.60 su Vercel — https://coach-os-lime.vercel.app
+
+**Fix Realtime storico/calendario (2026-09-17)**
+- Bug: dopo il messaggio post-allenamento dell'atleta, i pannelli `ath-storico` e `calendario` del coach non si aggiornano in tempo reale
+- Causa: `_onSessionChange` in `auth.js` aggiornava `DB.sessions` ma ri-renderizzava solo `dashboard` e `storico` (vista globale), ignorando `ath-storico` e `calendario`
+- Fix: aggiunte 2 guard identiche alle esistenti per i due pannelli mancanti
+- Verificato con Playwright: spy confermano che le render functions vengono chiamate sul panel giusto e non su altri panel
+- Deploy v6.60.1 su Vercel — https://coach-os-lime.vercel.app
+
+## Prossimo passo
+
 Valutare: PDF report mensile (jsPDF) oppure food database nutrizione (Open Food Facts API).
-Poi: deploy su Vercel con i video aggiornati.
 Poi lancio verso primi coach beta.

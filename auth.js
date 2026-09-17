@@ -937,6 +937,10 @@ function _onSessionChange(payload, role) {
         window.renderDashboard();
     if (appState.curPanel === 'storico' && typeof window.renderStorico === 'function')
         window.renderStorico();
+    if (appState.curPanel === 'ath-storico' && typeof window.renderAthStorico === 'function')
+        window.renderAthStorico();
+    if (appState.curPanel === 'calendario' && typeof window.renderCalendario === 'function')
+        window.renderCalendario();
 
     if (role === 'ADMIN' && payload.eventType === 'INSERT') {
         const ath  = DB.athletes.find(a => a.id === row.athlete_id);
