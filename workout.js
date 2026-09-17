@@ -2582,3 +2582,4 @@ export function endWorkout() {
         if (e.target.id === 'ew-sheet') _closeSheet();
     });
 }
+

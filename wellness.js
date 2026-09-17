@@ -331,10 +331,6 @@ export function upW() {
         cnsScore:       cnsTaps     // Valore corrente del Tap Test
     };
 
-    saveWellnessCloud();
-    // Marca wellness come completato oggi (usato dal badge nav + reminder)
-    localStorage.setItem(`qw_done_${appState.selAthId}`, new Date().toISOString().slice(0, 10));
-    if (typeof window._updateWellnessBadge === 'function') window._updateWellnessBadge();
 }
 
 
@@ -713,15 +709,13 @@ export function evaluateCnsTest() {
 //    un doppio haptic di sblocco, e naviga alla Sessione.
 // ─────────────────────────────────────────────────────────────
 export function confermaWellnessLive() {
-    // Forza un ultimo salvataggio pulito di tutti i parametri
     saveWellnessCloud();
+    localStorage.setItem(`qw_done_${appState.selAthId}`, new Date().toISOString().slice(0, 10));
+    if (typeof window._updateWellnessBadge === 'function') window._updateWellnessBadge();
 
-    // Doppio haptic feedback di sblocco (pattern ritmico)
     if (navigator.vibrate) navigator.vibrate([40, 40]);
-
     toast('Stato Wellness salvato.');
 
-    // Naviga alla Sessione Live con un leggero ritardo per il toast
     setTimeout(() => {
         window.go('sessione');
     }, 400);

@@ -7,6 +7,9 @@
 import { DB, appState } from './state.js';
 import { toast, escHtml, openMo, closeMo } from './utils.js';
 
+let nutChartAthlete = null;
+let nutChartCoach   = null;
+
 
 // ─────────────────────────────────────────────────────────────
 // loadNutrition — carica dal cloud per l'atleta loggato
@@ -141,7 +144,13 @@ export function renderNutritionCard(athId) {
             Nessun log per oggi — registra i tuoi macro
         </div>`}
         ${histHtml ? `<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.05em;margin-bottom:4px">ULTIMI 5 GIORNI</div>${histHtml}` : ''}
+        <div style="position:relative;height:180px;margin-top:16px;">
+            <canvas id="nut-chart-athlete"></canvas>
+        </div>
     </div>`;
+
+    if (nutChartAthlete) { nutChartAthlete.destroy(); nutChartAthlete = null; }
+    nutChartAthlete = _buildNutChart('nut-chart-athlete', athId, null, 14);
 }
 
 
@@ -182,8 +191,139 @@ export function renderNutritionCoach(athId, containerId) {
         <button onclick="saveNutritionTargets('${athId}')"
             style="padding:8px 16px;background:var(--teal-d);border:1px solid rgba(249,115,22,.3);border-radius:8px;color:var(--teal);font-weight:700;font-size:12px;cursor:pointer">
             💾 Salva target
-        </button>`}
+        </button>
+        <div style="position:relative;height:180px;margin-top:16px;">
+            <canvas id="nut-chart-coach"></canvas>
+        </div>`}
     </div>`;
+
+    if (logs.length > 0) {
+        if (nutChartCoach) { nutChartCoach.destroy(); nutChartCoach = null; }
+        nutChartCoach = _buildNutChart('nut-chart-coach', athId, null, 14);
+    }
+}
+
+function _buildNutChart(canvasId, athId, instanceRef, days = 14) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas || typeof Chart === 'undefined') return null;
+
+    const targets = DB.nutritionTargets?.[athId] || {};
+    const logs    = DB.nutrition[athId] || [];
+
+    // Costruisce array degli ultimi N giorni (null = dato mancante)
+    const labels = [], kcalData = [], protData = [];
+    for (let i = days - 1; i >= 0; i--) {
+        const d = new Date();
+        d.setDate(d.getDate() - i);
+        const dateStr = d.toISOString().slice(0, 10);
+        const log = logs.find(r => r.date === dateStr);
+        labels.push(dateStr.slice(5));
+        kcalData.push(log?.kcal       ?? null);
+        protData.push(log?.proteine   ?? null);
+    }
+
+    const monoFont = { size: 9, family: "'IBM Plex Mono', monospace" };
+    const gridCol  = 'rgba(255,255,255,0.05)';
+    const tickCol  = '#5E6873';
+
+    const datasets = [
+        {
+            label: 'kcal',
+            data: kcalData,
+            borderColor: 'oklch(0.76 0.16 52)',
+            backgroundColor: 'oklch(0.76 0.16 52 / .08)',
+            borderWidth: 2,
+            pointBackgroundColor: 'oklch(0.76 0.16 52)',
+            pointBorderColor: '#0A0C0F',
+            pointBorderWidth: 1.5,
+            pointRadius: 3.5,
+            tension: 0.3,
+            fill: true,
+            spanGaps: false,
+            yAxisID: 'yKcal'
+        },
+        {
+            label: 'proteine (g)',
+            data: protData,
+            borderColor: '#60a5fa',
+            backgroundColor: 'rgba(96,165,250,0.06)',
+            borderWidth: 2,
+            pointBackgroundColor: '#60a5fa',
+            pointBorderColor: '#0A0C0F',
+            pointBorderWidth: 1.5,
+            pointRadius: 3.5,
+            tension: 0.3,
+            fill: false,
+            spanGaps: false,
+            yAxisID: 'yProt'
+        }
+    ];
+
+    if (targets.kcal) datasets.push({
+        label: 'target kcal',
+        data: Array(days).fill(targets.kcal),
+        borderColor: 'oklch(0.76 0.16 52 / .4)',
+        borderWidth: 1.5,
+        borderDash: [4, 4],
+        pointRadius: 0,
+        fill: false,
+        yAxisID: 'yKcal'
+    });
+
+    if (targets.proteine) datasets.push({
+        label: 'target proteine',
+        data: Array(days).fill(targets.proteine),
+        borderColor: 'rgba(96,165,250,0.4)',
+        borderWidth: 1.5,
+        borderDash: [4, 4],
+        pointRadius: 0,
+        fill: false,
+        yAxisID: 'yProt'
+    });
+
+    if (instanceRef) instanceRef.destroy();
+
+    return new Chart(canvas, {
+        type: 'line',
+        data: { labels, datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: {
+                    display: true,
+                    labels: { color: tickCol, font: monoFont, boxWidth: 12, padding: 10,
+                        filter: item => !item.text.startsWith('target') }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(12,15,19,.95)',
+                    titleColor: '#E2DDD4',
+                    bodyColor: '#9CA3AF',
+                    borderColor: 'rgba(255,255,255,.08)',
+                    borderWidth: 1,
+                    titleFont: monoFont,
+                    bodyFont: monoFont
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: { color: tickCol, font: monoFont, maxRotation: 0, maxTicksLimit: 7 }
+                },
+                yKcal: {
+                    position: 'left',
+                    grid: { color: gridCol },
+                    ticks: { color: 'oklch(0.76 0.16 52)', font: monoFont, callback: v => v + ' kcal' }
+                },
+                yProt: {
+                    position: 'right',
+                    grid: { display: false },
+                    ticks: { color: '#60a5fa', font: monoFont, callback: v => v + 'g' }
+                }
+            }
+        }
+    });
 }
 
 function _targetInput(field, label, val, athId) {

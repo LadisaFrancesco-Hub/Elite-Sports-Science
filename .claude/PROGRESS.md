@@ -115,6 +115,38 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Bottom bar atleta: aggiunte icone geometriche a tutti i tab — Settimana: ⊞, Wellness: ◎, Progressi: ▲, Coach: ◇ (coerenti con ⊙/▶ già presenti)
 - `.bb-icon` CSS: aggiunto `height:22px; display:flex; align-items:center; justify-content:center` per allineamento uniforme
 
+**Focus Mode (2026-09-16)**
+- Bottone "▶ INIZIA ALLENAMENTO" nel pannello Sessione Live
+- Overlay full-screen `#mo-focus` con un esercizio alla volta
+- Navigazione prev/next con progress bar
+- Ogni card mostra: nome esercizio, fase, tipo, carico, RIR/TUT, CUE coach, autoregolazione, infortuni
+- Sezione ANALISI: ultimo e1RM stimato + trend ↑↓ + storico ultime sessioni + progressione carichi per settimana
+- Dot set interattivi (tap = complete, long press = realLog) sincronizzati con la lista sottostante
+- Timer REST autonomo nel focus (con STOP/START)
+- Campo "Prossimo Carico" sincronizzato con la lista
+- `refreshFocusIfOpen()` chiamato dopo ogni toggle dot / saveRealLog / saveTimerSet
+
+**Video Exercise Library (2026-09-16)**
+- Completati tutti i `ytUrl` mancanti in `EXERCISE_LIBRARY` (state.js) — ora 100% degli esercizi ha un video
+- Fix: link video nell'editor coach ora aprono modal in-app invece di `target="_blank"`
+- Nuovo modulo `library.js` (lazy-loaded): Exercise Library browser con:
+  - 9 categorie filtrabili (chip scroll orizzontale)
+  - Ricerca live per nome
+  - Grid responsive con thumbnail YouTube reali (16:9, `img.youtube.com/vi/`)
+  - Badge e1RM, categoria, zona anatomica su ogni card
+  - Bottone "+" coach-only: aggiunge esercizio direttamente alla sessione aperta nell'editor
+- Accesso coach: voce "Libreria Esercizi" in sidebar
+- Accesso atleta: card cliccabile in fondo alla home
+- Deploy v6.59 su Vercel — https://coach-os-lime.vercel.app
+
+**Fix Video Libreria Esercizi (2026-09-17)**
+- Verificati con oEmbed API tutti i 121 video YouTube della `EXERCISE_LIBRARY` in `state.js`
+- Trovati 70 video morti (404) su 121 totali — sostituiti tutti con URL funzionanti da canali affidabili (Athlean-X, Alan Thrall, Concept2, Jeff Nippard, canali specializzati)
+- Gestito caso speciale: `sumo_squat` e `power_snatch` condividevano stesso ID morto → assegnati URL separati e corretti
+- Verifica finale: 122 ID unici, tutti live
+
 ## Prossimo passo
 
-Attivare e testare il flusso push notification end-to-end (permesso browser → salvataggio subscription → invio da edge function al coach/atleta).
+Valutare: PDF report mensile (jsPDF) oppure food database nutrizione (Open Food Facts API).
+Poi: deploy su Vercel con i video aggiornati.
+Poi lancio verso primi coach beta.

@@ -355,7 +355,7 @@ export function openMesocycleArchive() {
 // ─────────────────────────────────────────────────────────────
 export function go(id, btn) {
   if (window.userRole === 'ATLETA') {
-  const allowed = ['ath-home', 'ath-week', 'ath-summary', 'wellness', 'sessione', 'feedback', 'coach-reply', 'ath-progressi', 'ath-storico'];
+  const allowed = ['ath-home', 'ath-week', 'ath-summary', 'wellness', 'sessione', 'feedback', 'coach-reply', 'ath-progressi', 'ath-storico', 'libreria'];
   if (!allowed.includes(id)) return;
   // sync bottom bar active state
   const bbMap = { 'ath-home':'bb-oggi', 'ath-week':'bb-week', 'ath-summary':'bb-sess', sessione:'bb-sess', wellness:'bb-well', feedback:'bb-sess', 'ath-progressi':'bb-prog', 'ath-storico':'bb-prog', 'coach-reply':'bb-coach' };
@@ -390,7 +390,8 @@ export function go(id, btn) {
   'messaggi': renderMessaggi,
   'macro': renderMacro,
   'team': () => { import('./team.js').then(m => m.renderTeamPanel('team-panel-container')); },
-  'branding': () => { import('./branding.js').then(m => m.renderBrandingSettings('branding-panel-container')); }
+  'branding': () => { import('./branding.js').then(m => m.renderBrandingSettings('branding-panel-container')); },
+  'libreria': () => { import('./library.js').then(m => m.renderExerciseLibrary()); }
   };
   if (renders[id]) renders[id]();
 
@@ -1854,6 +1855,19 @@ export function renderAthHome() {
   ` : `<div style="font-size:13px;color:var(--muted)">Nessun messaggio dal coach</div>`}
   </div>
 
+  <!-- Libreria Esercizi -->
+  <div onclick="go('libreria')" style="cursor:pointer;margin-top:14px;padding:14px 16px;
+  background:var(--s2);border:1px solid var(--border);border-radius:12px;
+  display:flex;align-items:center;gap:14px;transition:border-color .15s;"
+  onmouseenter="this.style.borderColor='var(--teal)'" onmouseleave="this.style.borderColor='var(--border)'">
+  <div style="width:40px;height:40px;background:var(--teal-d);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px;">▶</div>
+  <div style="flex:1">
+  <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;">Libreria Esercizi</div>
+  <div style="font-size:11px;color:var(--muted);">Video tutorial per ogni movimento della tua scheda</div>
+  </div>
+  <span style="color:var(--dim);font-size:14px;">›</span>
+  </div>
+
   </div>`;
 }
 
@@ -3005,44 +3019,64 @@ export function calc1RM() {
 }
 
 export function calcHRZones() {
-  const age = parseInt(document.getElementById('chr-age')?.value) || 0;
-  const hrmax = parseInt(document.getElementById('chr-hrmax')?.value) || (age ? 220 - age : 0);
-  const hrrest = parseInt(document.getElementById('chr-hrrest')?.value) || 0;
-  const res = document.getElementById('chr-result');
-  if (!hrmax || !res) { if (res) res.innerHTML=''; return; }
+  const age     = parseInt(document.getElementById('chr-age')?.value)    || 0;
+  const hrrest  = parseInt(document.getElementById('chr-hrrest')?.value) || 0;
+  const formula = document.getElementById('chr-formula')?.value || 'tanaka';
+  const res     = document.getElementById('chr-result');
+  if (!res) return;
+
+  // FCmax: misurata ha sempre priorità; altrimenti usa la formula selezionata
+  const measured = parseInt(document.getElementById('chr-hrmax')?.value) || 0;
+  let hrmax = measured;
+  let formulaLabel = 'Misurata';
+  if (!hrmax) {
+    if (!age) { res.innerHTML = ''; return; }
+    if (formula === 'tanaka') {
+      hrmax = Math.round(208 - 0.7 * age);
+      formulaLabel = 'Tanaka 2001 (208 − 0.7×età)';
+    } else if (formula === 'nes') {
+      hrmax = Math.round(211 - 0.64 * age);
+      formulaLabel = 'Nes 2013 (211 − 0.64×età, atleti)';
+    } else {
+      hrmax = Math.round(220 - age);
+      formulaLabel = '220 − età (Fox & Haskell 1971)';
+    }
+  }
 
   const useKarvonen = hrrest > 0;
   const hrr = hrmax - hrrest;
 
   const zones = [
-  { name: 'Z1 — Recupero Attivo', pct: [50, 60], color: '#3B82F6' },
-  { name: 'Z2 — Base Aerobica', pct: [60, 70], color: '#10B981' },
-  { name: 'Z3 — Potenza Aerobica', pct: [70, 80], color: '#F59E0B' },
-  { name: 'Z4 — Soglia Lattato', pct: [80, 90], color: '#F97316' },
-  { name: 'Z5 — Massimale/Anaerobico',pct: [90,100], color: '#EF4444' },
+  { name: 'Z1 — Recupero Attivo',         pct: [50, 60], color: '#3B82F6', desc: 'Rigenerazione, warm-up' },
+  { name: 'Z2 — Base Aerobica',            pct: [60, 70], color: '#10B981', desc: 'LT1 · fondamentale endurance' },
+  { name: 'Z3 — Aerobica Avanzata',        pct: [70, 80], color: '#F59E0B', desc: 'Tra LT1 e LT2' },
+  { name: 'Z4 — Soglia Anaerobica',        pct: [80, 90], color: '#F97316', desc: 'LT2 · lattato tamponato' },
+  { name: 'Z5 — Massimale / VO2max',       pct: [90,100], color: '#EF4444', desc: 'Oltre LT2' },
   ];
 
   const hr = ([lo, hi]) => useKarvonen
-  ? `${Math.round(lo/100*hrr+hrrest)} – ${Math.round(hi/100*hrr+hrrest)}`
-  : `${Math.round(lo/100*hrmax)} – ${Math.round(hi/100*hrmax)}`;
+  ? `${Math.round(lo / 100 * hrr + hrrest)} – ${Math.round(hi / 100 * hrr + hrrest)}`
+  : `${Math.round(lo / 100 * hrmax)} – ${Math.round(hi / 100 * hrmax)}`;
 
-  const subtitle = useKarvonen
-  ? `FCmax ${hrmax} bpm · FC riposo ${hrrest} bpm · Metodo Karvonen`
-  : `FCmax ${hrmax} bpm · Metodo % FCmax${age ? ` · Età ${age}` : ''}`;
+  const method = useKarvonen ? 'Karvonen (FCR)' : '% FCmax';
+  const subtitle = `FCmax ${hrmax} bpm${age ? ` · Età ${age}` : ''} · <em>${formulaLabel}</em> · Metodo ${method}${useKarvonen ? ` · FC riposo ${hrrest}` : ''}`;
 
-  res.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:10px;">${subtitle}</div>`
+  res.innerHTML = `<div style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.6;">${subtitle}</div>`
   + zones.map(z => `
   <div style="display:flex;align-items:center;gap:10px;padding:8px 10px;margin-bottom:4px;
   background:var(--s1);border-radius:8px;border-left:3px solid ${z.color}">
-  <div style="flex:1;font-size:12px;font-weight:600;color:var(--text)">${z.name}</div>
-  <div style="font-size:14px;font-weight:800;color:${z.color};white-space:nowrap">${hr(z.pct)} bpm</div>
+  <div style="flex:1">
+    <div style="font-size:12px;font-weight:600;color:var(--text)">${z.name}</div>
+    <div style="font-size:10px;color:var(--muted);margin-top:1px">${z.desc}</div>
+  </div>
+  <div style="font-size:14px;font-weight:800;color:${z.color};white-space:nowrap;font-family:var(--fmono)">${hr(z.pct)} bpm</div>
   </div>`).join('');
 }
 
 let _vo2Tab = 'cooper';
 export function setVO2Tab(tab) {
   _vo2Tab = tab;
-  ['cooper','rockport','15k'].forEach(t => {
+  ['cooper','rockport','15k','beep','yoyo','noex'].forEach(t => {
   document.getElementById(`vo2-section-${t}`).style.display = t === tab ? 'block' : 'none';
   const btn = document.getElementById(`vo2-tab-${t}`);
   if (btn) { btn.className = t === tab ? 'btn btn-p btn-sm' : 'btn btn-g btn-sm'; }
@@ -3054,45 +3088,87 @@ export function calcVO2() {
   const res = document.getElementById('vo2-result');
   if (!res) return;
   let vo2 = null;
+  let ref = '';
 
   if (_vo2Tab === 'cooper') {
-  const dist = parseFloat(document.getElementById('vo2-cooper-dist')?.value) || 0;
-  if (dist > 0) vo2 = (dist - 504.9) / 44.73;
+    const dist = parseFloat(document.getElementById('vo2-cooper-dist')?.value) || 0;
+    if (dist > 0) { vo2 = (dist - 504.9) / 44.73; ref = 'Cooper 1968'; }
+
   } else if (_vo2Tab === 'rockport') {
-  const timeStr = document.getElementById('vo2-rp-time')?.value || '';
-  const hr = parseFloat(document.getElementById('vo2-rp-hr')?.value) || 0;
-  const kg = parseFloat(document.getElementById('vo2-rp-kg')?.value) || 0;
-  const sex = parseFloat(document.getElementById('vo2-rp-sex')?.value) ?? 1;
-  const mins = _parseTimeToMin(timeStr);
-  if (mins > 0 && hr > 0 && kg > 0) {
-  const lbs = kg * 2.20462;
-  vo2 = 132.853 - (0.0769 * lbs) - (0.3877 * _parseTimeToMin(timeStr) * 60 / 60)
-  + (6.315 * sex) - (3.2649 * mins) - (0.1565 * hr);
-  }
+    const timeStr = document.getElementById('vo2-rp-time')?.value || '';
+    const hr  = parseFloat(document.getElementById('vo2-rp-hr')?.value) || 0;
+    const kg  = parseFloat(document.getElementById('vo2-rp-kg')?.value) || 0;
+    const sex = parseFloat(document.getElementById('vo2-rp-sex')?.value) ?? 1;
+    const mins = _parseTimeToMin(timeStr);
+    if (mins > 0 && hr > 0 && kg > 0) {
+      const lbs = kg * 2.20462;
+      vo2 = 132.853 - (0.0769 * lbs) - (0.3877 * mins) + (6.315 * sex) - (3.2649 * mins) - (0.1565 * hr);
+      ref = 'Kline et al. 1987';
+    }
+
   } else if (_vo2Tab === '15k') {
-  const timeStr = document.getElementById('vo2-15k-time')?.value || '';
-  const mins = _parseTimeToMin(timeStr);
-  if (mins > 0) vo2 = 3.5 + 483 / mins;
+    const mins = _parseTimeToMin(document.getElementById('vo2-15k-time')?.value || '');
+    if (mins > 0) { vo2 = 3.5 + 483 / mins; ref = 'Åstrand 1960'; }
+
+  } else if (_vo2Tab === 'beep') {
+    // Ramsbottom et al. 1988 — 20m Shuttle Run
+    // Velocità al livello L: speed = 8.0 + L × 0.5 km/h
+    const level   = parseInt(document.getElementById('vo2-beep-level')?.value)   || 0;
+    const shuttle = parseInt(document.getElementById('vo2-beep-shuttle')?.value) || 0;
+    const age     = parseInt(document.getElementById('vo2-beep-age')?.value)     || 0;
+    if (level > 0) {
+      const speed = 8.0 + level * 0.5; // km/h
+      if (age > 0) {
+        // Léger et al. 1988 — formula età-dipendente (adulti e ragazzi)
+        vo2 = 31.025 + 3.238 * speed - 3.248 * age + 0.1536 * age * speed;
+        ref = 'Léger et al. 1988';
+      } else {
+        // Ramsbottom 1988 — formula adulti senza età
+        vo2 = 5.857 * speed - 19.458;
+        ref = 'Ramsbottom et al. 1988';
+      }
+    }
+
+  } else if (_vo2Tab === 'yoyo') {
+    // Bangsbo et al. 2008 — Yo-Yo Intermittent Recovery Test Level 1
+    const dist = parseFloat(document.getElementById('vo2-yoyo-dist')?.value) || 0;
+    if (dist > 0) { vo2 = 0.0084 * dist + 36.4; ref = 'Bangsbo et al. 2008'; }
+
+  } else if (_vo2Tab === 'noex') {
+    // Jackson et al. 1990 — Non-Exercise VO2max Prediction
+    const age = parseFloat(document.getElementById('vo2-noex-age')?.value) || 0;
+    const bmi = parseFloat(document.getElementById('vo2-noex-bmi')?.value) || 0;
+    const sex = parseFloat(document.getElementById('vo2-noex-sex')?.value) ?? 1;
+    const pa  = parseFloat(document.getElementById('vo2-noex-pa')?.value)  ?? 4;
+    if (age > 0 && bmi > 0) {
+      vo2 = 56.363 + 1.921 * pa - 0.381 * age - 0.754 * bmi + 10.987 * sex;
+      ref = 'Jackson et al. 1990 · SEE ±5 ml/kg/min';
+    }
   }
 
   if (vo2 == null || vo2 <= 0) { res.innerHTML = ''; return; }
   vo2 = Math.max(10, Math.round(vo2 * 10) / 10);
 
-  const cat = vo2 < 25 ? {l:'Scarso',c:'var(--coral)'} : vo2 < 35 ? {l:'Sufficiente',c:'var(--amber)'}
-  : vo2 < 45 ? {l:'Buono',c:'var(--teal)'} : vo2 < 55 ? {l:'Ottimo',c:'var(--teal)'}
-  : {l:'Eccellente',c:'var(--blue)'};
+  const cat = vo2 < 25 ? {l:'Scarso',    c:'var(--coral)'}
+            : vo2 < 35 ? {l:'Sufficiente',c:'var(--amber)'}
+            : vo2 < 45 ? {l:'Buono',      c:'var(--teal)'}
+            : vo2 < 55 ? {l:'Ottimo',     c:'var(--teal)'}
+            :             {l:'Eccellente', c:'var(--blue)'};
 
   res.innerHTML = `
-  <div style="display:flex;align-items:center;gap:14px;background:var(--s1);border-radius:10px;padding:14px;">
-  <div style="text-align:center;flex:1">
-  <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">VO2max stimato</div>
-  <div style="font-size:32px;font-weight:800;color:var(--teal)">${vo2}</div>
-  <div style="font-size:11px;color:var(--muted)">ml/kg/min</div>
+  <div style="background:var(--s1);border-radius:10px;padding:14px;">
+  <div style="display:flex;align-items:center;gap:14px;margin-bottom:8px;">
+    <div style="text-align:center;flex:1">
+      <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em">VO2max stimato</div>
+      <div style="font-size:32px;font-weight:800;color:var(--teal);font-family:var(--fmono)">${vo2}</div>
+      <div style="font-size:11px;color:var(--muted)">ml/kg/min</div>
+    </div>
+    <div style="text-align:center;flex:1">
+      <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.05em">Categoria</div>
+      <div style="font-size:20px;font-weight:800;color:${cat.c}">${cat.l}</div>
+    </div>
   </div>
-  <div style="text-align:center;flex:1">
-  <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Categoria</div>
-  <div style="font-size:20px;font-weight:800;color:${cat.c}">${cat.l}</div>
-  </div>
+  ${ref ? `<div style="font-size:10px;color:var(--muted);font-style:italic;text-align:right;">Fonte: ${ref}</div>` : ''}
   </div>`;
 }
 
@@ -3599,7 +3675,7 @@ export function exportProgramPDF() {
   const exRows = (s.exercises || []).map(ex => {
   if (ex.type === 'circuit') {
   const circEx = (ex.circuitExercises || []).map(ce => {
-  const vLink = ce.video ? `<a href="${ce.video}" target="_blank" style="color:#f97316;font-size:10px;font-weight:700;text-decoration:none;margin-left:6px">▶ Video</a>` : '';
+  const vLink = ce.video ? `<button onclick="openVideoModal('${ce.video}','${(ce.name||'').replace(/'/g,"\\'")}')" style="background:none;border:none;padding:0;margin-left:6px;cursor:pointer;color:#f97316;font-size:10px;font-weight:700;">▶ Video</button>` : '';
   return `<tr><td style="padding:4px 8px;color:#555">${escHtml(ce.name)}${vLink}</td><td colspan="7" style="padding:4px 8px;color:#888;font-size:11px">${escHtml(ce.note || '')}</td></tr>`;
   }).join('');
   return `<tr style="background:#fff7ed"><td colspan="8" style="padding:6px 8px;font-weight:700;color:#9a3412"> Circuito: ${escHtml(ex.name)} — ${ex.circuitMeta ? `${ex.circuitMeta.rounds} round · ${ex.circuitMeta.workTime}s lavoro · ${ex.circuitMeta.restBetweenEx}s riposo` : ''}</td></tr>${circEx}`;
@@ -3607,7 +3683,7 @@ export function exportProgramPDF() {
   const progStr = ex.progression && Object.keys(ex.progression).length
   ? Object.entries(ex.progression).sort(([a],[b]) => a.localeCompare(b, undefined, { numeric: true })).map(([w, v]) => `${w.toUpperCase()}: ${v.set}x${v.rep}@${v.kg}kg`).join(' | ')
   : '';
-  const vLink = ex.ytUrl ? `<a href="${ex.ytUrl}" target="_blank" style="color:#f97316;font-size:10px;font-weight:700;text-decoration:none;margin-left:6px">▶ Video</a>` : '';
+  const vLink = ex.ytUrl ? `<button onclick="openVideoModal('${ex.ytUrl}','${(ex.name||'').replace(/'/g,"\\'")}')" style="background:none;border:none;padding:0;margin-left:6px;cursor:pointer;color:#f97316;font-size:10px;font-weight:700;">▶ Video</button>` : '';
   return `<tr>
   <td style="padding:5px 8px">${escHtml(ex.name || '')}${vLink}</td>
   <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.wset ?? ''))}</td>

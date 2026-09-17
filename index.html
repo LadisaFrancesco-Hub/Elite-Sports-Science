@@ -8,7 +8,7 @@
   Aggiorna ESS_REQUIRED ad ogni deploy per forzare un reset pulito su tutti i dispositivi. -->
 <script>
 (function(){
-  var ESS_REQUIRED = '6.57';
+  var ESS_REQUIRED = '6.59';
   if (localStorage.getItem('ess_cache_v') !== ESS_REQUIRED) {
   localStorage.setItem('ess_cache_v', ESS_REQUIRED);
   var p = ('serviceWorker' in navigator)
@@ -396,6 +396,7 @@
   <button class="nav-btn" onclick="go('calendario',this)"><span class="ico"></span>Calendario</button>
   <button class="nav-btn" onclick="go('editor',this)"><span class="ico"></span>Editor schede</button>
   <button class="nav-btn" onclick="go('macro',this)"><span class="ico"></span>Macro Periodiz.</button>
+  <button class="nav-btn" onclick="go('libreria',this)"><span class="ico"></span>Libreria Esercizi</button>
   </div>
   <!-- [RIMOSSO dalla sidebar coach] Wellness, Sessione, Feedback coach sono pannelli atleta.
   Accessibili dall'atleta via bottom bar. Il coach accede al feedback atleta da Storico e Messaggi. -->
@@ -1025,7 +1026,14 @@
   <div class="card-t"> Zone Frequenza Cardiaca</div>
   <div class="fr" style="margin-bottom:8px;flex-wrap:wrap;gap:8px">
   <div class="fg" style="min-width:100px"><label class="fl">Età</label><input type="number" id="chr-age" placeholder="30" oninput="calcHRZones()"></div>
-  <div class="fg" style="min-width:100px"><label class="fl">FCmax (opz.)</label><input type="number" id="chr-hrmax" placeholder="auto" oninput="calcHRZones()"></div>
+  <div class="fg" style="min-width:120px"><label class="fl">Formula FCmax</label>
+    <select id="chr-formula" onchange="calcHRZones()" style="width:100%">
+      <option value="tanaka">Tanaka 2001 (raccomandato)</option>
+      <option value="classic">220 − età (classica)</option>
+      <option value="nes">Nes 2013 (atleti)</option>
+    </select>
+  </div>
+  <div class="fg" style="min-width:100px"><label class="fl">FCmax misurata (opz.)</label><input type="number" id="chr-hrmax" placeholder="auto" oninput="calcHRZones()"></div>
   <div class="fg" style="min-width:100px"><label class="fl">FC riposo (opz.)</label><input type="number" id="chr-hrrest" placeholder="—" oninput="calcHRZones()"></div>
   </div>
   <div id="chr-result"></div>
@@ -1035,15 +1043,20 @@
   <div class="card" style="margin-bottom:10px">
   <div class="card-t"> VO2max</div>
   <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
-  <button id="vo2-tab-cooper" onclick="setVO2Tab('cooper')" class="btn btn-p btn-sm">Cooper 12'</button>
+  <button id="vo2-tab-cooper"   onclick="setVO2Tab('cooper')"   class="btn btn-p btn-sm">Cooper 12'</button>
   <button id="vo2-tab-rockport" onclick="setVO2Tab('rockport')" class="btn btn-g btn-sm">Rockport Walk</button>
-  <button id="vo2-tab-15k" onclick="setVO2Tab('15k')" class="btn btn-g btn-sm">1.5km Run</button>
+  <button id="vo2-tab-15k"      onclick="setVO2Tab('15k')"      class="btn btn-g btn-sm">1.5km Run</button>
+  <button id="vo2-tab-beep"     onclick="setVO2Tab('beep')"     class="btn btn-g btn-sm">Beep Test 20m</button>
+  <button id="vo2-tab-yoyo"     onclick="setVO2Tab('yoyo')"     class="btn btn-g btn-sm">Yo-Yo IR1</button>
+  <button id="vo2-tab-noex"     onclick="setVO2Tab('noex')"     class="btn btn-g btn-sm">Non-invasivo</button>
   </div>
+
   <div id="vo2-section-cooper">
   <div class="fr">
   <div class="fg"><label class="fl">Distanza percorsa (m)</label><input type="number" id="vo2-cooper-dist" placeholder="2800" oninput="calcVO2()"></div>
   </div>
   </div>
+
   <div id="vo2-section-rockport" style="display:none">
   <div class="fr" style="flex-wrap:wrap;gap:8px">
   <div class="fg"><label class="fl">Tempo 1 miglio (mm:ss)</label><input type="text" id="vo2-rp-time" placeholder="15:00" oninput="calcVO2()"></div>
@@ -1052,11 +1065,50 @@
   <div class="fg"><label class="fl">Sesso</label><select id="vo2-rp-sex" onchange="calcVO2()"><option value="1">M</option><option value="0">F</option></select></div>
   </div>
   </div>
+
   <div id="vo2-section-15k" style="display:none">
   <div class="fr">
   <div class="fg"><label class="fl">Tempo 1.5km (mm:ss)</label><input type="text" id="vo2-15k-time" placeholder="07:30" oninput="calcVO2()"></div>
   </div>
   </div>
+
+  <div id="vo2-section-beep" style="display:none">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Léger & Lambert 1982 · Ramsbottom 1988 — 20m Shuttle Run</div>
+  <div class="fr" style="flex-wrap:wrap;gap:8px">
+  <div class="fg" style="max-width:120px"><label class="fl">Ultimo livello</label><input type="number" id="vo2-beep-level" placeholder="10" min="1" max="21" oninput="calcVO2()"></div>
+  <div class="fg" style="max-width:120px"><label class="fl">Shuttle completate</label><input type="number" id="vo2-beep-shuttle" placeholder="5" min="1" oninput="calcVO2()"></div>
+  <div class="fg" style="max-width:120px"><label class="fl">Età</label><input type="number" id="vo2-beep-age" placeholder="25" oninput="calcVO2()"></div>
+  </div>
+  </div>
+
+  <div id="vo2-section-yoyo" style="display:none">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Bangsbo et al. 2008 — test intermittente, sport di squadra</div>
+  <div class="fr">
+  <div class="fg"><label class="fl">Distanza totale percorsa (m)</label><input type="number" id="vo2-yoyo-dist" placeholder="1200" oninput="calcVO2()"></div>
+  </div>
+  </div>
+
+  <div id="vo2-section-noex" style="display:none">
+  <div style="font-size:11px;color:var(--muted);margin-bottom:8px;">Jackson et al. 1990 — predizione senza sforzo fisico, SEE ±5 ml/kg/min</div>
+  <div class="fr" style="flex-wrap:wrap;gap:8px">
+  <div class="fg" style="max-width:120px"><label class="fl">Età (anni)</label><input type="number" id="vo2-noex-age" placeholder="30" oninput="calcVO2()"></div>
+  <div class="fg" style="max-width:120px"><label class="fl">BMI (kg/m²)</label><input type="number" id="vo2-noex-bmi" placeholder="24" step="0.1" oninput="calcVO2()"></div>
+  <div class="fg" style="max-width:120px"><label class="fl">Sesso</label><select id="vo2-noex-sex" onchange="calcVO2()"><option value="1">M</option><option value="0">F</option></select></div>
+  <div class="fg"><label class="fl">Livello attività fisica (0–7)</label>
+    <select id="vo2-noex-pa" onchange="calcVO2()">
+      <option value="0">0 — Sedentario</option>
+      <option value="1">1 — Attività minima</option>
+      <option value="2">2 — Camminata leggera</option>
+      <option value="3">3 — Sport occasionale</option>
+      <option value="4" selected>4 — Sport regolare (3×/sett)</option>
+      <option value="5">5 — Sport frequente (5×/sett)</option>
+      <option value="6">6 — Allenamento intenso</option>
+      <option value="7">7 — Atleta d'élite</option>
+    </select>
+  </div>
+  </div>
+  </div>
+
   <div id="vo2-result" style="margin-top:10px;"></div>
   </div>
 
@@ -1103,6 +1155,8 @@
   <div class="ps">Personalizza nome app, colore e logo per i tuoi atleti</div>
   <div id="branding-panel-container"></div>
 </div>
+
+<div class="panel" id="p-libreria"></div>
 
 <div class="panel" id="p-progressione">
   <div class="ph">Progressione</div>
