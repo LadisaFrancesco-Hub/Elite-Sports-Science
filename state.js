@@ -29,6 +29,12 @@ export const EXERCISE_LIBRARY = [
     { id: 'push_up',           name: 'Elevated Push Up',                 trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/IODxDxX7oi4' },
     { id: 'push_up_std',       name: 'Push Up',                          trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/IODxDxX7oi4' },
     { id: 'landmine_press',    name: 'Landmine Press',                   trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/MLsP2YjMdbM' },
+    { id: 'decline_bench',     name: 'Decline Bench Press Bilanciere',   trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/FFyGwcLnDYc' },
+    { id: 'decline_db',        name: 'Decline DB Bench Press',           trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/KYJgQZPwGS8' },
+    { id: 'close_grip_bench',  name: 'Close Grip Bench Press',           trackE1rm: true,  anatomicalZone: 'elbows',    ytUrl: 'https://youtu.be/LB6HBNHkavg' },
+    { id: 'db_shoulder_press', name: 'DB Shoulder Press',                trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/rO_iEImwHyo' },
+    { id: 'machine_shoulder_press', name: 'Shoulder Press Machine',      trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/BAZkFGeUy5U' },
+    { id: 'diamond_push_up',   name: 'Diamond Push-Up',                  trackE1rm: false, anatomicalZone: 'elbows',    ytUrl: 'https://youtu.be/2-OFbQ9GLpE' },
 
     // ── COMPOUND PULL ────────────────────────────────────────
     { id: 'lat_machine',       name: 'Lat Machine',                      trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/CAwf7n6Luuc' },
@@ -42,6 +48,12 @@ export const EXERCISE_LIBRARY = [
     { id: 'tbar_row',          name: 'T-Bar Row',                        trackE1rm: true,  anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/j3Igk5nyZE4' },
     { id: 'chest_supp_row',    name: 'Chest Supported DB Row',           trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/Nx0TzjgsI-0' },
     { id: 'seal_row',          name: 'Seal Row',                         trackE1rm: true,  anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/49Hbk_5fhoI' },
+    { id: 'lat_pulldown_neutral', name: 'Lat Pulldown Neutral Grip',     trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/kVB6SlEyjQM' },
+    { id: 'lat_pulldown_narrow',  name: 'Lat Pulldown Presa Stretta',    trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/0rzMziYkK7k' },
+    { id: 'neutral_pullup',    name: 'Neutral Grip Pull-Up',             trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/A3kl7Do0a3g' },
+    { id: 'inverted_row',      name: 'Inverted Row (Australian Pull-Up)', trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/5Vy6mjhXg7s' },
+    { id: 'machine_row',       name: 'Machine Row',                      trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/QXy1bfxMae0' },
+    { id: 'high_row',          name: 'High Row Cavi',                    trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/Q9VuYU3tF9Q' },
 
     // ── LEGACCI / GAMBE ──────────────────────────────────────
     { id: 'back_squat',        name: 'Back Squat',                       trackE1rm: true,  anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/bEv6CCg2BC8' },
@@ -63,6 +75,16 @@ export const EXERCISE_LIBRARY = [
     { id: 'calf_raise',        name: 'Calf Raise',                       trackE1rm: false, anatomicalZone: 'ankles',     ytUrl: 'https://youtu.be/JbyjNymZOt0' },
     { id: 'seated_calf',       name: 'Seated Calf Raise',                trackE1rm: false, anatomicalZone: 'ankles',     ytUrl: 'https://youtu.be/1Tq3QdYUuHs' },
     { id: 'tibialis_raise',    name: 'Tibialis Raise',                   trackE1rm: false, anatomicalZone: 'ankles',     ytUrl: 'https://youtu.be/xs7wTPl28CE' },
+    { id: 'box_squat',         name: 'Box Squat',                        trackE1rm: true,  anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/u87j5n6ClC8' },
+    { id: 'split_squat',       name: 'Split Squat',                      trackE1rm: true,  anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/2C-uNgKwPLE' },
+    { id: 'lateral_lunge',     name: 'Lateral Lunge',                    trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/VYMwJERueAI' },
+    { id: 'single_leg_press',  name: 'Leg Press Singola Gamba',          trackE1rm: true,  anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/ZYDTJaAM-gE' },
+    { id: 'hip_abduction',     name: 'Hip Abduction Machine',            trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/xbb4pU42CG4' },
+    { id: 'hip_adduction',     name: 'Hip Adduction Machine',            trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/HPR_Opslke0' },
+    { id: 'cable_kickback',    name: 'Cable Glute Kickback',             trackE1rm: false, anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/bVrmtCI00Ys' },
+    { id: 'single_leg_calf',   name: 'Single Leg Calf Raise',            trackE1rm: false, anatomicalZone: 'ankles',     ytUrl: 'https://youtu.be/ElcvJ0kjt6c' },
+    { id: 'standing_leg_curl', name: 'Leg Curl in Piedi',                trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/CZVTv9T_Ml8' },
+    { id: 'sissy_squat',       name: 'Sissy Squat',                      trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/AYN-U5nZieY' },
 
     // ── HINGE / CATENA POSTERIORE ────────────────────────────
     { id: 'deadlift',          name: 'Stacco da Terra',                  trackE1rm: true,  anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/AweC3UaM14o' },
@@ -76,6 +98,10 @@ export const EXERCISE_LIBRARY = [
     { id: 'bb_hip_thrust',     name: 'Hip Thrust Bilanciere',            trackE1rm: true,  anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/LM8XHLYJoYs' },
     { id: 'glute_bridge',      name: 'Glute Bridge',                     trackE1rm: false, anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/wPM8icPu6H8' },
     { id: 'kb_swing',          name: 'Kettlebell Swing',                 trackE1rm: false, anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/U7gOEqSM-0I' },
+    { id: 'single_leg_hip_thrust', name: 'Single Leg Hip Thrust',        trackE1rm: true,  anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/kpkg8r7dex4' },
+    { id: 'cable_pull_through', name: 'Cable Pull Through',              trackE1rm: false, anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/fbF4_pn_0xc' },
+    { id: 'ghd_hip_ext',       name: 'GHD Hip Extension',                trackE1rm: false, anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/-FRYZjXMHkA' },
+    { id: 'kb_deadlift',       name: 'Kettlebell Deadlift',              trackE1rm: true,  anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/T7Qb1xmKYWc' },
 
     // ── OLIMPICI / POTENZA ───────────────────────────────────
     { id: 'power_clean',       name: 'Power Clean',                      trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/-PG2KtOz-0k' },
@@ -89,6 +115,14 @@ export const EXERCISE_LIBRARY = [
     { id: 'depth_jump',        name: 'Depth Jump',                       trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/fL66hVKR89Q' },
     { id: 'sled_push',         name: 'Sled Push',                        trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/YJbKlXj4WhI' },
     { id: 'sled_pull',         name: 'Sled Pull',                        trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/cBTlCeSiu-8' },
+    { id: 'hang_snatch',       name: 'Hang Power Snatch',                trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/SpDPcj0W3Yw' },
+    { id: 'clean_pull',        name: 'Clean Pull',                       trackE1rm: true,  anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/xx8WkFrST2Y' },
+    { id: 'split_jerk',        name: 'Split Jerk',                       trackE1rm: true,  anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/2GPA-cjUFnA' },
+    { id: 'mb_chest_pass',     name: 'Med Ball Chest Pass',              trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/68SjXgERIvk' },
+    { id: 'mb_rotational',     name: 'Med Ball Rotational Throw',        trackE1rm: false, anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/c7fB-K8Ih54' },
+    { id: 'continuous_box_jump', name: 'Continuous Box Jump',            trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/fTpI4tgjci0' },
+    { id: 'hurdle_jump',       name: 'Hurdle Jump',                      trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/0H_fXWTUSiY' },
+    { id: 'horizontal_bound',  name: 'Horizontal Bound (Single)',        trackE1rm: false, anatomicalZone: 'knees',      ytUrl: 'https://youtu.be/LAFf_sKB0cg' },
 
     // ── ISOLARE PETTO ────────────────────────────────────────
     { id: 'pec_fly',           name: 'Pec Fly',                          trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/eozdVDA78K0' },
@@ -105,6 +139,10 @@ export const EXERCISE_LIBRARY = [
     { id: 'upright_row',       name: 'Upright Row',                      trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/nwkLwMRHMQo' },
     { id: 'shrug',             name: 'Shrug Bilanciere',                 trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/u9Lp_F3lyTU' },
     { id: 'cable_shrug',       name: 'Cable Shrug',                      trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/12g2avOv7so' },
+    { id: 'lateral_raise_machine', name: 'Lateral Raise Machine',        trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/IropE3iOk2c' },
+    { id: 'rear_delt_machine', name: 'Rear Delt Machine (Pec Dec Inverso)', trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/dtwZQcV48vI' },
+    { id: 'db_shrug',          name: 'DB Shrug',                         trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/qvvJUKq7_sU' },
+    { id: 'bent_over_lateral', name: 'Bent Over Lateral Raise',          trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/0ZhJBg77g7Y' },
 
     // ── ISOLARE SCHIENA ──────────────────────────────────────
     { id: 'straight_arm_pd',   name: 'Straight Arm Pulldown',            trackE1rm: false, anatomicalZone: 'shoulders', ytUrl: 'https://youtu.be/3sNc3hgtyjM' },
@@ -121,6 +159,11 @@ export const EXERCISE_LIBRARY = [
     { id: 'cable_curl',        name: 'Cable Curl',                       trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/NFzTWp2qpiE' },
     { id: 'spider_curl',       name: 'Spider Curl',                      trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/B1fVN5zOit4' },
     { id: 'zottman_curl',      name: 'Zottman Curl',                     trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/ix2ue9PhxzE' },
+    { id: 'concentration_curl', name: 'Concentration Curl',              trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/ZcU2hN76UyA' },
+    { id: 'ez_bar_curl',       name: 'EZ Bar Curl',                      trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/5NsFLGUf0Fo' },
+    { id: 'reverse_curl',      name: 'Reverse Curl',                     trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/ypfd1kaI1AU' },
+    { id: 'bayesian_curl',     name: 'Bayesian Cable Curl',              trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/teiR8q8nCE8' },
+    { id: 'drag_curl',         name: 'Drag Curl',                        trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/K1baXRg-OG8' },
 
     // ── ISOLARE TRICIPITI ────────────────────────────────────
     { id: 'push_down',         name: 'Push Down Cavi',                   trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/2-LAMcpzODU' },
@@ -130,6 +173,8 @@ export const EXERCISE_LIBRARY = [
     { id: 'db_kickback',       name: 'DB Tricep Kickback',               trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/6SS6K3lAwZ8' },
     { id: 'dips_tri',          name: 'Dips (Tricipiti)',                  trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/2z8JmcrW-As' },
     { id: 'cable_overhead_t',  name: 'Cable Overhead Tricep Extension',  trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/tG2D4ernaBM' },
+    { id: 'rope_pushdown',     name: 'Rope Pushdown',                    trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/-KVa3M1uZfs' },
+    { id: 'single_arm_pushdown', name: 'Single Arm Cable Pushdown',      trackE1rm: false, anatomicalZone: 'elbows',     ytUrl: 'https://youtu.be/Oy4-uJ35cQQ' },
 
     // ── CORE / ADDOME ────────────────────────────────────────
     { id: 'crunch_cable',      name: 'Weighted Crunch with Cable',       trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/aBd6T01PBqw' },
@@ -146,6 +191,11 @@ export const EXERCISE_LIBRARY = [
     { id: 'toes_bar',          name: 'Toes to Bar',                      trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/gBu16ijqpEg' },
     { id: 'ghd_situp',         name: 'GHD Sit-Up',                      trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/k1AHDQBuJ6o' },
     { id: 'dragon_flag',       name: 'Dragon Flag',                      trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/69AnMt9Fq9A' },
+    { id: 'hollow_hold',       name: 'Hollow Body Hold',                 trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/HAfUt2Cco74' },
+    { id: 'leg_raise_bench',   name: 'Leg Raise su Panca',               trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/l4kQd9eWclE' },
+    { id: 'l_sit',             name: 'L-Sit',                            trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/IUZJoSP66HI' },
+    { id: 'copenhagen_plank',  name: 'Copenhagen Plank',                 trackE1rm: false, anatomicalZone: 'knees',       ytUrl: 'https://youtu.be/YRRnnZsRs9U' },
+    { id: 'hanging_windshield', name: 'Hanging Windshield Wiper',        trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/Aa_63nr9dzc' },
 
     // ── MOBILITÀ / ATTIVAZIONE ───────────────────────────────
     { id: 'hip_hinge',         name: 'Hip Hinge (tecnica)',              trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/068DbYEpKio' },
@@ -158,6 +208,12 @@ export const EXERCISE_LIBRARY = [
     { id: 'band_pull_apart',   name: 'Band Pull Apart',                  trackE1rm: false, anatomicalZone: 'shoulders',   ytUrl: 'https://youtu.be/XPPfnSEATJA' },
     { id: 'scapular_pullup',   name: 'Scapular Pull Up',                 trackE1rm: false, anatomicalZone: 'shoulders',   ytUrl: 'https://youtu.be/Iv_V6oGBBQ0' },
     { id: 'Cuban_rotation',    name: 'Cuban Rotation',                   trackE1rm: false, anatomicalZone: 'shoulders',   ytUrl: 'https://youtu.be/eUo48struNE' },
+    { id: 'couch_stretch',     name: 'Couch Stretch',                    trackE1rm: false, anatomicalZone: 'knees',       ytUrl: 'https://youtu.be/WKo4APrwfXQ' },
+    { id: 'hip_90_90',         name: '90/90 Hip Stretch',                trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/ebZtd1B44QE' },
+    { id: 'squat_to_stand',    name: 'Squat to Stand',                   trackE1rm: false, anatomicalZone: 'knees',       ytUrl: 'https://youtu.be/EgLQxPsQ93w' },
+    { id: 'cossack_squat',     name: 'Cossack Squat',                    trackE1rm: false, anatomicalZone: 'knees',       ytUrl: 'https://youtu.be/d4IPCXI8GQc' },
+    { id: 'foam_roller_thoracic', name: 'Foam Roller Thoracic Extension', trackE1rm: false, anatomicalZone: 'lowerback',  ytUrl: 'https://youtu.be/1LKd8e9QJ0w' },
+    { id: 'wall_hip_flexor',   name: 'Wall Hip Flexor Stretch',          trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/ca54fyiIq2I' },
 
     // ── CAMPO / CONDIZIONAMENTO ──────────────────────────────
     { id: 'sprint_10',         name: 'Sprint 10m',                       trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/UtZWtHsOmsk' },
@@ -178,6 +234,18 @@ export const EXERCISE_LIBRARY = [
     { id: 'assault_bike',      name: 'Assault Bike',                     trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/0kzhFdDUUs0' },
     { id: 'ski_erg',           name: 'Ski Erg',                          trackE1rm: false, anatomicalZone: 'shoulders',   ytUrl: 'https://youtu.be/B0lIgT5PHc8' },
     { id: 'bike_sprint',       name: 'Bike Sprint',                      trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/0kzhFdDUUs0' },
+    { id: 'sprint_60',         name: 'Sprint 60m',                       trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/kFLwmd0yzOU' },
+    { id: 'fly_sprint',        name: 'Fly Sprint 20m',                   trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/F7BlhM7k5o0' },
+    { id: 'a_skip',            name: 'A-Skip',                           trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/JPzYHi5iKmo' },
+    { id: 'b_skip',            name: 'B-Skip',                           trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/JPzYHi5iKmo' },
+    { id: 'illinois_agility',  name: 'Illinois Agility Test',            trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/CTndGKrdMbk' },
+    { id: 'jump_rope',         name: 'Jump Rope (Corda)',                 trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/ug7K-8X6pJk' },
+    { id: 'burpee',            name: 'Burpee',                           trackE1rm: false, anatomicalZone: '',            ytUrl: 'https://youtu.be/wGvBfVeCNko' },
+    { id: 'wall_ball',         name: 'Wall Ball (Med Ball)',              trackE1rm: false, anatomicalZone: 'shoulders',   ytUrl: 'https://youtu.be/U_wNNwNXKr8' },
+    { id: 'sandbag_carry',     name: 'Sandbag Carry',                    trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/PTpridy5fMY' },
+    { id: 'overhead_carry',    name: 'Overhead Carry',                   trackE1rm: false, anatomicalZone: 'shoulders',   ytUrl: 'https://youtu.be/1fGijWfRrCE' },
+    { id: 'suitcase_carry',    name: 'Suitcase Carry',                   trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/tNHdx7pmrGI' },
+    { id: 'bear_crawl',        name: 'Bear Crawl',                       trackE1rm: false, anatomicalZone: 'lowerback',   ytUrl: 'https://youtu.be/U3Y58Kyw7Xw' },
 ];
 
 // ─────────────────────────────────────────────────────────────
