@@ -259,11 +259,43 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: `node --check` OK; re-audit → banner presente, "Riposo" solo nella legenda, 0 errori console.
 - Deploy **v6.71** su Vercel — verificato live ✅
 
-## Prossimo passo
+**Gamification riattivata — engagement atleta (2026-09-19)**
+- Contesto: review prodotto/UX ha classificato la gamification già-costruita-ma-nascosta come autogol (codice completo in `badges.js`, `checkAndAwardBadges` già chiamato al salvataggio sessione in `app.js:4215`, ma rendering spento). Riattivarla = miglior rapporto impatto/costo sull'adozione atleta.
+- **Bacheca trofei riattivata**: decommentato `renderBadgesSection('ap-badges', athId)` in `analytics.js` (~1498) → la trophy shelf 17 badge (comuni/rari/epici) torna visibile nel tab atleta "I miei progressi".
+- **Striscia trofei nella home atleta** (nuova, il vero lever di daily-open): `badgeStripHtml(athId, streak)` in `badges.js` costruisce una card compatta cliccabile (🏆 X/17 trofei + 🔥 streak se ≥2 + ultimo badge sbloccato) → tap porta al tab Progressi. Inserita in `renderAthHome` (`app.js`) subito dopo il banner motivazionale, riusando lo `streak` già calcolato. Import aggiunto in `app.js`.
+- Coerenza id verificata: award usa `appState.selAthId`, lettura usa `mioIdLoggato || selAthId` (stessa risoluzione di tutte le render atleta) → sul lato atleta coincidono, quindi i badge sbloccati si vedono davvero.
+- Verifica: `node --check` OK su app/badges/analytics; test **codice reale** di `badgeStripHtml` (moduli copiati in dir temp `type:module`, `loadBadges` reale su localStorage shimmato) → **8/8 asserzioni verdi** (count 0/N e 3/N, nudge primo trofeo, streak mostrata solo se ≥2, "ultimo" = badge con data ISO più recente, click → `ath-progressi`).
+- Smoke Playwright (Chrome reale, mobile 390px, modalità ATLETA su Marco `a2`, badge assegnati dallo storico via `checkAndAwardBadges`): striscia in home (`13/17 trofei` + streak + ultimo + cliccabile → progressi), bacheca in progressi (header "13/17 sbloccati", 17 tile, 13 sbloccati + 4 correttamente sfumati), toast di award visibile, **0 errori console** (`09-ath-home-badges.png`, `10-ath-progressi-shelf.png`). Nota: streak/totali gonfiati nello shot = artefatto del seed coach (DB con tutti gli atleti); in prod l'atleta ha solo le sue sessioni.
+- Edge minore noto: se più badge si sbloccano lo stesso giorno, "ultimo" mostra il primo per ordine di definizione (nell'uso reale gli sblocchi hanno date distinte).
+- Deploy **v6.72** su Vercel (SW bumpato, `vercel --prod`) — verificato live su https://coach-os-lime.vercel.app (SW v6.72 + codice gamification servito) ✅
 
-Filoni pronti quando vuoi (nessuno richiede P.IVA):
-- **Attiva gamification** (badge/trofei già assegnati, rendering commentato in `analytics.js:1498`) — engagement atleta, quasi gratis.
+**Time-to-value coach — template programmi + duplica scheda (2026-09-19)**
+- Blocker #2 della review (da atleta vuoto a scheda assegnata in pochi click). Prima non esisteva alcun template di *contenuto*: `applyMacroTemplate` riguarda solo le fasi di periodizzazione, non sedute/esercizi.
+- **6 template programmi** in `PROGRAM_TEMPLATES` (state.js, in coda): Full Body 3× Principiante, Upper/Lower 4×, Push/Pull/Legs Ipertrofia, Forza 5×5, Preparazione Atletica (con seduta Campo), Ricomposizione + Condizionamento. 88 esercizi totali, ognuno referenzia un `id` di EXERCISE_LIBRARY.
+- **Applica template** (`applyProgramTemplate` in app.js): `_expandTemplateEx` espande ogni `{id,set,rep,rir,rest}` nel formato editor completo risolvendo name/ytUrl/trackE1rm/zona dalla libreria (stesso shape di `_libAddEx`). Sostituisce la scheda (con `showConfirm` "Sostituisci" se già piena), setta meso/fase/durata/note/obiettivo/scheduledDays, poi `renderEditor` + `saveSchedule` (sync Supabase). Vincoli rispettati: rep/kg testo, rir ∈ {0,1,2,3,—}.
+- **Duplica da un altro atleta** (`duplicateScheduleFrom`): deep-clone (JSON) della scheda sorgente con id sessione freschi e `progression` azzerata (è dato live dell'origine). Modal `mo-dup` elenca solo atleti con scheda non vuota.
+- **Duplica sessione** (`duplicateCurrentSession`): clona la seduta aperta nell'editor ("(copia)", id fresco, progression azzerata).
+- UI: riga bottoni "Parti da un template" / "Duplica da un altro atleta" in cima all'editor (max visibilità con atleta vuoto) + "Duplica sessione" vicino a "+ Nuova Sessione"; 2 modali `mo-templates`/`mo-dup` con lista+preview (livello·obiettivo·sedute·esercizi·settimane). Funzioni sul window bridge (main.js).
+- Verifica: `node --check` OK (state/app/main); test dati reali → **41/41** (6 template, 88 esercizi, tutti gli id risolti a nome+video, tutti i rir validi); smoke Playwright (coach desktop) → applica PPL su atleta vuoto = 3 tab + meso corretto + 6 esercizi con video risolti, modal template 6 card, modal duplica 5 sorgenti, duplica da Marco riempie l'editor, **0 errori console** (`11-templates-modal.png`, `12-editor-template-applied.png`, `13-editor-duplicated.png`).
+- **Non ancora deployato** — bumpare SW + `vercel --prod` quando confermi.
+
+## Prossimo passo — roadmap dalla review prodotto (2026-09-19)
+
+Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA). Diagnosi chiave: prodotto forte ma **disallineato** — analytics elite-S&C per un mercato raggiungibile (PT generalisti) che non li capisce; il collo di bottiglia è *fiducia + primo utente reale + time-to-value*, non le feature.
+
+**Blocker (impediscono uso/vendita):**
+1. **Distribuzione + prova sociale** (non-codice): reclutare 1 coach reale come caso zero + girare un video demo 60–90s del flusso coach→atleta. Senza, i 10 beta non arrivano.
+2. **Time-to-value coach**: da zero a "atleta con scheda assegnata" in 5 min → ✅ 6 template programmi + duplica scheda da atleta + duplica sessione (fatto 2026-09-19). Resta: assegna a più atleti in blocco + import grezzo da Excel/Sheets per la migrazione.
+3. **Adozione atleta**: sessione persistente + PWA install pulita + push reminder di default + ✅ gamification accesa (fatto oggi). È il punto di rottura del modello (senza log, analytics vuote).
+4. **Fiducia minima (dato sanitario, GDPR)**: privacy policy + export dati + cancella account; rinominare "AI Insight" → "Analisi automatica" (l'engine è euristico, non LLM) e mostrare le regole/il perché.
+
+**Nice-to-have (retention/percezione):**
+- Decidere posizionamento e **semplificare il default** (modalità base PT vs toggle "Performance/Avanzato" per gli analytics S&C).
+- Nascondere i tile wearable "Coming Soon" (sanno di vaporware) + de-enfatizzare la nutrizione senza database alimenti.
+- ACWR presentato come *supporto alla decisione* con metodologia visibile e disattivabile (è scientificamente contestato — credibilità coi coach esperti).
 - **Cruscotto settimanale coach** (AI insight su tutti gli atleti in un colpo d'occhio).
-- Card-ificazione tabella Storico su mobile (ora scroll orizzontale) + eventuale refactor boot con skeleton (solo se utenti su connessioni lente reali).
+- Card-ificazione tabella Storico su mobile; refactor boot con skeleton (solo se utenti su connessioni lente reali).
+
+**Rimandati (dipendono da P.IVA / costi):**
 - **Billing reale** (quando avrai P.IVA + primi paganti) — codice + checklist Stripe pronti da preparare.
 - Upgrade **AI insight via Claude API** (edge function + `ANTHROPIC_API_KEY`) sopra l'engine locale.

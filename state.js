@@ -418,3 +418,203 @@ export const appState = {
     coachRole:           'head',
     headCoachId:         null,
 };
+
+
+// ─────────────────────────────────────────────────────────────
+// PROGRAM_TEMPLATES — programmi pronti da applicare in un click.
+// Ogni esercizio referenzia un `id` di EXERCISE_LIBRARY: la funzione
+// applyProgramTemplate (app.js) lo espande nel formato editor completo
+// (name/ytUrl/trackE1rm/anatomicalZone risolti dalla libreria).
+// Vincoli campi editor: rep/kg = testo libero; rir ∈ {0,1,2,3,—}.
+// ─────────────────────────────────────────────────────────────
+export const PROGRAM_TEMPLATES = [
+    {
+        id: 'fb_beginner_3',
+        name: 'Full Body 3× — Principiante',
+        goal: 'Ricomposizione', level: 'Principiante',
+        desc: 'Tre sedute full-body sui pattern fondamentali. Ideale per chi inizia.',
+        meso: 'Full Body — Base', phase: 'Accumulo', duration: 4, days: [1, 3, 5],
+        objective: 'Adattamento anatomico e apprendimento tecnico su tutti i pattern.',
+        coachNote: 'Carichi conservativi: aumenta solo quando completi tutte le serie con RIR ≥ 2. Priorità alla tecnica.',
+        sessions: [
+            { name: 'Full Body A', sessType: 'Palestra', exercises: [
+                { id: 'goblet_squat', set: 3, rep: '10', rir: '3', rest: "90''" },
+                { id: 'chest_press',  set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'lat_machine',  set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'leg_curl',     set: 3, rep: '12', rir: '2', rest: "60''" },
+                { id: 'plank',        set: 3, rep: '30-45s', rir: '—', rest: "45''" },
+            ]},
+            { name: 'Full Body B', sessType: 'Palestra', exercises: [
+                { id: 'leg_press',      set: 3, rep: '12', rir: '2', rest: "90''" },
+                { id: 'shoulder_press', set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'cable_row',      set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'bb_curl',        set: 3, rep: '12', rir: '2', rest: "60''" },
+                { id: 'dead_bug',       set: 3, rep: '10/lato', rir: '—', rest: "45''" },
+            ]},
+            { name: 'Full Body C', sessType: 'Palestra', exercises: [
+                { id: 'db_rdl',               set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'incline_db',           set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'lat_pulldown_neutral', set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'push_down',            set: 3, rep: '12', rir: '2', rest: "60''" },
+                { id: 'side_plank',           set: 3, rep: '30s/lato', rir: '—', rest: "45''" },
+            ]},
+        ],
+    },
+    {
+        id: 'upper_lower_4',
+        name: 'Upper / Lower 4× — Forza & Ipertrofia',
+        goal: 'Ipertrofia', level: 'Intermedio',
+        desc: 'Split superiore/inferiore su 4 sedute. Equilibrio forza e ipertrofia.',
+        meso: 'Upper/Lower', phase: 'Intensificazione', duration: 4, days: [1, 2, 4, 5],
+        objective: 'Aumento forza sui fondamentali e volume ipertrofico sugli accessori.',
+        coachNote: 'Fondamentali in RIR 2, accessori in RIR 1. Progressione: +2,5 kg quando chiudi il range in tutte le serie.',
+        sessions: [
+            { name: 'Upper A', sessType: 'Palestra', exercises: [
+                { id: 'bench_press_bb', set: 4, rep: '6',  rir: '2', rest: "2'30''" },
+                { id: 'bb_row',         set: 4, rep: '8',  rir: '2', rest: "2'" },
+                { id: 'shoulder_press', set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'lat_machine',    set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'lateral_raises', set: 3, rep: '15', rir: '1', rest: "60''" },
+                { id: 'push_down',      set: 3, rep: '12', rir: '1', rest: "60''" },
+            ]},
+            { name: 'Lower A', sessType: 'Palestra', exercises: [
+                { id: 'back_squat', set: 4, rep: '6',  rir: '2', rest: "3'" },
+                { id: 'bb_rdl',     set: 3, rep: '8',  rir: '2', rest: "2'" },
+                { id: 'leg_press',  set: 3, rep: '12', rir: '2', rest: "90''" },
+                { id: 'leg_curl',   set: 3, rep: '12', rir: '1', rest: "60''" },
+                { id: 'calf_raise', set: 4, rep: '12', rir: '1', rest: "60''" },
+                { id: 'plank',      set: 3, rep: '40s', rir: '—', rest: "45''" },
+            ]},
+            { name: 'Upper B', sessType: 'Palestra', exercises: [
+                { id: 'incline_db',   set: 4, rep: '8',  rir: '2', rest: "2'" },
+                { id: 'pull_up',      set: 4, rep: '8',  rir: '2', rest: "2'" },
+                { id: 'cable_row',    set: 3, rep: '12', rir: '2', rest: "90''" },
+                { id: 'arnold_press', set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'bb_curl',      set: 3, rep: '12', rir: '1', rest: "60''" },
+                { id: 'face_pull',    set: 3, rep: '15', rir: '1', rest: "60''" },
+            ]},
+            { name: 'Lower B', sessType: 'Palestra', exercises: [
+                { id: 'deadlift',          set: 4, rep: '5',  rir: '2', rest: "3'" },
+                { id: 'front_squat',       set: 3, rep: '8',  rir: '2', rest: "2'" },
+                { id: 'bulgarian_lunges',  set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'leg_ext',           set: 3, rep: '15', rir: '1', rest: "60''" },
+                { id: 'seated_calf',       set: 4, rep: '15', rir: '1', rest: "60''" },
+                { id: 'hanging_leg_raise', set: 3, rep: '12', rir: '—', rest: "60''" },
+            ]},
+        ],
+    },
+    {
+        id: 'ppl_hypertrophy',
+        name: 'Push / Pull / Legs — Ipertrofia',
+        goal: 'Ipertrofia', level: 'Avanzato',
+        desc: 'Split PPL ad alto volume. Ripeti il ciclo 2× a settimana (6 sedute).',
+        meso: 'PPL — Ipertrofia', phase: 'Accumulo', duration: 5, days: [1, 2, 3, 5, 6],
+        objective: 'Massimo volume per gruppo muscolare, frequenza 2× a settimana.',
+        coachNote: 'Ripeti Push/Pull/Legs due volte a settimana. Ultime 1-2 serie vicino al cedimento (RIR 0-1).',
+        sessions: [
+            { name: 'Push', sessType: 'Palestra', exercises: [
+                { id: 'bench_press_bb', set: 4, rep: '8',  rir: '2', rest: "2'" },
+                { id: 'shoulder_press', set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'incline_db',     set: 3, rep: '10', rir: '2', rest: "90''" },
+                { id: 'cable_fly',      set: 3, rep: '15', rir: '1', rest: "60''" },
+                { id: 'lateral_raises', set: 4, rep: '15', rir: '1', rest: "60''" },
+                { id: 'push_down',      set: 3, rep: '12', rir: '1', rest: "60''" },
+            ]},
+            { name: 'Pull', sessType: 'Palestra', exercises: [
+                { id: 'pull_up',     set: 4, rep: '8',  rir: '2', rest: "2'" },
+                { id: 'bb_row',      set: 4, rep: '8',  rir: '2', rest: "2'" },
+                { id: 'lat_machine', set: 3, rep: '12', rir: '2', rest: "90''" },
+                { id: 'cable_row',   set: 3, rep: '12', rir: '2', rest: "90''" },
+                { id: 'bb_curl',     set: 3, rep: '12', rir: '1', rest: "60''" },
+                { id: 'face_pull',   set: 3, rep: '15', rir: '1', rest: "60''" },
+            ]},
+            { name: 'Legs', sessType: 'Palestra', exercises: [
+                { id: 'back_squat', set: 4, rep: '8',  rir: '2', rest: "3'" },
+                { id: 'bb_rdl',     set: 3, rep: '10', rir: '2', rest: "2'" },
+                { id: 'leg_press',  set: 3, rep: '12', rir: '2', rest: "90''" },
+                { id: 'leg_curl',   set: 3, rep: '12', rir: '1', rest: "60''" },
+                { id: 'leg_ext',    set: 3, rep: '15', rir: '1', rest: "60''" },
+                { id: 'calf_raise', set: 4, rep: '15', rir: '1', rest: "60''" },
+            ]},
+        ],
+    },
+    {
+        id: 'strength_5x5',
+        name: 'Forza 5×5 — Base',
+        goal: 'Forza Massimale', level: 'Intermedio',
+        desc: 'Programma di forza lineare A/B sui tre alzate. Semplice ed efficace.',
+        meso: 'Forza 5×5', phase: 'Intensificazione', duration: 6, days: [1, 3, 5],
+        objective: 'Aumento della forza massimale su squat, panca, stacco.',
+        coachNote: 'Alterna Seduta A e B ogni allenamento. Aggiungi +2,5 kg ogni volta che completi tutte le 5×5. Se fallisci due volte, deload -10%.',
+        sessions: [
+            { name: 'Seduta A', sessType: 'Palestra', exercises: [
+                { id: 'back_squat',     set: 5, rep: '5', rir: '2', rest: "3'" },
+                { id: 'bench_press_bb', set: 5, rep: '5', rir: '2', rest: "3'" },
+                { id: 'bb_row',         set: 5, rep: '5', rir: '2', rest: "2'" },
+            ]},
+            { name: 'Seduta B', sessType: 'Palestra', exercises: [
+                { id: 'back_squat', set: 5, rep: '5', rir: '2', rest: "3'" },
+                { id: 'ohp_bb',     set: 5, rep: '5', rir: '2', rest: "3'" },
+                { id: 'deadlift',   set: 1, rep: '5', rir: '1', rest: "3'" },
+            ]},
+        ],
+    },
+    {
+        id: 'athletic_power_2',
+        name: 'Preparazione Atletica — Forza & Potenza',
+        goal: 'Performance Atletica', level: 'Avanzato',
+        desc: 'Due sedute di palestra (forza + potenza) più una seduta di campo sport-specifica.',
+        meso: 'Prep. Atletica', phase: 'Picco', duration: 4, days: [1, 4],
+        objective: 'Sviluppo di forza e potenza trasferibili alla performance in campo.',
+        coachNote: 'La potenza va eseguita fresca e veloce (RIR alto, focus sulla velocità). Personalizza la seduta di campo per lo sport.',
+        sessions: [
+            { name: 'Palestra — Forza', sessType: 'Palestra', exercises: [
+                { id: 'back_squat',     set: 4, rep: '5', rir: '2', rest: "3'" },
+                { id: 'bench_press_bb', set: 4, rep: '5', rir: '2', rest: "3'" },
+                { id: 'bb_rdl',         set: 3, rep: '6', rir: '2', rest: "2'" },
+                { id: 'pull_up',        set: 3, rep: '8', rir: '2', rest: "2'" },
+                { id: 'plank',          set: 3, rep: '45s', rir: '—', rest: "45''" },
+            ]},
+            { name: 'Palestra — Potenza', sessType: 'Palestra', exercises: [
+                { id: 'hang_clean',    set: 5, rep: '3', rir: '—', rest: "2'30''" },
+                { id: 'box_jump',      set: 4, rep: '4', rir: '—', rest: "2'" },
+                { id: 'push_press',    set: 4, rep: '4', rir: '1', rest: "2'" },
+                { id: 'kb_swing',      set: 4, rep: '12', rir: '—', rest: "90''" },
+                { id: 'med_ball_slam', set: 3, rep: '8', rir: '—', rest: "60''" },
+            ]},
+            { name: 'Campo — Sport-specifico', sessType: 'Campo', exercises: [] },
+        ],
+    },
+    {
+        id: 'recomp_conditioning_3',
+        name: 'Ricomposizione — Full Body + Condizionamento',
+        goal: 'Ricomposizione', level: 'Intermedio',
+        desc: 'Tre sedute full-body con finisher metabolico. Forza + dispendio calorico.',
+        meso: 'Ricomposizione', phase: 'Accumulo', duration: 4, days: [1, 3, 5],
+        objective: 'Mantenere massa magra e aumentare il dispendio energetico.',
+        coachNote: 'Recuperi brevi sui multiarticolari per densità. Il finisher va a intensità alta ma controllata.',
+        sessions: [
+            { name: 'Full Body A', sessType: 'Palestra', exercises: [
+                { id: 'goblet_squat', set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'chest_press',  set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'cable_row',    set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'kb_swing',     set: 3, rep: '15', rir: '—', rest: "60''" },
+                { id: 'battle_ropes', set: 4, rep: '30s', rir: '—', rest: "45''" },
+            ]},
+            { name: 'Full Body B', sessType: 'Palestra', exercises: [
+                { id: 'leg_press',      set: 3, rep: '15', rir: '2', rest: "75''" },
+                { id: 'shoulder_press', set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'lat_machine',    set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'walking_lunges', set: 3, rep: '20', rir: '2', rest: "75''" },
+                { id: 'row_machine',    set: 4, rep: '250m', rir: '—', rest: "60''" },
+            ]},
+            { name: 'Full Body C', sessType: 'Palestra', exercises: [
+                { id: 'db_rdl',       set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'incline_db',   set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'inverted_row', set: 3, rep: '12', rir: '2', rest: "75''" },
+                { id: 'burpee',       set: 4, rep: '10', rir: '—', rest: "45''" },
+                { id: 'plank',        set: 3, rep: '45s', rir: '—', rest: "45''" },
+            ]},
+        ],
+    },
+];

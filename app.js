@@ -12,7 +12,7 @@
   analytics.js → renderAnalytics, calculateACWR, renderE1rmChart
   ══════════════════════════════════════════════════════════════ */
 
-import { DB, appState, KEY, EXERCISE_LIBRARY, rpeDescs, starDescs } from './state.js';
+import { DB, appState, KEY, EXERCISE_LIBRARY, PROGRAM_TEMPLATES, rpeDescs, starDescs } from './state.js';
 import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus } from './utils.js';
 
 // Importazioni circolari risolte: questi moduli importano da state+utils,
@@ -22,7 +22,7 @@ import { loadLive, updateLiveTotals } from './workout.js';
 import { renderAnalytics, calculateACWR, renderE1rmChart, renderAthProgressi, renderBodyComp } from './analytics.js';
 import { subscribePush } from './auth.js';
 import { canAddAthlete, showUpgradeModal } from './billing.js';
-import { checkAndAwardBadges, renderBadgesSection } from './badges.js';
+import { checkAndAwardBadges, renderBadgesSection, badgeStripHtml } from './badges.js';
 import { renderNutritionCard, openNutritionModal, saveNutritionLog, saveNutritionTargets, loadNutrition } from './nutrition.js';
 
 // ─────────────────────────────────────────────────────────────
@@ -2358,6 +2358,9 @@ export function renderAthHome() {
   <!-- SEZIONE C: Momento motivazionale -->
   ${motivHtml}
 
+  <!-- Striscia trofei — engagement/gamification -->
+  ${badgeStripHtml(athId, streak)}
+
   <!-- SEZIONE D: Stats con sparkline -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
   <div class="kpi"><div class="kpi-l">Sessioni tot.</div><div class="kpi-v">${DB.sessions.length}</div></div>
@@ -3491,6 +3494,175 @@ export async function updatePhaseStyle(phase) {
   toast(' Fase Scarico: Volume ridotto e salvato sul Cloud!');
   }
   await saveDB(); renderEdExercises(); await saveSchedule();
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// TEMPLATE PROGRAMMI + DUPLICAZIONE SCHEDE
+// Riduce il time-to-value: da atleta vuoto a scheda assegnata in
+// pochi click. I template referenziano id di EXERCISE_LIBRARY.
+// ─────────────────────────────────────────────────────────────
+
+// Espande un esercizio-template ({id,set,rep,rir,rest,...}) nel formato
+// completo dell'editor, risolvendo name/ytUrl/trackE1rm/zona dalla libreria.
+function _expandTemplateEx(t) {
+  const lib = EXERCISE_LIBRARY.find(e => e.id === t.id);
+  return {
+    name: lib ? lib.name : (t.name || t.id),
+    type: t.type || 'repetition',
+    arm: t.arm || 'Bi',
+    wset: t.wset || 0,
+    set: t.set ?? 3,
+    rep: String(t.rep ?? '8'),
+    kg: String(t.kg ?? 0),
+    rir: String(t.rir ?? '2'),
+    rest: t.rest || "90''",
+    tut: t.tut || '-',
+    note: t.note || '',
+    ytUrl: lib?.ytUrl || '',
+    rpe: '',
+    trackE1rm: lib?.trackE1rm ?? false,
+    anatomicalZone: lib?.anatomicalZone || '',
+    section: t.section || 'centrale',
+    progression: {},
+  };
+}
+
+// Costruisce una scheda completa da un template (id sessioni freschi).
+function _scheduleFromTemplate(tpl) {
+  return {
+    meso: tpl.meso, phase: tpl.phase, duration: tpl.duration || 4,
+    coachNote: tpl.coachNote || '', objective: tpl.objective || '',
+    scheduledDays: [...(tpl.days || [])],
+    sessions: tpl.sessions.map(s => ({
+      id: uid(), name: s.name, sessType: s.sessType || 'Palestra',
+      exercises: (s.exercises || []).map(_expandTemplateEx),
+    })),
+  };
+}
+
+// Apre il modal "Parti da un template".
+export function openTemplatesModal() {
+  if (!appState.selAthId) { toast('Seleziona prima un atleta'); return; }
+  const el = document.getElementById('tpl-list');
+  if (el) el.innerHTML = PROGRAM_TEMPLATES.map(t => {
+    const nSess = t.sessions.length;
+    const nEx = t.sessions.reduce((a, s) => a + (s.exercises || []).length, 0);
+    return `<div style="border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--s1)">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+        <div style="min-width:0;flex:1">
+          <div style="font-size:14px;font-weight:800;color:var(--text)">${escHtml(t.name)}</div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px;line-height:1.4">${escHtml(t.desc || '')}</div>
+          <div style="font-size:10px;color:var(--dim);margin-top:6px;font-family:var(--fmono)">${escHtml(t.level)} · ${escHtml(t.goal)} · ${nSess} sedute · ${nEx} esercizi · ${t.duration} sett.</div>
+        </div>
+        <button class="btn btn-p btn-sm" style="flex-shrink:0" onclick="applyProgramTemplate('${t.id}')">Applica</button>
+      </div>
+    </div>`;
+  }).join('');
+  openMo('mo-templates');
+}
+
+// Applica un template all'atleta selezionato (sostituendo la scheda se già piena).
+export async function applyProgramTemplate(tplId) {
+  const tpl = PROGRAM_TEMPLATES.find(t => t.id === tplId);
+  const athId = appState.selAthId;
+  if (!tpl || !athId) { toast('Seleziona prima un atleta'); return; }
+
+  const apply = async () => {
+    DB.schedules[athId] = _scheduleFromTemplate(tpl);
+    appState.edSessId = DB.schedules[athId].sessions[0]?.id;
+    closeMo('mo-templates');
+    renderEditor();
+    await saveSchedule();
+    toast(`Template "${tpl.name}" applicato ✓`);
+  };
+
+  const cur = DB.schedules[athId];
+  const hasContent = cur && (cur.sessions || []).some(s => (s.exercises || []).length > 0);
+  if (hasContent) {
+    showConfirm(`Sostituire la scheda attuale con il template "${tpl.name}"? Le sessioni correnti verranno rimpiazzate.`, apply, 'Sostituisci');
+  } else {
+    await apply();
+  }
+}
+
+// Apre il modal "Duplica da un altro atleta".
+export function openDuplicateModal() {
+  const destId = appState.selAthId;
+  if (!destId) { toast('Seleziona prima un atleta'); return; }
+  const sources = DB.athletes.filter(a =>
+    a.id !== destId && DB.schedules[a.id] &&
+    (DB.schedules[a.id].sessions || []).some(s => (s.exercises || []).length > 0)
+  );
+  const el = document.getElementById('dup-list');
+  if (el) {
+    el.innerHTML = sources.length ? sources.map(a => {
+      const sch = DB.schedules[a.id];
+      const nSess = sch.sessions.length;
+      const nEx = sch.sessions.reduce((x, s) => x + (s.exercises || []).length, 0);
+      return `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--s1)">
+        <div style="min-width:0;flex:1">
+          <div style="font-size:14px;font-weight:800;color:var(--text)">${escHtml(a.name)}</div>
+          <div style="font-size:10px;color:var(--dim);margin-top:4px;font-family:var(--fmono)">${escHtml(sch.meso || '')} · ${nSess} sedute · ${nEx} esercizi</div>
+        </div>
+        <button class="btn btn-p btn-sm" style="flex-shrink:0" onclick="duplicateScheduleFrom('${a.id}')">Copia</button>
+      </div>`;
+    }).join('') : '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">Nessun altro atleta con una scheda da copiare.</div>';
+  }
+  openMo('mo-dup');
+}
+
+// Copia l'intera scheda di un atleta di origine su quello selezionato.
+export async function duplicateScheduleFrom(srcAthId) {
+  const destId = appState.selAthId;
+  const src = DB.schedules[srcAthId];
+  if (!src || !destId || srcAthId === destId) { toast('Atleta di origine non valido'); return; }
+
+  const doCopy = async () => {
+    DB.schedules[destId] = {
+      meso: src.meso, phase: src.phase, duration: src.duration || 4,
+      coachNote: src.coachNote || '', objective: src.objective || '',
+      scheduledDays: [...(src.scheduledDays || [])],
+      sessions: (src.sessions || []).map(s => {
+        const clone = JSON.parse(JSON.stringify(s));
+        clone.id = uid();
+        // Azzera le progressioni: sono dati live legati all'atleta di origine
+        (clone.exercises || []).forEach(ex => { ex.progression = {}; });
+        return clone;
+      }),
+    };
+    appState.edSessId = DB.schedules[destId].sessions[0]?.id;
+    closeMo('mo-dup');
+    renderEditor();
+    await saveSchedule();
+    const srcName = DB.athletes.find(a => a.id === srcAthId)?.name || 'atleta';
+    toast(`Scheda copiata da ${srcName} ✓`);
+  };
+
+  const cur = DB.schedules[destId];
+  const hasContent = cur && (cur.sessions || []).some(s => (s.exercises || []).length > 0);
+  if (hasContent) showConfirm('Sostituire la scheda attuale con quella copiata?', doCopy, 'Sostituisci');
+  else await doCopy();
+}
+
+// Duplica la sessione correntemente aperta nell'editor.
+export async function duplicateCurrentSession() {
+  const athId = document.getElementById('ed-ath').value || appState.selAthId;
+  const sch = DB.schedules[athId];
+  if (!sch) return;
+  const cur = sch.sessions.find(s => s.id === appState.edSessId);
+  if (!cur) return;
+  const clone = JSON.parse(JSON.stringify(cur));
+  clone.id = uid();
+  clone.name = `${cur.name} (copia)`;
+  (clone.exercises || []).forEach(ex => { ex.progression = {}; });
+  const idx = sch.sessions.findIndex(s => s.id === cur.id);
+  sch.sessions.splice(idx + 1, 0, clone);
+  appState.edSessId = clone.id;
+  await saveDB();
+  renderEditor();
+  await saveSchedule();
+  toast('Sessione duplicata ✓');
 }
 
 

@@ -146,6 +146,43 @@ export function checkAndAwardBadges(athId) {
 
 
 // ─────────────────────────────────────────────────────────────
+// badgeStripHtml — striscia compatta per la home atleta.
+// Mostra count trofei + streak + ultimo badge sbloccato, cliccabile
+// verso il tab Progressi (bacheca completa). Restituisce una stringa HTML
+// da embeddare nel template di renderAthHome.
+// ─────────────────────────────────────────────────────────────
+export function badgeStripHtml(athId, streak = 0) {
+    const earned = loadBadges(athId);
+    const earnedIds = Object.keys(earned);
+    const total = BADGE_DEFS.length;
+
+    // ultimo badge sbloccato (data ISO YYYY-MM-DD → confronto lessicografico)
+    let latest = null, latestDate = '';
+    for (const id of earnedIds) {
+        if (earned[id] > latestDate) {
+            const def = BADGE_DEFS.find(d => d.id === id);
+            if (def) { latest = def; latestDate = earned[id]; }
+        }
+    }
+
+    const sub = latest
+        ? `Ultimo: ${latest.icon} ${latest.name}`
+        : 'Completa una sessione per sbloccare il primo';
+    const streakTxt = streak >= 2 ? ` · 🔥 ${streak} di fila` : '';
+
+    return `
+    <div onclick="go('ath-progressi')" style="cursor:pointer;margin-bottom:14px;padding:12px 14px;background:var(--s1);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;gap:12px;min-height:44px">
+        <span style="font-size:22px;flex-shrink:0">🏆</span>
+        <div style="flex:1;min-width:0">
+            <div style="font-size:13px;font-weight:800;color:var(--text)">${earnedIds.length}/${total} trofei${streakTxt}</div>
+            <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div>
+        </div>
+        <span style="color:var(--dim);font-size:14px;flex-shrink:0">›</span>
+    </div>`;
+}
+
+
+// ─────────────────────────────────────────────────────────────
 // renderBadgesSection — inserisce la trophy shelf nell'elemento dato
 // ─────────────────────────────────────────────────────────────
 export function renderBadgesSection(containerId, athId) {

@@ -524,6 +524,10 @@
 <div class="panel" id="p-editor">
   <div class="ph">Editor schede</div>
   <div class="ps">Costruisci e rinomina le tue sessioni liberamente — si salvano automaticamente</div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+  <button class="btn btn-p btn-sm" onclick="openTemplatesModal()"> Parti da un template</button>
+  <button class="btn btn-g btn-sm" onclick="openDuplicateModal()"> Duplica da un altro atleta</button>
+  </div>
   <div class="card" style="margin-bottom:12px">
   <div class="card-t">Atleta e contesto</div>
    
@@ -562,6 +566,7 @@
   </div>
   <div style="display:flex;justify-content:between;align-items:center;gap:10px;margin-bottom:10px">
   <div class="sess-tabs" id="ed-tabs" style="margin-bottom:0; flex:1"></div>
+  <button class="btn btn-g btn-sm" onclick="duplicateCurrentSession()"> Duplica sessione</button>
   <button class="btn btn-p btn-sm" onclick="addNewSessionToSchedule()">+ Nuova Sessione</button>
   </div>
   <div class="card" id="ed-session-details-card" style="display:none">
@@ -1458,6 +1463,30 @@
   <div class="fg"><label class="fl">Note (opzionale)</label><input type="text" id="nut-note" placeholder="es. giorno di gara"></div>
   <button class="btn btn-p" style="width:100%;margin-top:8px" onclick="saveNutritionLog()"> Salva</button>
   </div>
+</div>
+
+<!-- ── Modale Template Programmi ─────────────────────── -->
+<div class="mo" id="mo-templates">
+<div class="mo-box" style="max-width:560px">
+  <div class="mo-t">Parti da un template <button class="mo-x" onclick="closeMo('mo-templates')">✕</button></div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Applica un programma pronto all'atleta selezionato. Potrai modificare ogni esercizio, carico e progressione dopo.</div>
+  <div id="tpl-list" style="max-height:60vh;overflow-y:auto"></div>
+  <div style="display:flex;justify-content:flex-end;margin-top:6px">
+  <button class="btn btn-g" onclick="closeMo('mo-templates')">Chiudi</button>
+  </div>
+</div>
+</div>
+
+<!-- ── Modale Duplica Scheda ─────────────────────────── -->
+<div class="mo" id="mo-dup">
+<div class="mo-box" style="max-width:520px">
+  <div class="mo-t">Duplica da un altro atleta <button class="mo-x" onclick="closeMo('mo-dup')">✕</button></div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:14px">Copia l'intera scheda (sessioni ed esercizi) di un altro atleta su quello selezionato.</div>
+  <div id="dup-list" style="max-height:60vh;overflow-y:auto"></div>
+  <div style="display:flex;justify-content:flex-end;margin-top:6px">
+  <button class="btn btn-g" onclick="closeMo('mo-dup')">Chiudi</button>
+  </div>
+</div>
 </div>
 
 <!-- ── Modale Video Esercizio ────────────────────────── -->
