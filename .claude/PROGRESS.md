@@ -277,7 +277,15 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - **Duplica sessione** (`duplicateCurrentSession`): clona la seduta aperta nell'editor ("(copia)", id fresco, progression azzerata).
 - UI: riga bottoni "Parti da un template" / "Duplica da un altro atleta" in cima all'editor (max visibilità con atleta vuoto) + "Duplica sessione" vicino a "+ Nuova Sessione"; 2 modali `mo-templates`/`mo-dup` con lista+preview (livello·obiettivo·sedute·esercizi·settimane). Funzioni sul window bridge (main.js).
 - Verifica: `node --check` OK (state/app/main); test dati reali → **41/41** (6 template, 88 esercizi, tutti gli id risolti a nome+video, tutti i rir validi); smoke Playwright (coach desktop) → applica PPL su atleta vuoto = 3 tab + meso corretto + 6 esercizi con video risolti, modal template 6 card, modal duplica 5 sorgenti, duplica da Marco riempie l'editor, **0 errori console** (`11-templates-modal.png`, `12-editor-template-applied.png`, `13-editor-duplicated.png`).
-- **Non ancora deployato** — bumpare SW + `vercel --prod` quando confermi.
+- Deploy **v6.73** su Vercel + commit `8e789e1` su `main` (insieme alla gamification) — verificato live.
+
+**Verifica + fix realtime coach: sessione atleta → Storico/Attività/Calendario (2026-09-19)**
+- Segnalazione: dopo l'allenamento dell'atleta, i pannelli coach (Storico, "Attività atleti", Calendario) sembravano non aggiornarsi in automatico.
+- **Verifica end-to-end sul progetto live** (`ncvmnoaelzdmuiqrvcjl`, via Supabase MCP): (1) `sessions/messages/atleti/schedules` sono nella publication `supabase_realtime`; (2) RLS su `sessions` consente al coach la lettura (`coach_full_sessions` + policy permissiva `USING(true)` per `public`); (3) **test di consegna reale**: client anon sottoscritto a `postgres_changes` su `sessions` → INSERT di prova → evento **ricevuto**; riga di test cancellata (0 residui). Client: coach = ruolo `ADMIN` (tutti i branch attivi), `_onSessionChange` aggiorna `DB.sessions` + ri-renderizza il pannello visibile; `_athAdoptionStatus` legge `DB.sessions` live. **Conclusione: il meccanismo funziona.**
+- **Gap reale individuato**: il realtime NON ri-consegna gli eventi persi mentre la tab del coach è in background/telefono bloccato → una sessione conclusa in quel momento non compariva finché il coach non navigava/ricaricava. Nessun re-sync al ritorno.
+- **Fix** (`auth.js`): estratti `_mapSessionRow` + `_renderSessionPanels` da `_onSessionChange` (refactor senza cambi di comportamento); nuovo `_reloadSessions(role, reason)` che rilegge le sessioni da Supabase (coach: tutte; atleta: filtrate) → rimpiazza `DB.sessions` → ri-renderizza il pannello corrente (debounce 3s). Agganciato a `visibilitychange` (ritorno visibile), `online`, e alla **riconnessione** del canale realtime (`_sub` ora accetta un callback `onReconnect`, chiamato al re-SUBSCRIBED dopo un drop).
+- Verifica: `node --check` OK; query di re-sync provata su prod via anon → 46 sessioni lette; smoke Playwright **no-regression** (refactor di `_onSessionChange`) → dashboard/"Attività atleti"/storico(122 righe)/calendario renderizzano, **0 errori console**.
+- **Non ancora deployato/committato** — SW bump + `vercel --prod` + commit quando confermi.
 
 ## Prossimo passo — roadmap dalla review prodotto (2026-09-19)
 

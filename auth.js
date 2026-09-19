@@ -728,14 +728,23 @@ export function startRealtime(role) {
         return;
     }
 
-    const _sub = (name, table, handler) => {
+    const _sub = (name, table, handler, onReconnect) => {
+        let wasDown = false;
         window.mySupabase
             .channel(`rt-${name}`)
             .on('postgres_changes', { event: '*', schema: 'public', table }, handler)
             .subscribe((status, err) => {
                 console.log(`[RT] ${name}: ${status}`, err ?? '');
-                if (status === 'SUBSCRIBED') _updateRtIndicator(true);
-                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') _updateRtIndicator(false);
+                if (status === 'SUBSCRIBED') {
+                    _updateRtIndicator(true);
+                    // Riconnessione dopo un drop: il realtime NON ri-consegna gli
+                    // eventi persi → risincronizza per recuperare il gap.
+                    if (wasDown && typeof onReconnect === 'function') { wasDown = false; onReconnect(); }
+                }
+                if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                    _updateRtIndicator(false);
+                    wasDown = true;
+                }
             });
     };
 
@@ -777,11 +786,25 @@ export function startRealtime(role) {
     }
 
     // ── Postgres Changes: sessions (coach riceve sessioni atleta) ──
-    _sub('sessions',  'sessions',  payload => _onSessionChange(payload, role));
+    _sub('sessions',  'sessions',  payload => _onSessionChange(payload, role),
+         () => _reloadSessions(role, 'reconnect'));
     if (role === 'ADMIN') _sub('atleti', 'atleti', _onAtletiChange);
 
     // ── Postgres Changes: messages (messaggistica diretta) ──
     _sub('messages', 'messages', payload => _onMessageChange(payload, role));
+
+    // ── Re-sync su ritorno focus / rete online ──────────────────────
+    // Quando la tab del coach è in background (o il telefono è bloccato)
+    // Supabase chiude la connessione realtime e NON ri-consegna gli eventi
+    // persi. Al ritorno del focus / online risincronizziamo le sessioni,
+    // così Storico / Calendario / "Attività atleti" recuperano il gap.
+    if (!window._rtResyncBound) {
+        window._rtResyncBound = true;
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') _reloadSessions(window.userRole, 'focus');
+        });
+        window.addEventListener('online', () => _reloadSessions(window.userRole, 'online'));
+    }
 }
 
 function _onMessageChange(payload, role) {
@@ -897,13 +920,9 @@ function _onScheduleChange(payload, role) {
     }
 }
 
-function _onSessionChange(payload, role) {
-    console.log('[RT] session event →', payload.eventType, payload.new, payload.old);
-    const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
-    if (!row || !row.id) return;
-    if (role === 'ATLETA' && row.athlete_id !== window.mioIdLoggato) return;
-
-    const mapped = {
+// Mappa una riga Supabase `sessions` nel formato interno DB.sessions.
+function _mapSessionRow(row) {
+    return {
         id:          row.id,
         athlete:     row.athlete_id,
         date:        row.date,
@@ -925,15 +944,10 @@ function _onSessionChange(payload, role) {
         notes:       row.notes,
         reply:       row.reply
     };
+}
 
-    if (payload.eventType === 'DELETE') {
-        DB.sessions = DB.sessions.filter(s => s.id !== row.id);
-    } else {
-        const idx = DB.sessions.findIndex(s => s.id === row.id);
-        if (idx >= 0) DB.sessions[idx] = mapped;
-        else          DB.sessions.push(mapped);
-    }
-
+// Ri-renderizza il pannello sessione-dipendente attualmente visibile.
+function _renderSessionPanels() {
     if (appState.curPanel === 'dashboard' && typeof window.renderDashboard === 'function')
         window.renderDashboard();
     if (appState.curPanel === 'storico' && typeof window.renderStorico === 'function')
@@ -942,6 +956,45 @@ function _onSessionChange(payload, role) {
         window.renderAthStorico();
     if (appState.curPanel === 'calendario' && typeof window.renderCalendario === 'function')
         window.renderCalendario();
+}
+
+// Re-sync completo delle sessioni da Supabase: recupera gli eventi realtime
+// persi mentre la tab era in background. Debounce 3s contro ricariche a raffica.
+let _lastSessionResync = 0;
+async function _reloadSessions(role, reason) {
+    if (!window.mySupabase) return;
+    const now = Date.now();
+    if (now - _lastSessionResync < 3000) return;
+    _lastSessionResync = now;
+    try {
+        let q = window.mySupabase.from('sessions').select('*');
+        if (role === 'ATLETA' && window.mioIdLoggato) q = q.eq('athlete_id', window.mioIdLoggato);
+        const { data, error } = await q;
+        if (error || !data) return;
+        DB.sessions = data.map(_mapSessionRow);
+        console.log(`[RT] re-sync sessions (${reason}) → ${DB.sessions.length} righe`);
+        _renderSessionPanels();
+    } catch (e) {
+        console.warn('[RT] re-sync sessions fallito:', e);
+    }
+}
+
+function _onSessionChange(payload, role) {
+    console.log('[RT] session event →', payload.eventType, payload.new, payload.old);
+    const row = payload.eventType === 'DELETE' ? payload.old : payload.new;
+    if (!row || !row.id) return;
+    if (role === 'ATLETA' && row.athlete_id !== window.mioIdLoggato) return;
+
+    if (payload.eventType === 'DELETE') {
+        DB.sessions = DB.sessions.filter(s => s.id !== row.id);
+    } else {
+        const mapped = _mapSessionRow(row);
+        const idx = DB.sessions.findIndex(s => s.id === row.id);
+        if (idx >= 0) DB.sessions[idx] = mapped;
+        else          DB.sessions.push(mapped);
+    }
+
+    _renderSessionPanels();
 
     if (role === 'ADMIN' && payload.eventType === 'INSERT') {
         const ath  = DB.athletes.find(a => a.id === row.athlete_id);
