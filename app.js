@@ -1423,9 +1423,10 @@ function _renderInsightCard() {
   el.style.display = '';
   el.innerHTML = `
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-  <span style="font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--muted);font-family:var(--fmono);text-transform:uppercase">AI Insight — settimana</span>
+  <span style="font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--muted);font-family:var(--fmono);text-transform:uppercase">Analisi automatica — settimana</span>
   <span style="font-size:10px;font-weight:800;font-family:var(--fmono);color:${tk.c};border:1px solid ${tk.c};border-radius:4px;padding:2px 8px">${tk.t}</span>
   </div>
+  <div style="font-size:10px;color:var(--dim,#64748b);margin-bottom:12px;font-family:var(--fmono);letter-spacing:.02em">Regole di sports science · aderenza · ACWR · HRV · monotonia · infortuni</div>
   <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:12px">${escHtml(ins.headline)}</div>
   <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
   ${ins.findings.map(f => `<div style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.45;color:var(--text2,#cbd5e1)">
@@ -2422,6 +2423,12 @@ export function renderAthHome() {
   <div style="font-size:11px;color:var(--muted);">Video tutorial per ogni movimento della tua scheda</div>
   </div>
   <span style="color:var(--dim);font-size:14px;">›</span>
+  </div>
+
+  <!-- Footer: i tuoi dati sono tuoi -->
+  <div style="margin-top:22px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:18px;justify-content:center;flex-wrap:wrap">
+  <span onclick="exportMyData()" style="font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Esporta i miei dati</span>
+  <span onclick="window.open('/privacy.html','_blank')" style="font-size:11px;color:var(--muted);cursor:pointer;text-decoration:underline;text-underline-offset:2px">Privacy Policy</span>
   </div>
 
   </div>`;
@@ -4686,6 +4693,31 @@ export function exportJSON() {
   const u = URL.createObjectURL(b);
   const a = document.createElement('a'); a.href = u; a.download = 'coachOS_backup.json'; a.click();
   URL.revokeObjectURL(u); toast('Backup Esportato! ✓');
+}
+
+// exportMyData — portabilità GDPR lato atleta: esporta SOLO i dati
+// dell'atleta loggato (profilo, scheda, sessioni, wellness, nutrizione,
+// messaggi, infortuni) in un unico JSON strutturato.
+export function exportMyData() {
+  const athId = window.mioIdLoggato || appState.selAthId;
+  const ath = DB.athletes.find(a => a.id === athId);
+  if (!ath) { toast('Nessun dato da esportare.'); return; }
+  const data = {
+    esportato_il: new Date().toISOString(),
+    profilo:      ath,
+    scheda:       DB.schedules?.[athId] || null,
+    sessioni:     DB.sessions.filter(s => s.athlete === athId),
+    wellness:     DB.wellnessByAthlete?.[athId] || null,
+    nutrizione:   DB.nutrition?.[athId] || [],
+    messaggi:     DB.messages?.[athId] || [],
+    infortuni:    (DB.injuries || []).filter(i => i.athlete === athId),
+  };
+  const b = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const u = URL.createObjectURL(b);
+  const a = document.createElement('a');
+  a.href = u; a.download = `imieidati_${(ath.name || 'atleta').replace(/\s+/g, '_')}.json`; a.click();
+  URL.revokeObjectURL(u);
+  toast('I tuoi dati sono stati esportati ✓');
 }
 
 export function confirmReset() {

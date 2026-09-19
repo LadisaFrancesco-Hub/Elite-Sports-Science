@@ -118,6 +118,7 @@
   <button id="btn-admin-back" onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">Torna indietro</button>
   </div>
   </div>
+  <a href="/privacy.html" target="_blank" rel="noopener" style="font-size:11px; color:#4b5563; text-decoration:none; letter-spacing:0.05em;">Privacy Policy</a>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -417,7 +418,8 @@
   <span id="plan-badge-label" style="display:inline-block;font-size:9px;font-weight:700;padding:2px 8px;border-radius:10px;background:rgba(160,168,180,.12);color:var(--muted);letter-spacing:.08em;text-transform:uppercase;">FREE</span>
   <div id="plan-badge-sub" style="font-size:9px;color:var(--muted);margin-top:2px;display:none;">→ Passa a Pro</div>
   </div>
-  <button class="foot-btn" onclick="exportJSON()"> Backup JSON</button>
+  <button class="foot-btn" onclick="exportJSON()">Esporta i miei dati</button>
+  <button class="foot-btn" onclick="window.open('/privacy.html','_blank')">Privacy Policy</button>
   <button class="foot-btn danger" onclick="confirmReset()"> Reset dati</button>
   </div>
 </nav>

@@ -51,7 +51,7 @@ import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          saveSchedule, updatePhaseStyle, updatePredictiveACWR,
          openMesocycleArchive, archiveAndNewMeso, confirmMesoArchive,
          calcSrpe, initFB, submitFB, testPushNotification, activatePushCoach,
-         updateExpInfo, doExport, exportJSON, confirmReset,
+         updateExpInfo, doExport, exportJSON, exportMyData, confirmReset,
          showConfirm, copyCodiceAtleta, inviteAthleteWhatsApp,
          exportProgramPDF,
          renderMessaggi, sendMessageCoach,
@@ -130,7 +130,7 @@ Object.assign(window, {
     // Push
     testPushNotification, activatePushCoach,
     // Esportazione
-    updateExpInfo, doExport, exportJSON, confirmReset,
+    updateExpInfo, doExport, exportJSON, exportMyData, confirmReset,
     // Persistenza (usata da auth.js via window bridge)
     saveDB, seed, clearDemoData, replaceDB,
     // Stato condiviso (mutabile — tutti i moduli vedono la stessa reference)

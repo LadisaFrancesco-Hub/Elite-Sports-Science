@@ -285,6 +285,14 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - **Gap reale individuato**: il realtime NON ri-consegna gli eventi persi mentre la tab del coach è in background/telefono bloccato → una sessione conclusa in quel momento non compariva finché il coach non navigava/ricaricava. Nessun re-sync al ritorno.
 - **Fix** (`auth.js`): estratti `_mapSessionRow` + `_renderSessionPanels` da `_onSessionChange` (refactor senza cambi di comportamento); nuovo `_reloadSessions(role, reason)` che rilegge le sessioni da Supabase (coach: tutte; atleta: filtrate) → rimpiazza `DB.sessions` → ri-renderizza il pannello corrente (debounce 3s). Agganciato a `visibilitychange` (ritorno visibile), `online`, e alla **riconnessione** del canale realtime (`_sub` ora accetta un callback `onReconnect`, chiamato al re-SUBSCRIBED dopo un drop).
 - Verifica: `node --check` OK; query di re-sync provata su prod via anon → 46 sessioni lette; smoke Playwright **no-regression** (refactor di `_onSessionChange`) → dashboard/"Attività atleti"/storico(122 righe)/calendario renderizzano, **0 errori console**.
+- Deploy **v6.74** su Vercel + commit `83abbc9` su `main`, poi `git push origin main` (allineato a origin) — verificato live.
+
+**Fiducia minima — privacy + export dati + rinomina "AI" (2026-09-19)**
+- Blocker #4 della review (dato sanitario = categoria speciale GDPR; i coach seri chiedono policy/export/onestà prima di mettere clienti veri).
+- **Privacy policy**: `privacy.html` esisteva già ed è completa e GDPR-corretta (titolare, categorie dati inclusi wellness/salute, basi giuridiche, SCC Supabase/Vercel, conservazione, diritti, sicurezza, minori, cookie). Corretta l'unica imprecisione: "cifratura end-to-end" → "in transito (HTTPS/TLS) e a riposo" (onesto). Ora **linkata dentro l'app**: login screen, foot sidebar coach, footer home atleta (prima era solo nella landing).
+- **Export dati**: `exportJSON` (backup DB completo) rietichettato "Esporta i miei dati" nel foot coach. Nuovo `exportMyData()` lato atleta (portabilità GDPR): esporta SOLO i dati dell'atleta loggato (profilo, scheda, sessioni, wellness, nutrizione, messaggi, infortuni) in un JSON strutturato, dal footer della home. Bridge in main.js.
+- **Rinomina "AI"**: l'engine è euristico locale, non LLM. Card dashboard "AI Insight — settimana" → **"Analisi automatica — settimana"** + sottotitolo di trasparenza "Regole di sports science · aderenza · ACWR · HRV · monotonia · infortuni". (Il pannello Analytics diceva già "Insight automatici"; il PDF "Analisi del coach" — nessun altro "AI" user-facing.)
+- Verifica: `node --check` OK; nessuna stringa user-facing "AI Insight" residua; smoke Playwright → link privacy nel login, card rinominata+trasparenza (no "AI Insight"), foot coach + footer atleta con export/privacy, **`exportMyData` scaricato realmente** = JSON con solo i dati di a2 (32 sessioni, 0 leak), privacy.html HTTP 200, **0 errori console**.
 - **Non ancora deployato/committato** — SW bump + `vercel --prod` + commit quando confermi.
 
 ## Prossimo passo — roadmap dalla review prodotto (2026-09-19)
@@ -295,7 +303,7 @@ Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA). Diagn
 1. **Distribuzione + prova sociale** (non-codice): reclutare 1 coach reale come caso zero + girare un video demo 60–90s del flusso coach→atleta. Senza, i 10 beta non arrivano.
 2. **Time-to-value coach**: da zero a "atleta con scheda assegnata" in 5 min → ✅ 6 template programmi + duplica scheda da atleta + duplica sessione (fatto 2026-09-19). Resta: assegna a più atleti in blocco + import grezzo da Excel/Sheets per la migrazione.
 3. **Adozione atleta**: sessione persistente + PWA install pulita + push reminder di default + ✅ gamification accesa (fatto oggi). È il punto di rottura del modello (senza log, analytics vuote).
-4. **Fiducia minima (dato sanitario, GDPR)**: privacy policy + export dati + cancella account; rinominare "AI Insight" → "Analisi automatica" (l'engine è euristico, non LLM) e mostrare le regole/il perché.
+4. ~~**Fiducia minima (dato sanitario, GDPR)**: privacy policy + export dati + rinominare "AI Insight"~~ → ✅ fatto 2026-09-19 (privacy in-app + fix wording, export coach + `exportMyData` atleta, card "Analisi automatica" + trasparenza). Resta eventuale: cancella-account che cascata su Supabase (ora l'erasure è su richiesta via email, documentata in policy).
 
 **Nice-to-have (retention/percezione):**
 - Decidere posizionamento e **semplificare il default** (modalità base PT vs toggle "Performance/Avanzato" per gli analytics S&C).
