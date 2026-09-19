@@ -707,8 +707,9 @@ export async function loadDB() {
         }
     }
 
-    if (!DB.athletes.length) {
-        // seed è in app.js — disponibile via window bridge
+    if (!DB.athletes.length && !localStorage.getItem('coachOS_noDemo')) {
+        // seed è in app.js — disponibile via window bridge.
+        // Salta se il coach ha già rimosso i dati demo (flag coachOS_noDemo).
         if (typeof window.seed === 'function') window.seed();
     }
 }

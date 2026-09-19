@@ -30,7 +30,7 @@ import { loadLive, updateLiveTotals, toggleDot,
          toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
          openVideoModal, closeVideoModal, endWorkout } from './workout.js';
 
-import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
+import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          populateSelects, onAthChange, updateModalSessions,
          renderCoachOnboarding, renderDashboard, renderAthletes, renderStorico, renderCoachReply,
          exportAthleteReport,
@@ -38,7 +38,7 @@ import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          renderEditor, renderEdExercises, renderProg,
          getEdExercises, loadEditorForAthlete,
          getAthleteRiskScore, openNewAthleteModal, openEditAthleteModal,
-         deleteSelectedAthlete, addAthlete,
+         deleteSelectedAthlete, addAthlete, nudgeAthlete, nudgeSilent,
          editReply, saveReply, delSess, saveSess,
          addExType, openCustomTypeModal, addCircuit, addCircuitEx, removeCircuitEx,
          updateCircuitMeta, updateCircuitEx,
@@ -50,7 +50,7 @@ import { saveDB, seed, go, toggleMobileMenu, renderWeekWidget,
          openMesocycleArchive, archiveAndNewMeso, confirmMesoArchive,
          calcSrpe, initFB, submitFB, testPushNotification, activatePushCoach,
          updateExpInfo, doExport, exportJSON, confirmReset,
-         showConfirm, copyCodiceAtleta,
+         showConfirm, copyCodiceAtleta, inviteAthleteWhatsApp,
          exportProgramPDF,
          renderMessaggi, sendMessageCoach,
          renderAthleteChat, sendMessageAthleta, updateMsgBadge,
@@ -120,7 +120,7 @@ Object.assign(window, {
     openProgressionModal, saveProgressionData, applySmartMicrocycle,
     openMesocycleArchive, archiveAndNewMeso, confirmMesoArchive,
     // Modal helpers
-    showConfirm, copyCodiceAtleta,
+    showConfirm, copyCodiceAtleta, inviteAthleteWhatsApp,
     // Feedback
     calcSrpe, initFB, submitFB,
     // Push
@@ -128,13 +128,13 @@ Object.assign(window, {
     // Esportazione
     updateExpInfo, doExport, exportJSON, confirmReset,
     // Persistenza (usata da auth.js via window bridge)
-    saveDB, seed, replaceDB,
+    saveDB, seed, clearDemoData, replaceDB,
     // Stato condiviso (mutabile — tutti i moduli vedono la stessa reference)
     appState,
     // Utility (usata negli onclick inline nell'editor e nei modali)
     uid, openMo, closeMo,
     // Atleti — azioni dirette
-    addAthlete,
+    addAthlete, nudgeAthlete, nudgeSilent,
     // Render
     renderCoachOnboarding, renderDashboard, renderProg,
     renderCalendario, renderAthStorico, calPrev, calNext, calToday,

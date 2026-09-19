@@ -899,11 +899,15 @@ tr:hover td { background: #171C22; }
     align-items: center !important;
     overflow: visible !important;
   }
-  .topbar > div:last-child, #save-status, .save-txt {
-    display: inline-block !important;
+  /* Su mobile lo spazio è prezioso: tieni solo il pallino di salvataggio,
+     nascondi il testo di stato/cloud (evita l'accavallamento con l'ath-pill). */
+  .topbar > div:last-child {
+    display: inline-flex !important;
+    align-items: center !important;
     white-space: nowrap !important;
-    opacity: 1 !important;
   }
+  #save-status, .save-txt { display: none !important; }
+  .topbar[data-save-msg]::after { display: none !important; }
 
   /* 6. Hamburger menu */
   .menu-toggle {
@@ -919,11 +923,10 @@ tr:hover td { background: #171C22; }
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
   }
 
-  /* 7. Fix logo topbar */
+  /* 7. Topbar mobile: nascondi il wordmark (il box "ES" fa da logo) per
+     liberare spazio ed evitare la collisione col badge ruolo / "Salvato". */
   .logo {
-    font-size: 15px !important;
-    white-space: nowrap !important;
-    letter-spacing: 1px !important;
+    display: none !important;
   }
 
   /* 8. Rimozione stile Apple nativo sugli input */

@@ -71,7 +71,8 @@
       "Bash(npm error *)",
       "Bash(sudo chmod -R 755 /Users/ladisa/.npm/_cacache)",
       "Bash(sudo rm -rf /Users/ladisa/.npm/_cacache)",
-      "mcp__claude_ai_Vercel__import-claude-design-from-url"
+      "mcp__claude_ai_Vercel__import-claude-design-from-url",
+      "WebFetch(domain:www.youtube.com)"
     ]
   }
 }

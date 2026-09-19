@@ -51,6 +51,31 @@ export function copyCodiceAtleta() {
 }
 
 // ─────────────────────────────────────────────────────────────
+// Invito atleta via WhatsApp — canale primario dei coach IT.
+// Messaggio precompilato con codice d'accesso + link all'app;
+// wa.me senza numero: il coach sceglie il contatto in WhatsApp.
+// ─────────────────────────────────────────────────────────────
+export function buildAthleteInviteText(name, code) {
+  const firstName = (name || '').trim().split(' ')[0] || '';
+  const brand  = appState.brandName || 'CoachOS';
+  const appUrl = (typeof window !== 'undefined' && window.location) ? window.location.origin : 'https://coach-os-lime.vercel.app';
+  return `Ciao ${firstName}! 👋\n\n`
+  + `Ti ho aggiunto su ${brand}, l'app dove seguiremo insieme i tuoi allenamenti e progressi.\n\n`
+  + `Come iniziare:\n`
+  + `1) Apri ${appUrl}\n`
+  + `2) Inserisci il codice di accesso: ${code}\n`
+  + `3) Imposta la tua email e password\n\n`
+  + `Ci vediamo dentro! 💪`;
+}
+
+export function inviteAthleteWhatsApp() {
+  const ctx = window._athInvite;
+  if (!ctx || !ctx.code) { toast('Nessun invito disponibile.'); return; }
+  const url = 'https://wa.me/?text=' + encodeURIComponent(buildAthleteInviteText(ctx.name, ctx.code));
+  window.open(url, '_blank', 'noopener');
+}
+
+// ─────────────────────────────────────────────────────────────
 // PUSH — test manuale dalla sidebar coach
 // ─────────────────────────────────────────────────────────────
 export async function testPushNotification() {
@@ -127,26 +152,286 @@ export async function saveDB() {
   }, 500);
 }
 
+// ─────────────────────────────────────────────────────────────
+// SEED — dataset demo realistico (3 atleti, 8 settimane di storico).
+// Ogni entità è marcata `demo:true` così il coach può rimuoverla in
+// blocco con clearDemoData(). Popola TUTTI i pannelli: ACWR duale,
+// e1RM trend, HRV, LSI, Foster, radar, nutrizione, chat, triage.
+// ─────────────────────────────────────────────────────────────
 export async function seed() {
-  DB.athletes = [{
-  id: 'a1', name: 'Niccolò Trentin', level: 'Avanzato',
-  goal: 'Performance Atletica', freq: 4, height: 182, weight: 78, bf: 11,
-  anthropoHistory: [{ date: '2026-05-01', weight: 78, bf: 11 }],
-  notes: 'Focus decelerazione servizio tennis.'
-  }];
-  DB.schedules['a1'] = {
-  meso: 'Meso 1', phase: 'Accumulo',
-  coachNote: 'Focus sul controllo della spalla',
-  objective: 'Aumento del volume complessivo',
-  sessions: [{
-  id: 's1', name: 'Upper 1 (Forza Servizio)',
-  exercises: [
-  { name: 'Bench press bb', arm: 'Bi', wset: 2, set: 3, rep: 5, kg: 57.5, rir: 2, rest: "2'", tut: '-', note: '' },
-  { name: 'Lat machine', arm: 'Bi', wset: 1, set: 3, rep: 8, kg: 52, rir: 1, rest: "90''", tut: '-', note: '' }
-  ]
-  }]
+  const DAY = 86400000;
+  const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+  const isoAgo   = n => new Date(midnight.getTime() - n * DAY).toISOString().slice(0, 10);
+  const isoTsAgo = (n, h = 10) => new Date(midnight.getTime() - n * DAY + h * 3600000).toISOString();
+
+  // PRNG deterministico (mulberry32): dataset identico ad ogni seed.
+  let _s = 0x9e3779b9;
+  const rnd = () => {
+  _s = (_s + 0x6d2b79f5) | 0;
+  let t = Math.imul(_s ^ (_s >>> 15), 1 | _s);
+  t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+  return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+  const jit   = (base, spread) => base + (rnd() * 2 - 1) * spread;
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const pick  = arr => arr[Math.floor(rnd() * arr.length)];
+  const WEEKS = 8;
+  const phaseOf = w => w <= 3 ? 'Accumulo' : w <= 6 ? 'Intensificazione' : w === 7 ? 'Picco' : 'Scarico';
+
+  const profiles = [
+  {
+  ath: { id: 'a1', name: 'Niccolò Trentin', level: 'Avanzato', goal: 'Performance Atletica', freq: 4, height: 182, weight: 78, bf: 11 },
+  notes: 'Tennis — decelerazione e forza sul servizio.', wStart: 1.5,
+  gymDays: 3, fieldDays: 1, volBase: 9500, rpeBase: 7.4, hrvMean: 74, readyMean: 82,
+  lsiDeficit: 5, fieldSpike: false,
+  lifts: { 'Bench Press Bilanciere': [92, 104], 'Back Squat': [130, 148] },
+  gymNames: ['Upper Forza', 'Lower Forza', 'Upper Ipertrofia'],
+  fieldName: 'Campo Tennis', meso: 'Meso 3 — Forza',
+  coachNote: 'Focus sul controllo della spalla e decelerazione.', objective: 'Aumento forza sul servizio',
+  wellness: { sleep: 4, sleepHours: 7.5, stress: 2, sore: 2, motiv: 4, readinessScore: 83 },
+  injuries: [{ zone: 'shoulders', vas: 2, type: 'Tendinopatia cuffia', tissue: 'Tendine', status: 'Risolto', ago: 42 }],
+  messages: [
+  { from: 'coach',   ago: 5, content: 'Ottima settimana Niccolò, il servizio migliora. Teniamo il carico così.' },
+  { from: 'athlete', ago: 4, content: 'Grazie coach! Spalla perfetta, nessun fastidio.' },
+  ],
+  nutTarget: { kcal: 2900, proteine: 160, carboidrati: 340, grassi: 85 },
+  nutBase:   { kcal: 2840, proteine: 156, carboidrati: 330, grassi: 82 },
+  },
+  {
+  ath: { id: 'a2', name: 'Marco Bianchi', level: 'Avanzato', goal: 'Forza Massimale', freq: 4, height: 176, weight: 88, bf: 14 },
+  notes: 'Powerlifting — peak verso gara panca/squat/stacco.', wStart: -1,
+  gymDays: 4, fieldDays: 0, volBase: 14000, rpeBase: 8.0, hrvMean: 66, readyMean: 86,
+  lsiDeficit: 4, fieldSpike: false,
+  lifts: { 'Panca Piana': [140, 150], 'Squat': [182, 200], 'Stacco': [212, 232] },
+  gymNames: ['Squat Day', 'Bench Day', 'Deadlift Day', 'Accessori'],
+  fieldName: null, meso: 'Meso 3 — Peak',
+  coachNote: 'Peak forza: intensità alta, volume in calo. RIR 1 sui fondamentali.', objective: 'Massimali su panca/squat/stacco',
+  wellness: { sleep: 4, sleepHours: 7, stress: 2, sore: 3, motiv: 5, readinessScore: 88 },
+  injuries: [],
+  messages: [
+  { from: 'athlete', ago: 3, content: 'Coach, chiusi 200 di squat oggi! Filava che è una bellezza.' },
+  { from: 'coach',   ago: 3, content: 'Grande Marco, PR pulito. La prossima scarico e poi test massimali.' },
+  ],
+  nutTarget: { kcal: 3400, proteine: 190, carboidrati: 380, grassi: 100 },
+  nutBase:   { kcal: 3370, proteine: 187, carboidrati: 372, grassi: 98 },
+  },
+  {
+  ath: { id: 'a3', name: 'Elena Riva', level: 'Intermedio', goal: 'Performance Atletica', freq: 5, height: 168, weight: 61, bf: 19 },
+  notes: 'Calcio — ritorno in campo, gestione carico e ginocchio.', wStart: 0.5,
+  gymDays: 2, fieldDays: 3, volBase: 6200, rpeBase: 7.2, hrvMean: 58, readyMean: 64,
+  lsiDeficit: 18, fieldSpike: true,
+  lifts: { 'Hip Thrust': [80, 92], 'Bulgarian Split Squat': [28, 34] },
+  gymNames: ['Forza Arti Inferiori', 'Full Body'],
+  fieldName: 'Campo Calcio', meso: 'Meso 3 — Ritorno Campo',
+  coachNote: 'ATTENZIONE carico campo. Monitorare ginocchio, LSI ancora sotto soglia.', objective: 'Ritorno graduale alla performance',
+  wellness: { sleep: 2, sleepHours: 5.5, stress: 4, sore: 5, motiv: 3, readinessScore: 44 },
+  injuries: [{ zone: 'knees', vas: 6, type: 'Sovraccarico tendine rotuleo', tissue: 'Tendine', status: 'Attivo', ago: 6 }],
+  messages: [
+  { from: 'athlete', ago: 1, content: 'Coach, il ginocchio tira dopo gli scatti di ieri. Sento la gamba pesante.', unread: true },
+  ],
+  nutTarget: { kcal: 2200, proteine: 120, carboidrati: 250, grassi: 70 },
+  nutBase:   { kcal: 2040, proteine: 103, carboidrati: 236, grassi: 66 },
+  },
+  {
+  ath: { id: 'a4', name: 'Giulia Fontana', level: 'Principiante', goal: 'Ricomposizione', freq: 3, height: 165, weight: 64, bf: 24 },
+  notes: 'Fitness generale — rientro dopo pausa.', wStart: 2, activeWeeks: 6,
+  gymDays: 2, fieldDays: 1, volBase: 4200, rpeBase: 6.6, hrvMean: 62, readyMean: 70,
+  lsiDeficit: 6, fieldSpike: false,
+  lifts: { 'Leg Press 45': [110, 130], 'Chest Press': [30, 38] },
+  gymNames: ['Full Body A', 'Full Body B'],
+  fieldName: 'Cardio', meso: 'Meso 1 — Base',
+  coachNote: 'Costruzione dell\'abitudine. Priorità assoluta: costanza.', objective: 'Ricomposizione corporea',
+  wellness: { sleep: 3, sleepHours: 6.5, stress: 3, sore: 2, motiv: 2, readinessScore: 66 },
+  injuries: [],
+  messages: [
+  { from: 'coach', ago: 12, content: 'Ciao Giulia, come procede? Fammi sapere se riesci ad allenarti questa settimana.' },
+  ],
+  nutTarget: { kcal: 1900, proteine: 110, carboidrati: 200, grassi: 60 },
+  nutBase:   { kcal: 1980, proteine: 98, carboidrati: 214, grassi: 64 },
+  },
+  ];
+
+  // reset collezioni
+  DB.athletes = []; DB.sessions = []; DB.schedules = {}; DB.mesocycles = [];
+  DB.injuries = []; DB.wellnessByAthlete = {}; DB.messages = {};
+  DB.nutrition = {}; DB.nutritionTargets = {};
+
+  const mkEx = (name, set, rep, kg, rir, rest) =>
+  ({ name, arm: 'Bi', wset: 1, set, rep, kg, rir, rest, tut: '-', note: '', progression: {} });
+
+  const buildSessions = p => {
+  const L = Object.keys(p.lifts);
+  const upper = { id: 'sess_' + uid(), name: 'Upper — Spinta', sessType: 'Palestra', exercises: [
+  mkEx(L[0], 4, 5, Math.round(p.lifts[L[0]][1] * 0.82), 2, "2'30''"),
+  mkEx('Shoulder Press', 3, 8, 42, 2, "90''"),
+  mkEx('Lat Machine', 3, 10, 55, 2, "75''"),
+  ]};
+  const lower = { id: 'sess_' + uid(), name: 'Lower — Forza', sessType: 'Palestra', exercises: [
+  mkEx(L[1] || 'Back Squat', 4, 5, Math.round((p.lifts[L[1]] ? p.lifts[L[1]][1] : 140) * 0.82), 2, "3'"),
+  mkEx('Romanian Deadlift', 3, 8, 90, 2, "2'"),
+  mkEx('Leg Curl', 3, 12, 45, 1, "60''"),
+  ]};
+  const arr = [upper, lower];
+  if (p.fieldDays > 0) arr.push({ id: 'sess_' + uid(), name: p.fieldName, sessType: 'Campo', exercises: [] });
+  return arr;
+  };
+
+  profiles.forEach(p => {
+  const a = { ...p.ath, demo: true, notes: p.notes,
+  anthropoHistory: [
+  { date: isoAgo(56), weight: p.ath.weight + p.wStart, bf: p.ath.bf + 1 },
+  { date: isoAgo(7),  weight: p.ath.weight, bf: p.ath.bf },
+  ] };
+  DB.athletes.push(a);
+
+  const L = Object.keys(p.lifts);
+  const primary = L[0];
+
+  for (let w = 1; w <= (p.activeWeeks || WEEKS); w++) {
+  const weeksAgo = WEEKS - w;   // recency assoluta: WEEKS-w resta l'ancora temporale
+  const phase  = phaseOf(w);
+  const deload = phase === 'Scarico';
+  const ramp   = w / WEEKS;
+
+  // ── Sedute di PALESTRA (tonnellaggio meccanico → ACWR gym) ──
+  [6, 4, 2, 1].slice(0, p.gymDays).forEach((off, gi) => {
+  const dayN = weeksAgo * 7 + off;
+  const volMult = deload ? 0.6 : 0.8 + 0.22 * ramp;
+  const vol = Math.round(jit(p.volBase * volMult, p.volBase * 0.05));
+  const rpe = clamp(Math.round(jit(deload ? p.rpeBase - 1.3 : p.rpeBase + ramp, 0.3) * 2) / 2, 6, 9.5);
+  const dur = Math.round(jit(70, 8));
+  const e1rmPerExercise = {};
+  L.forEach(ln => {
+  const [s0, s1] = p.lifts[ln];
+  const v = s0 + (s1 - s0) * ramp - (deload ? (s1 - s0) * 0.06 : 0);
+  e1rmPerExercise[ln] = Math.round(jit(v, (s1 - s0) * 0.03) * 2) / 2;
+  });
+  const dom = e1rmPerExercise[primary];
+  DB.sessions.push({
+  id: 'sess_' + uid(), athlete: a.id, date: isoAgo(dayN),
+  session: p.gymNames[gi % p.gymNames.length], sessionType: 'Palestra',
+  week: w, phase, readiness: clamp(Math.round(jit(p.readyMean, 6)), 40, 99),
+  vol, sRPE: Math.round(rpe * dur), rpe,
+  qual: clamp(Math.round(jit(4, 0.7)), 2, 5),
+  hrv: clamp(Math.round(jit(p.hrvMean, 4)), 30, 110),
+  maxE1rm: Math.round(Math.max(...Object.values(e1rmPerExercise))),
+  e1rmDom: Math.round(dom),
+  e1rmNDom: Math.round(dom * (1 - p.lsiDeficit / 100 - rnd() * 0.02)),
+  e1rmPerExercise,
+  doms: pick(['Gambe', 'Petto', 'Schiena', 'Spalle', 'Nessuno']),
+  flag: '', notes: '', reply: '',
+  });
+  });
+
+  // ── Sedute di CAMPO (sRPE → ACWR specifico) ──
+  [5, 3, 0].slice(0, p.fieldDays).forEach(off => {
+  const dayN = weeksAgo * 7 + off;
+  const spike = p.fieldSpike && w >= 7;   // ultime 2 settimane: picco di carico
+  const rpe = clamp(Math.round(jit(spike ? 9 : p.rpeBase - 0.6, 0.3) * 2) / 2, 5, 10);
+  const dur = Math.round(jit(spike ? 100 : 62, 8));
+  DB.sessions.push({
+  id: 'sess_' + uid(), athlete: a.id, date: isoAgo(dayN),
+  session: p.fieldName, sessionType: 'Campo',
+  week: w, phase, readiness: clamp(Math.round(jit(p.readyMean - (spike ? 16 : 0), 6)), 30, 99),
+  vol: 0, sRPE: Math.round(rpe * dur), rpe,
+  qual: clamp(Math.round(jit(3.6, 0.8)), 2, 5),
+  hrv: clamp(Math.round(jit(p.hrvMean - (spike ? 11 : 0), 4)), 30, 110),
+  maxE1rm: 0, e1rmDom: 0, e1rmNDom: 0, e1rmPerExercise: {},
+  doms: pick(['Gambe', 'Polpacci', 'Nessuno']),
+  flag: spike ? 'Carico campo elevato' : '', notes: '', reply: '',
+  });
+  });
+  }
+
+  // scheda corrente
+  DB.schedules[a.id] = {
+  meso: p.meso, phase: 'Intensificazione', duration: 4,
+  coachNote: p.coachNote, objective: p.objective,
+  sessions: buildSessions(p),
+  };
+
+  // mesociclo archiviato (popola l'Archivio)
+  DB.mesocycles.push({
+  athlete: a.id, meso: 'Meso 2 — Accumulo', phase: 'Accumulo', duration: 4,
+  coachNote: 'Blocco ipertrofico di base.', objective: 'Costruzione volume',
+  archivedAt: isoTsAgo(56, 9), sessions: buildSessions(p),
+  });
+
+  // ultimo check-in wellness
+  DB.wellnessByAthlete[a.id] = {
+  ...p.wellness, cycle: 'N/A', weight: String(a.weight), bf: String(a.bf),
+  cnsScore: Math.round(jit(38, 4)),
+  };
+
+  // infortuni
+  p.injuries.forEach(inj => DB.injuries.push({
+  id: uid(), athlete: a.id, date: isoAgo(inj.ago),
+  zone: inj.zone, vas: inj.vas, type: inj.type, tissue: inj.tissue, status: inj.status,
+  }));
+
+  // messaggistica
+  DB.messages[a.id] = p.messages.map(m => ({
+  id: uid(), athlete_id: a.id, from_type: m.from, content: m.content,
+  created_at: isoTsAgo(m.ago, m.from === 'coach' ? 18 : 9),
+  read_at: m.unread ? null : isoTsAgo(m.ago, 20),
+  }));
+
+  // nutrizione (ultimi 7 giorni + target)
+  DB.nutritionTargets[a.id] = p.nutTarget;
+  DB.nutrition[a.id] = [];
+  for (let d = 6; d >= 0; d--) {
+  DB.nutrition[a.id].push({
+  athlete_id: a.id, date: isoAgo(d),
+  kcal: Math.round(jit(p.nutBase.kcal, 120)),
+  proteine: Math.round(jit(p.nutBase.proteine, 10)),
+  carboidrati: Math.round(jit(p.nutBase.carboidrati, 25)),
+  grassi: Math.round(jit(p.nutBase.grassi, 8)),
+  note: '',
+  });
+  }
+  });
+
+  DB.sessions.sort((x, y) => x.date.localeCompare(y.date));
+  if (!appState.selAthId) appState.selAthId = 'a1';
   await saveDB();
+}
+
+// ─────────────────────────────────────────────────────────────
+// clearDemoData() — rimuove in blocco tutti gli atleti demo e i
+// dati collegati, poi imposta un flag così il seed non riparte.
+// Chiamata dal banner "Rimuovi dati demo" in dashboard.
+// ─────────────────────────────────────────────────────────────
+export async function clearDemoData() {
+  const demoIds = DB.athletes.filter(a => a.demo).map(a => a.id);
+  if (!demoIds.length) { toast('Nessun dato demo da rimuovere.'); return; }
+
+  showConfirm(
+  `Rimuovere i ${demoIds.length} atleti demo e tutti i dati collegati? Potrai ripartire da zero con i tuoi atleti reali.`,
+  async () => {
+  const isDemo = id => demoIds.includes(id);
+  DB.athletes   = DB.athletes.filter(a => !a.demo);
+  DB.sessions   = DB.sessions.filter(s => !isDemo(s.athlete));
+  DB.injuries   = (DB.injuries || []).filter(i => !isDemo(i.athlete));
+  DB.mesocycles = (DB.mesocycles || []).filter(m => !isDemo(m.athlete));
+  demoIds.forEach(id => {
+  delete DB.schedules[id];
+  delete DB.wellnessByAthlete[id];
+  delete DB.messages[id];
+  delete DB.nutrition[id];
+  delete DB.nutritionTargets[id];
+  delete DB.macroPlans[id];
+  });
+  if (isDemo(appState.selAthId)) appState.selAthId = DB.athletes[0] ? DB.athletes[0].id : '';
+  try { localStorage.setItem('coachOS_noDemo', '1'); } catch (e) {}
+
+  await saveDB();
+  populateSelects();   // aggiorna dropdown atleti + badge nav (nb-ath, nb-sto, msg, reply)
+  renderAthletes();
+  go(appState.curPanel || 'dashboard');
+  toast('Dati demo rimossi. Puoi iniziare con i tuoi atleti.');
+  },
+  'Rimuovi'
+  );
 }
 
 
@@ -736,28 +1021,11 @@ export function renderDashboard() {
   statusEl.textContent = 'Inviato oggi ✓';
   }
 
-  // Atleti inattivi — calcolato sempre, indipendente dall'atleta selezionato
-  const _today = new Date(); _today.setHours(0, 0, 0, 0);
-  const _inattivi = DB.athletes.map(a => {
-  const sa = DB.sessions.filter(s => s.athlete === a.id);
-  if (!sa.length) return null;
-  const last = sa.reduce((mx, s) => s.date > mx ? s.date : mx, sa[0].date);
-  const days = Math.floor((_today - new Date(last)) / 86400000);
-  return days > 5 ? { name: a.name, days } : null;
-  }).filter(Boolean).sort((a, b) => b.days - a.days);
-  const _inattiviDiv = document.getElementById('dh-inattivi');
-  if (_inattiviDiv) {
-  if (_inattivi.length) {
-  _inattiviDiv.style.display = '';
-  _inattiviDiv.innerHTML = `<div class="card-t" style="margin-bottom:10px"> Atleti Inattivi (&gt;5 giorni)</div>` +
-  _inattivi.map(x => `<div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);">
-  <span style="color:var(--text);font-weight:600">${escHtml(x.name)}</span>
-  <span style="color:var(--amber);font-size:12px;font-weight:700">${x.days} giorni fa</span>
-  </div>`).join('');
-  } else {
-  _inattiviDiv.style.display = 'none';
-  }
-  }
+  // AI Insight settimanale — executive summary per l'atleta selezionato
+  _renderInsightCard();
+
+  // Motore di adozione — attività/logging atleti (sempre, indip. dall'atleta selezionato)
+  _renderAdoptionCard();
 
   if (!ath) return;
 
@@ -790,10 +1058,17 @@ export function renderDashboard() {
   </div>`;
   }
 
+  const demoBanner = DB.athletes.some(a => a.demo)
+  ? `<div style="background:oklch(0.24 0.04 175);border:1px solid oklch(0.40 0.06 175);color:oklch(0.84 0.10 175);padding:11px 13px;border-radius:8px;margin-bottom:16px;font-size:12.5px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+  <span><strong>Dati demo attivi</strong> — 3 atleti di esempio per esplorare l'app con dati realistici. Quando sei pronto, rimuovili e parti dai tuoi.</span>
+  <button onclick="clearDemoData()" style="background:transparent;border:1px solid oklch(0.55 0.08 175);color:oklch(0.84 0.10 175);padding:6px 12px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;">Rimuovi dati demo</button>
+  </div>`
+  : '';
+
   const alertsDiv = document.getElementById('dh-alerts');
   if (alertsDiv) {
   const combined = triageHTML + scaricoHTML + alertCaricoHTML;
-  alertsDiv.innerHTML = combined || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px 0;">Nessun alert attivo</div>';
+  alertsDiv.innerHTML = demoBanner + (combined || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px 0;">Nessun alert attivo</div>');
   }
 
   const n = sess.length;
@@ -913,6 +1188,257 @@ function _renderComplianceCard() {
   `;
 }
 
+// ─────────────────────────────────────────────────────────────
+// MOTORE DI ADOZIONE — "chi ha loggato / chi no"
+// Rende visibile al coach l'attività di logging degli atleti (il
+// fattore critico di retention): stato a 3 livelli + nudge diretto.
+// ─────────────────────────────────────────────────────────────
+export function _athAdoptionStatus(athId) {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const sa = DB.sessions.filter(s => s.athlete === athId);
+  if (!sa.length) return { tier: 'silent', days: null, label: 'Mai allenato' };
+  const last = sa.reduce((mx, s) => s.date > mx ? s.date : mx, sa[0].date);
+  const days = Math.floor((today - new Date(last)) / 86400000);
+  const tier = days <= 3 ? 'active' : days <= 7 ? 'warn' : 'silent';
+  const label = days === 0 ? 'oggi' : days === 1 ? 'ieri' : `${days} giorni fa`;
+  return { tier, days, label };
+}
+
+function _renderAdoptionCard() {
+  const el = document.getElementById('dh-inattivi');
+  if (!el) return;
+  if (!DB.athletes.length) { el.style.display = 'none'; return; }
+
+  const TIER = {
+  active: { c: 'var(--green)', t: 'Attivo' },     // --teal è arancione in questo tema; verde = --green
+  warn:   { c: 'var(--amber)', t: 'A rischio' },
+  silent: { c: 'var(--coral)', t: 'Silente' },
+  };
+  const rows = DB.athletes.map(a => ({ a, ..._athAdoptionStatus(a.id) }));
+  const rank = { silent: 0, warn: 1, active: 2 };
+  rows.sort((x, y) => rank[x.tier] - rank[y.tier] || (y.days ?? 1e9) - (x.days ?? 1e9));
+
+  const nActive = rows.filter(r => r.tier === 'active').length;
+  const nWarn   = rows.filter(r => r.tier === 'warn').length;
+  const nSilent = rows.filter(r => r.tier === 'silent').length;
+  const nNudge  = nWarn + nSilent;
+
+  el.style.display = '';
+  el.innerHTML = `
+  <div class="card-t" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <span>Attività atleti — chi ha loggato</span>
+  ${nNudge > 0 ? `<button onclick="nudgeSilent()" style="background:transparent;border:1px solid var(--amber);color:var(--amber);padding:5px 11px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fmono)">${nNudge === 1 ? 'Sollecita 1 inattivo' : `Sollecita i ${nNudge} inattivi`}</button>` : ''}
+  </div>
+  <div style="display:flex;gap:16px;margin-bottom:12px;font-size:12px;font-family:var(--fmono)">
+  <span style="color:var(--green)">● ${nActive} ${nActive === 1 ? 'attivo' : 'attivi'}</span>
+  <span style="color:var(--amber)">● ${nWarn} a rischio</span>
+  <span style="color:var(--coral)">● ${nSilent} ${nSilent === 1 ? 'silente' : 'silenti'}</span>
+  </div>
+  ${rows.map(r => {
+  const tk = TIER[r.tier];
+  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
+  <div style="display:flex;align-items:center;gap:9px;min-width:0">
+  <span style="width:8px;height:8px;border-radius:50%;background:${tk.c};flex:0 0 8px"></span>
+  <span style="color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.a.name)}</span>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;flex:0 0 auto">
+  <span style="font-size:11.5px;color:${tk.c};font-family:var(--fmono)">${tk.t} · ${r.label}</span>
+  ${r.tier !== 'active' ? `<button onclick="nudgeAthlete('${r.a.id}')" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Sollecita</button>` : ''}
+  </div>
+  </div>`;
+  }).join('')}`;
+}
+
+async function _doNudge(athId) {
+  const a = athById(athId); if (!a) return null;
+  const { days } = _athAdoptionStatus(athId);
+  const firstName = a.name.split(' ')[0];
+  const content = days === null
+  ? `Ciao ${firstName}! Pronti a iniziare? Registra il tuo primo allenamento quando vuoi 💪`
+  : `Ciao ${firstName}, non registri un allenamento da ${days} giorni. Tutto ok? Ci sei? 💪`;
+
+  const msg = { id: uid(), athlete_id: athId, from_type: 'coach', content,
+  created_at: new Date().toISOString(), read_at: new Date().toISOString() };
+  if (!DB.messages[athId]) DB.messages[athId] = [];
+  DB.messages[athId].push(msg);
+
+  try {
+  if (window.mySupabase) {
+  const { data, error } = await window.mySupabase.from('messages')
+  .insert([{ athlete_id: athId, from_type: 'coach', content }]).select().single();
+  if (!error && data) { msg.id = data.id; msg.created_at = data.created_at; }
+  }
+  } catch (e) { console.warn('[nudge] messaggio non sincronizzato:', e); }
+  _sendPushNotification('athlete', athId, ' Il coach ti cerca', content.slice(0, 80), 'coach-reply');
+  return firstName;
+}
+
+export async function nudgeAthlete(athId) {
+  const name = await _doNudge(athId);
+  if (!name) return;
+  await saveDB();
+  updateMsgBadge();
+  renderDashboard();
+  toast(`Sollecito inviato a ${name}`);
+}
+
+export async function nudgeSilent() {
+  const targets = DB.athletes.filter(a => _athAdoptionStatus(a.id).tier !== 'active');
+  if (!targets.length) { toast('Tutti gli atleti sono attivi 💪'); return; }
+  for (const a of targets) await _doNudge(a.id);
+  await saveDB();
+  updateMsgBadge();
+  renderDashboard();
+  toast(`Sollecito inviato a ${targets.length} atleti`);
+}
+
+// ─────────────────────────────────────────────────────────────
+// AI INSIGHT SETTIMANALE — engine locale euristico.
+// Sintetizza le metriche sports-science già calcolate (aderenza,
+// ACWR, monotonia di Foster, trend e1RM/HRV, readiness, LSI,
+// infortuni) in un insight coach-grade: verdetto + rilievi
+// prioritizzati + una raccomandazione concreta per la settimana.
+// Deterministico, offline, zero costi. Nessun dato lascia il device.
+// ─────────────────────────────────────────────────────────────
+export function generateWeeklyInsight(athId) {
+  const a = athById(athId);
+  if (!a) return null;
+  const DAY = 86400000;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const within = (s, loDays, hiDays) => { const d = today - new Date(s.date); return d > loDays * DAY && d <= hiDays * DAY; };
+  const sess = DB.sessions.filter(s => s.athlete === athId).slice().sort((x, y) => x.date.localeCompare(y.date));
+  const last7 = sess.filter(s => (today - new Date(s.date)) <= 7 * DAY);
+  const prev7 = sess.filter(s => within(s, 7, 14));
+  const avg = arr => arr.reduce((s, v) => s + v, 0) / arr.length;
+
+  const findings = [];
+  const push = (level, text) => findings.push({ level, text });
+
+  // — Aderenza —
+  const target = a.freq || 3;
+  const nWeek = last7.length;
+  if (nWeek === 0) {
+  const adopt = _athAdoptionStatus(athId);
+  push('bad', adopt.days === null
+  ? 'Nessun allenamento registrato: adozione ancora da avviare.'
+  : `Nessuna seduta negli ultimi 7 giorni (ultima ${adopt.label}): riaggancia l'atleta.`);
+  } else if (nWeek < Math.ceil(target * 0.6)) {
+  push('warn', `Aderenza sotto target: ${nWeek}/${target} sedute previste questa settimana.`);
+  } else {
+  push('good', `Aderenza in linea: ${nWeek}/${target} sedute completate.`);
+  }
+
+  // — Carico (ACWR duale) — solo se l'atleta si è allenato (altrimenti è stale) —
+  if (nWeek > 0) {
+  const acwr = calculateACWR(athId);
+  const fV = acwr.field.value !== 'N/A' && acwr.field.value !== null ? parseFloat(acwr.field.value) : null;
+  const gV = acwr.gym.value !== 'N/A' && acwr.gym.value !== null ? parseFloat(acwr.gym.value) : null;
+  if (fV !== null && fV > 1.5) push('bad', `Carico specifico in DANGER (ACWR campo ${fV.toFixed(2)}): picco acuto, rischio infortunio elevato.`);
+  else if (gV !== null && gV > 1.5) push('bad', `Carico meccanico in DANGER (ACWR gym ${gV.toFixed(2)}): riduci il tonnellaggio.`);
+  else if ((fV !== null && fV > 1.3) || (gV !== null && gV > 1.3)) push('warn', `Carico in aumento (ACWR ${Math.max(fV || 0, gV || 0).toFixed(2)}): monitora il recupero.`);
+  else if (gV !== null && gV >= 0.8 && gV <= 1.3) push('good', `Carico nel sweet spot (ACWR gym ${gV.toFixed(2)}).`);
+  else if (gV !== null && gV > 0 && gV < 0.8) push('warn', `Carico in calo (ACWR gym ${gV.toFixed(2)}): rischio deallenamento se prolungato.`);
+  }
+
+  // — Monotonia di Foster (finestra 7 giorni, giorni di riposo inclusi) —
+  if (nWeek >= 3) {
+  const byDay = {};
+  last7.forEach(s => { byDay[s.date] = (byDay[s.date] || 0) + (s.sRPE || 0); });
+  const arr = [];
+  for (let i = 0; i < 7; i++) arr.push(byDay[new Date(today - i * DAY).toISOString().slice(0, 10)] || 0);
+  const m = avg(arr);
+  const sd = Math.sqrt(avg(arr.map(v => (v - m) ** 2))) || 0.0001;
+  const monotony = m / sd;
+  if (monotony > 2) push('warn', `Monotonia di Foster alta (${monotony.toFixed(1)}): settimana troppo uniforme, differenzia i carichi.`);
+  }
+
+  // — Trend e1RM (7gg vs 2-3 settimane precedenti) —
+  const e1Recent = last7.filter(s => s.maxE1rm > 0).map(s => s.maxE1rm);
+  const e1Prev = sess.filter(s => within(s, 7, 21) && s.maxE1rm > 0).map(s => s.maxE1rm);
+  if (e1Recent.length && e1Prev.length) {
+  const delta = Math.max(...e1Recent) - Math.max(...e1Prev);
+  if (delta >= 1) push('good', `Forza in progressione: e1RM di picco +${delta.toFixed(1)} kg vs settimane precedenti.`);
+  else if (delta <= -2) push('warn', `e1RM di picco in calo (${delta.toFixed(1)} kg): valuta recupero o riprogramma l'intensità.`);
+  }
+
+  // — HRV (media settimanale) —
+  const hRec = last7.filter(s => s.hrv > 0).map(s => s.hrv);
+  const hPrev = prev7.filter(s => s.hrv > 0).map(s => s.hrv);
+  if (hRec.length >= 2 && hPrev.length >= 2) {
+  const dr = avg(hRec) - avg(hPrev);
+  if (dr <= -5) push('warn', `HRV in calo (${dr.toFixed(0)} ms sulla media settimanale): recupero sotto pressione.`);
+  else if (dr >= 5) push('good', `HRV in risalita (+${dr.toFixed(0)} ms): buon adattamento.`);
+  }
+
+  // — Readiness / wellness —
+  const w = (DB.wellnessByAthlete && DB.wellnessByAthlete[athId]) || {};
+  if (w.readinessScore !== undefined && w.readinessScore < 50) push('bad', `Readiness bassa (${w.readinessScore}%): priorità al recupero prima di caricare.`);
+  else if (w.sore === 5) push('warn', 'Indolenzimento massimo riferito: attenzione ai DOMS.');
+
+  // — LSI (asimmetria arti) —
+  const lsiSess = [...sess].reverse().find(s => s.e1rmDom > 0 && s.e1rmNDom > 0);
+  if (lsiSess) {
+  const deficit = Math.abs(lsiSess.e1rmDom - lsiSess.e1rmNDom) / Math.max(lsiSess.e1rmDom, lsiSess.e1rmNDom) * 100;
+  if (deficit > 15) push('bad', `Asimmetria arti ${deficit.toFixed(0)}% (red flag clinica): lavoro unilaterale sul lato debole.`);
+  else if (deficit >= 10) push('warn', `Asimmetria arti ${deficit.toFixed(0)}%: monitora, inserisci esercizi unilaterali.`);
+  }
+
+  // — Infortuni attivi —
+  const inj = (DB.injuries || []).filter(x => x.athlete === athId && x.status === 'Attivo').sort((x, y) => y.vas - x.vas)[0];
+  if (inj) push(inj.vas >= 7 ? 'bad' : 'warn', `Infortunio attivo (${inj.zone || 'n/d'}, VAS ${inj.vas}): adatta il carico ed evita gesti provocativi.`);
+
+  // — Sintesi: tono + headline —
+  const nBad = findings.filter(f => f.level === 'bad').length;
+  const nWarn = findings.filter(f => f.level === 'warn').length;
+  let tone, headline;
+  if (nBad > 0) { tone = 'bad'; headline = nBad >= 2 ? 'Settimana critica — servono aggiustamenti' : 'Attenzione — un segnale da gestire'; }
+  else if (nWarn > 0) { tone = 'warn'; headline = 'Settimana da monitorare'; }
+  else { tone = 'good'; headline = 'Settimana solida — rotta confermata'; }
+
+  return { headline, tone, findings, rec: _insightRecommendation(findings, { nWeek, target, inj }), nWeek, target };
+}
+
+function _insightRecommendation(findings, ctx) {
+  const has = kw => findings.some(f => f.text.toLowerCase().includes(kw));
+  if (has('danger') && ctx.inj) return 'Prossima settimana: −20/30% sul carico specifico, mantieni la forza in palestra a intensità moderata e rivaluta l\'infortunio prima di risalire.';
+  if (has('danger')) return 'Prossima settimana: scarico del 20% sul binario in danger, poi risalita graduale (max +10%/settimana).';
+  if (has('readiness bassa') || has('hrv in calo')) return 'Inserisci 1-2 giorni di recupero attivo e verifica sonno/stress prima di aumentare l\'intensità.';
+  if (has('asimmetria')) return 'Aggiungi 2 sedute con lavoro unilaterale sul lato debole (split squat, single-leg press) per chiudere il gap.';
+  if (has('nessuna seduta') || has('nessun allenamento') || has('aderenza sotto')) return 'Priorità adozione: un messaggio di check-in + una seduta breve “win facile” per riprendere il ritmo.';
+  if (has('monotonia')) return 'Alterna una giornata pesante e una leggera nel microciclo per abbassare la monotonia.';
+  if (ctx.nWeek >= ctx.target) return 'Mantieni la progressione: +2.5/5% sui fondamentali dove l\'RIR lo consente.';
+  return 'Prosegui sul programma pianificato: nessun aggiustamento urgente questa settimana.';
+}
+
+function _renderInsightCard() {
+  const el = document.getElementById('dh-insight');
+  if (!el) return;
+  const athId = appState.selAthId;
+  if (!athId || !athById(athId)) { el.style.display = 'none'; return; }
+  const ins = generateWeeklyInsight(athId);
+  if (!ins) { el.style.display = 'none'; return; }
+
+  const TONE = { good: { c: 'var(--green)', t: 'POSITIVO' }, warn: { c: 'var(--amber)', t: 'DA MONITORARE' }, bad: { c: 'var(--coral)', t: 'CRITICO' } };
+  const tk = TONE[ins.tone];
+  el.style.display = '';
+  el.innerHTML = `
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+  <span style="font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--muted);font-family:var(--fmono);text-transform:uppercase">AI Insight — settimana</span>
+  <span style="font-size:10px;font-weight:800;font-family:var(--fmono);color:${tk.c};border:1px solid ${tk.c};border-radius:4px;padding:2px 8px">${tk.t}</span>
+  </div>
+  <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:12px">${escHtml(ins.headline)}</div>
+  <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
+  ${ins.findings.map(f => `<div style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.45;color:var(--text2,#cbd5e1)">
+  <span style="width:6px;height:6px;border-radius:50%;background:${TONE[f.level].c};flex:0 0 6px;margin-top:6px"></span>
+  <span>${escHtml(f.text)}</span>
+  </div>`).join('')}
+  </div>
+  <div style="background:var(--s1);border-left:3px solid ${tk.c};border-radius:6px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:var(--text)">
+  <div style="color:${tk.c};font-family:var(--fmono);font-size:10.5px;letter-spacing:.05em;font-weight:800;margin-bottom:3px">RACCOMANDAZIONE</div>
+  ${escHtml(ins.rec)}
+  </div>`;
+}
+
 export function getAthleteRiskScore(athId) {
   let score = 0;
   const sess = DB.sessions.filter(s => s.athlete === athId);
@@ -987,6 +1513,12 @@ export function renderCalendario() {
   });
   html += '</tr></thead><tbody>';
 
+  if (!DB.athletes.length) {
+  html += `<tr><td colspan="8" style="padding:44px 20px;text-align:center;color:var(--muted)">
+  <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px">Calendario vuoto</div>
+  <div style="font-size:12.5px;line-height:1.5">Aggiungi un atleta per pianificare e visualizzare le sedute della settimana.</div>
+  </td></tr>`;
+  }
   DB.athletes.forEach(a => {
   const parts = a.name.trim().split(' ');
   const shortName = parts.length > 1
@@ -1047,6 +1579,16 @@ export function renderAthletes() {
   }
 
   const sorted = [...DB.athletes].sort((a, b) => getAthleteRiskScore(b.id) - getAthleteRiskScore(a.id));
+
+  if (!sorted.length) {
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:44px 20px;color:var(--muted)">
+  <div style="font-size:32px;margin-bottom:12px;opacity:.5">⊕</div>
+  <div style="font-size:15px;font-weight:800;color:var(--text);margin-bottom:6px">Ancora nessun atleta</div>
+  <div style="font-size:12.5px;line-height:1.6;max-width:280px;margin:0 auto 18px">Aggiungi il tuo primo atleta: genererai un codice d'accesso da inviare via WhatsApp e potrai iniziare a programmare.</div>
+  <button class="btn btn-p" onclick="openNewAthleteModal()">+ Aggiungi il primo atleta</button>
+  </div>`;
+  return;
+  }
 
   sorted.forEach(a => {
   const riskScore = getAthleteRiskScore(a.id);
@@ -1150,6 +1692,7 @@ export async function addAthlete() {
   document.getElementById('mac-code').textContent = codiceGenerato;
   const _cpBtn = document.getElementById('mac-copy-btn');
   if (_cpBtn) _cpBtn.textContent = 'Copia codice';
+  window._athInvite = { name, code: codiceGenerato };
   openMo('mo-ath-code');
 }
 
@@ -1355,6 +1898,9 @@ export function renderAthWeek() {
   // fallback legacy: stima rotazione
   const nextIdx = weekCount % sessions.length;
   content = `<div style="margin-top:6px;font-size:11px;color:var(--muted);font-style:italic">${escHtml(sessions[nextIdx]?.name || 'Riposo')}</div>`;
+  } else if (!sessions.length) {
+  // nessuna scheda assegnata: neutro, NON "Riposo" (non è un riposo prescritto)
+  content = `<div style="margin-top:6px;font-size:11px;color:var(--border)">—</div>`;
   } else {
   content = `<div style="margin-top:6px;font-size:11px;color:var(--border)">— Riposo</div>`;
   }
@@ -1383,6 +1929,12 @@ export function renderAthWeek() {
   }).join('')}
   </div>`;
 
+  const noSchedBanner = !sessions.length ? `
+  <div class="card" style="margin-bottom:16px;border:1px dashed var(--border);text-align:center;padding:22px 16px">
+  <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px">Scheda non ancora assegnata</div>
+  <div style="font-size:12.5px;color:var(--muted);line-height:1.5">Il coach sta preparando il tuo programma. Intanto puoi registrare il tuo <span onclick="go('wellness')" style="color:var(--teal);cursor:pointer;font-weight:700">check-in Wellness</span>.</div>
+  </div>` : '';
+
   el.innerHTML = `
   <div style="padding-bottom:100px">
   <div style="margin-bottom:16px">
@@ -1392,6 +1944,7 @@ export function renderAthWeek() {
   </div>
   </div>
 
+  ${noSchedBanner}
   ${dotBar}
 
   <div class="card" style="margin-bottom:16px;border:1px solid var(--border)">
@@ -2035,6 +2588,17 @@ export function renderStorico() {
   });
 
   const tb = document.getElementById('sto-body'); tb.innerHTML = '';
+  if (!rows.length) {
+  const hasAth = DB.athletes.length > 0;
+  tb.innerHTML = `<tr><td colspan="15" style="padding:44px 20px;text-align:center;color:var(--muted)">
+  <div style="font-size:26px;opacity:.45;margin-bottom:8px">▤</div>
+  <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px">Nessuna sessione registrata</div>
+  <div style="font-size:12.5px;line-height:1.5;max-width:340px;margin:0 auto">${hasAth ? 'Le sessioni compaiono qui quando i tuoi atleti si allenano — o aggiungile a mano con “+ Sessione”.' : 'Aggiungi il tuo primo atleta per iniziare a raccogliere le sessioni.'}</div>
+  </td></tr>`;
+  document.getElementById('sto-count').textContent = '0 sessioni';
+  updateReplyBadge();
+  return;
+  }
   rows.forEach(sess => {
   const tr = document.createElement('tr');
   tr.innerHTML = `
@@ -3785,6 +4349,34 @@ export function exportAthleteReport() {
   const wData = DB.wellnessByAthlete?.[athId];
   const wellStr = wData ? `Sonno ${wData.sleep ?? '—'}/5 · Soreness ${wData.sore ?? '—'}/5 · Readiness ${wData.readinessScore ?? '—'}` : 'Nessun dato wellness';
 
+  // ── Branding white-label: il report porta il brand del coach ──
+  const brand  = appState.brandName || 'CoachOS';
+  const accent = appState.brandColor || '#f97316';
+  const logo   = appState.brandLogoUrl
+  ? `<img src="${appState.brandLogoUrl}" alt="logo" style="height:32px;max-width:150px;object-fit:contain;margin-bottom:6px;display:block;margin-left:auto">`
+  : '';
+
+  // ── Personal Records del mese (miglior e1RM per esercizio) ──
+  const prMap = {};
+  moSess.forEach(s => Object.entries(s.e1rmPerExercise || {}).forEach(([ex, v]) => {
+  if (v > 0 && (!prMap[ex] || v > prMap[ex])) prMap[ex] = v;
+  }));
+  const prRows = Object.entries(prMap).sort((a, b) => b[1] - a[1]).slice(0, 6)
+  .map(([ex, v]) => `<tr><td style="padding:5px 8px">${escHtml(ex)}</td><td style="padding:5px 8px;text-align:right;font-weight:700">${Math.round(v)} kg</td></tr>`).join('');
+
+  // ── Composizione corporea (da anthropoHistory) ──
+  const ah = (ath.anthropoHistory || []).filter(x => x.weight);
+  let bodyStr = '';
+  if (ah.length >= 2) {
+  const first = ah[0], last = ah[ah.length - 1];
+  const dW = +(last.weight - first.weight).toFixed(1);
+  const dBf = (last.bf != null && first.bf != null) ? +(last.bf - first.bf).toFixed(1) : null;
+  bodyStr = `Peso ${last.weight} kg (${dW >= 0 ? '+' : ''}${dW} kg dall'inizio)` + (dBf !== null ? ` · BF ${last.bf}% (${dBf >= 0 ? '+' : ''}${dBf}%)` : '');
+  }
+
+  // ── AI Insight (analisi del coach) ──
+  const insight = generateWeeklyInsight(athId);
+
   // Sessioni tabella
   const sessRows = moSess.map(s => `
   <tr>
@@ -3804,12 +4396,12 @@ export function exportAthleteReport() {
   body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:24px;color:#1e293b;background:#fff;font-size:13px}
   h1{font-size:20px;font-weight:800;margin:0 0 2px}
   h2{font-size:13px;color:#64748b;font-weight:400;margin:0 0 16px}
-  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid #f97316}
-  .brand{font-size:11px;font-weight:800;color:#f97316;letter-spacing:.12em;text-transform:uppercase}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;padding-bottom:14px;border-bottom:2px solid ${accent}}
+  .brand{font-size:11px;font-weight:800;color:${accent};letter-spacing:.12em;text-transform:uppercase;text-align:right}
   .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
   .kpi{background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;padding:12px}
   .kpi-l{font-size:10px;text-transform:uppercase;color:#64748b;letter-spacing:.06em;margin-bottom:4px}
-  .kpi-v{font-size:20px;font-weight:800;color:#f97316}
+  .kpi-v{font-size:20px;font-weight:800;color:${accent}}
   .section{margin-bottom:20px}
   .section-title{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:#64748b;margin-bottom:8px;padding-bottom:4px;border-bottom:1px solid #e2e8f0}
   table{width:100%;border-collapse:collapse;font-size:12px}
@@ -3825,7 +4417,7 @@ export function exportAthleteReport() {
   <h1>${escHtml(ath.name)}</h1>
   <h2>${monthName} · ${escHtml([ath.level, ath.goal].filter(Boolean).join(' · '))}</h2>
   </div>
-  <div class="brand">CoachOS · Report Mensile</div>
+  <div>${logo}<div class="brand">${escHtml(brand)} · Report Mensile</div></div>
   </div>
 
   <div class="grid4">
@@ -3835,6 +4427,15 @@ export function exportAthleteReport() {
   <div class="kpi"><div class="kpi-l">Miglior e1RM</div><div class="kpi-v">${bestE1rm > 0 ? bestE1rm+'kg' : '—'}</div></div>
   </div>
 
+  ${insight ? `<div class="section">
+  <div class="section-title">Analisi del coach</div>
+  <div style="background:#f8fafc;border:1px solid #e2e8f0;border-left:4px solid ${accent};border-radius:8px;padding:14px 16px">
+  <div style="font-size:15px;font-weight:800;margin-bottom:8px">${escHtml(insight.headline)}</div>
+  <ul style="margin:0 0 10px;padding-left:18px;line-height:1.6">${insight.findings.map(f => `<li>${escHtml(f.text)}</li>`).join('')}</ul>
+  <div style="padding:9px 12px;background:#fff;border-radius:6px;border-left:3px solid ${accent}"><strong>Raccomandazione:</strong> ${escHtml(insight.rec)}</div>
+  </div>
+  </div>` : ''}
+
   ${sch ? `<div class="section">
   <div class="section-title">Programma in corso</div>
   <div style="background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:12px;display:flex;gap:24px">
@@ -3843,7 +4444,7 @@ export function exportAthleteReport() {
   <div><strong>Durata:</strong> ${sch.duration||4}w</div>
   ${sch.objective ? `<div><strong>Obiettivo:</strong> ${escHtml(sch.objective)}</div>` : ''}
   </div>
-  ${sch.coachNote ? `<div style="margin-top:8px;padding:8px 12px;background:#f8fafc;border-left:3px solid #f97316;font-size:12px"><strong>Note coach:</strong> ${escHtml(sch.coachNote)}</div>` : ''}
+  ${sch.coachNote ? `<div style="margin-top:8px;padding:8px 12px;background:#f8fafc;border-left:3px solid ${accent};font-size:12px"><strong>Note coach:</strong> ${escHtml(sch.coachNote)}</div>` : ''}
   </div>` : ''}
 
   ${acwrData ? `<div class="section">
@@ -3855,9 +4456,15 @@ export function exportAthleteReport() {
   </div>` : ''}
 
   <div class="section">
-  <div class="section-title">Wellness (ultimo check-in)</div>
+  <div class="section-title">Wellness & Composizione</div>
   <div>${wellStr}</div>
+  ${bodyStr ? `<div style="margin-top:6px">${bodyStr}</div>` : ''}
   </div>
+
+  ${prRows ? `<div class="section">
+  <div class="section-title">Personal Records del mese</div>
+  <table><tbody>${prRows}</tbody></table>
+  </div>` : ''}
 
   ${moSess.length ? `<div class="section">
   <div class="section-title">Sessioni del mese (${moSess.length})</div>
@@ -3870,10 +4477,10 @@ export function exportAthleteReport() {
   </div>` : ''}
 
   <div style="margin-top:32px;text-align:center;padding-top:16px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8">
-  Generato da CoachOS · ${new Date().toLocaleDateString('it-IT')}
+  Generato da ${escHtml(brand)} · ${new Date().toLocaleDateString('it-IT')}
   </div>
   <div style="margin-top:16px;text-align:center">
-  <button onclick="window.print()" style="padding:12px 32px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">
+  <button onclick="window.print()" style="padding:12px 32px;background:${accent};color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">
   Stampa / Salva PDF
   </button>
   </div>
@@ -3953,8 +4560,14 @@ export function renderMessaggi() {
   if (!thread) return;
   const msgs = (DB.messages && DB.messages[athId]) ? DB.messages[athId] : [];
 
-  if (!msgs.length) {
-  thread.innerHTML = `<div style="text-align:center;color:var(--muted);padding:30px 20px;font-size:13px">Nessun messaggio con questo atleta.</div>`;
+  if (!DB.athletes.length) {
+  thread.innerHTML = `<div style="text-align:center;color:var(--muted);padding:44px 20px">
+  <div style="font-size:26px;opacity:.45;margin-bottom:8px">◇</div>
+  <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px">Nessun atleta con cui chattare</div>
+  <div style="font-size:12.5px;line-height:1.5">Aggiungi un atleta: la chat diretta coach ↔ atleta comparirà qui.</div>
+  </div>`;
+  } else if (!msgs.length) {
+  thread.innerHTML = `<div style="text-align:center;color:var(--muted);padding:30px 20px;font-size:13px">Nessun messaggio con questo atleta.<br>Scrivi il primo per iniziare la conversazione.</div>`;
   } else {
   thread.innerHTML = msgs.map(m => {
   const isCoach = m.from_type === 'coach';
@@ -4154,7 +4767,14 @@ export function renderMacro() {
   }
 
   const athId = appState.selAthId;
-  if (!athId) return;
+  if (!athId) {
+  const g0 = document.getElementById('macro-grid');
+  if (g0) g0.innerHTML = `<div style="text-align:center;color:var(--muted);padding:44px 20px">
+  <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px">Nessun atleta selezionato</div>
+  <div style="font-size:12.5px;line-height:1.5">Aggiungi o seleziona un atleta per pianificare il macrociclo.</div>
+  </div>`;
+  return;
+  }
 
   const mp = _getMacroPlan(athId);
 

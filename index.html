@@ -204,6 +204,7 @@
   <div id="mac-code" style="font-size:30px;font-weight:800;color:var(--teal);font-family:monospace;letter-spacing:.1em"></div>
   </div>
   <div style="font-size:12px;color:var(--muted);margin-bottom:16px;line-height:1.5;text-align:left">Comunica questo codice all'atleta. Al primo accesso lo inserisce e imposta email e password definitivi.</div>
+  <button class="btn" id="mac-wa-btn" onclick="inviteAthleteWhatsApp()" style="width:100%;background:#25D366;color:#0a2e1a;font-weight:800;border:none;margin-bottom:10px">Invia invito via WhatsApp</button>
   <div style="display:flex;gap:8px;justify-content:flex-end">
   <button class="btn btn-g" onclick="closeMo('mo-ath-code')">Chiudi</button>
   <button class="btn btn-p" id="mac-copy-btn" onclick="copyCodiceAtleta()">Copia codice</button>
@@ -427,6 +428,7 @@
   <div class="ph" id="dh-title">Dashboard</div>
   <div class="ps" id="dh-sub">Vista globale</div>
   <div class="g4" id="dh-kpis"></div>
+  <div class="card" id="dh-insight" style="margin-bottom:10px;display:none"></div>
   <div class="g2">
   <div class="card"><div class="card-t">Volume — ultime 8 sessioni</div><div class="bc" id="dh-bc"></div></div>
   <div class="card"><div class="card-t">Alert automatici & Sports Science</div><div id="dh-alerts"></div></div>
