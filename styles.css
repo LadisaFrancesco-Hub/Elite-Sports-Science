@@ -360,6 +360,7 @@ body {
 .tg  { background: oklch(0.36 0.09 52);  color: var(--teal);   border: 1px solid oklch(0.44 0.09 52); }
 .ta  { background: oklch(0.26 0.06 88);  color: var(--amber);  border: 1px solid oklch(0.40 0.08 88); }
 .tc  { background: oklch(0.18 0.04 22);  color: var(--coral);  border: 1px solid oklch(0.24 0.06 22); }
+.tn  { background: rgba(255,255,255,.06); color: var(--text2);  border: 1px solid rgba(255,255,255,.14); }
 .tp  { background: var(--purple-d);      color: var(--purple); border: 1px solid rgba(139,92,246,.22); }
 .tb  { background: var(--blue-d);        color: var(--blue);   border: 1px solid rgba(59,130,246,.22); }
 
@@ -749,7 +750,7 @@ tr:hover td { background: #171C22; }
    ATHLETE CARD
    ══════════════════════════════════════════════════════════════ */
 .ac      { background: var(--s1); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: border-color .15s; box-shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 12px 26px -20px #000; }
-.ac:hover{ border-color: rgba(255,255,255,.20); }
+.ac:hover{ border-color: oklch(0.76 0.16 52 / .40); }
 .ac.sel  { border-color: var(--teal); background: var(--teal-d); }
 .ac-av   { width: 32px; height: 32px; border-radius: 7px; background: #1B2027; border: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; justify-content: center; font-family: var(--fmono); font-size: 11px; font-weight: 600; color: var(--mono-dim); margin-bottom: 8px; }
 .ac-n    { font-family: var(--fm); font-size: 13px; font-weight: 600; margin-bottom: 1px; }

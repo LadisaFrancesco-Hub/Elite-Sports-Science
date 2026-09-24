@@ -599,8 +599,8 @@ export function openMesocycleArchive() {
   }).join('');
 
   const phaseColor = {
-  'Accumulo': 'var(--teal)', 'Intensificazione': 'var(--amber)',
-  'Picco': 'var(--coral)', 'Scarico': 'var(--blue)'
+  'Accumulo': '#3b82f6', 'Intensificazione': '#f97316',
+  'Picco': '#ef4444', 'Scarico': '#22c55e'
   }[m.phase] || 'var(--muted)';
 
   return `<div style="background:var(--s1); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden;">
@@ -1650,20 +1650,6 @@ export function renderCalendario() {
 // ─────────────────────────────────────────────────────────────
 // ATLETI
 // ─────────────────────────────────────────────────────────────
-const _ATH_PALETTE = [
-  { bg:'oklch(0.36 0.09 52)', border:'oklch(0.76 0.16 52)', text:'oklch(0.76 0.16 52)' },
-  { bg:'oklch(0.26 0.06 88)', border:'oklch(0.82 0.13 88)', text:'oklch(0.82 0.13 88)' },
-  { bg:'rgba(139,92,246,.18)', border:'#8b5cf6', text:'#8b5cf6' },
-  { bg:'rgba(59,130,246,.18)', border:'#3b82f6', text:'#3b82f6' },
-  { bg:'rgba(236,72,153,.18)', border:'#ec4899', text:'#ec4899' },
-  { bg:'rgba(20,184,166,.18)', border:'#14b8a6', text:'#14b8a6' },
-];
-function _athColor(id) {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) & 0xffff;
-  return _ATH_PALETTE[h % _ATH_PALETTE.length];
-}
-
 export function renderAthletes() {
   const grid = document.getElementById('ath-grid');
   grid.innerHTML = '';
@@ -1698,19 +1684,19 @@ export function renderAthletes() {
   const borderStyle = riskScore >= 50 ? '3px solid var(--coral)' : riskScore >= 20 ? '2px solid var(--amber)' : '1px solid var(--border)';
   const sc = DB.sessions.filter(s => s.athlete === a.id).length;
   const init = a.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const col = _athColor(a.id);
+  const statoCol = riskScore > 0 ? 'var(--coral)' : 'var(--green)';
 
   const div = document.createElement('div');
   div.className = 'ac' + (a.id === appState.selAthId ? ' sel' : '');
   div.style.border = borderStyle;
   div.onclick = () => { appState.selAthId = a.id; renderAthletes(); renderDashboard(); renderStorico(); };
   div.innerHTML = `
-  <div class="ac-av" style="background:${col.bg};border-color:${col.border};color:${col.text}">${init}</div>
-  <div class="ac-n">${escHtml(a.name)} ${riskScore > 0 ? '' : ''}</div>
+  <div class="ac-av">${init}</div>
+  <div class="ac-n">${escHtml(a.name)}</div>
   <div class="ac-m">${[a.level, a.goal].filter(Boolean).map(escHtml).join(' · ')}</div>
   <div class="ac-st">
   <div class="ac-stat"><div class="ac-sv">${sc}</div><div class="ac-sl">Sess.</div></div>
-  <div class="ac-stat"><div class="ac-sv">${riskScore > 0 ? 'ALTO' : 'OK'}</div><div class="ac-sl">Stato</div></div>
+  <div class="ac-stat"><div class="ac-sv" style="color:${statoCol}">${riskScore > 0 ? 'ALTO' : 'OK'}</div><div class="ac-sl">Stato</div></div>
   </div>`;
   grid.appendChild(div);
   });
@@ -1905,7 +1891,7 @@ export function renderCoachReply() {
   return `
   <div class="card" style="margin-bottom:12px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-  <span class="tag tg">${escHtml(s.session)}</span>
+  <span class="tag tn">${escHtml(s.session)}</span>
   <span style="color:var(--muted);font-size:11px">${s.date}</span>
   </div>
   ${s.flag ? `<span style="background:rgba(239,68,68,.12);color:var(--coral);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;display:inline-block;margin-bottom:8px">${escHtml(s.flag)}</span>` : ''}
@@ -2560,7 +2546,7 @@ export function renderAthStorico() {
   if (allMesos.length <= 1) {
   timelineEl.innerHTML = '';
   } else {
-  const phaseColors = { Accumulo: 'var(--teal)', Intensificazione: 'var(--amber)', Picco: 'var(--coral)', Scarico: '#60a5fa' };
+  const phaseColors = { Accumulo: '#3b82f6', Intensificazione: '#f97316', Picco: '#ef4444', Scarico: '#22c55e' };
 
   const cards = allMesos.map((m, i) => {
   const col = phaseColors[m.phase] || 'var(--muted)';
@@ -2638,7 +2624,7 @@ export function renderAthStorico() {
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
   <div style="display:flex;align-items:center;gap:8px">
   <span style="font-size:15px">${emoji}</span>
-  <span class="tag tg" style="font-size:11px">${escHtml(s.session)}</span>
+  <span class="tag tn" style="font-size:11px">${escHtml(s.session)}</span>
   ${s.reply ? `<span style="background:rgba(20,184,166,.15);color:var(--teal);font-size:9px;font-weight:800;padding:2px 7px;border-radius:999px"></span>` : ''}
   </div>
   <span style="color:var(--muted);font-size:11px">${s.date}</span>
@@ -2715,10 +2701,10 @@ export function renderStorico() {
   const tr = document.createElement('tr');
   tr.innerHTML = `
   <td style="color:var(--muted)">${sess.date}</td>
-  <td><span class="tag tg">${sess.session}</span></td>
+  <td><span class="tag tn">${escHtml(sess.session)}</span></td>
   <td style="font-weight:700;max-width:90px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(athName(sess.athlete))}</td>
   <td style="color:var(--muted)">W${sess.week || '—'}</td>
-  <td><span class="tag tg" style="font-size:10px">${sess.phase || '—'}</span></td>
+  <td><span class="tag tn" style="font-size:10px">${escHtml(sess.phase || '—')}</span></td>
   <td style="color:var(--teal);font-weight:700">${sess.readiness || '—'}</td>
   <td>${(sess.vol || 0).toLocaleString('it-IT')}</td>
   <td style="color:var(--purple);font-weight:700">${sess.sRPE || '—'} UA</td>
@@ -5246,11 +5232,19 @@ export function renderProg() {
 // ─────────────────────────────────────────────────────────────
 const _MACRO_PHASES = ['Accumulo', 'Intensificazione', 'Picco', 'Scarico'];
 const _MACRO_COLORS = {
-  'Accumulo': 'var(--teal)',
-  'Intensificazione': 'var(--amber)',
-  'Picco': 'var(--coral)',
-  'Scarico': 'var(--blue)',
-  '': 'var(--border)'
+  'Accumulo': '#3b82f6',
+  'Intensificazione': '#f97316',
+  'Picco': '#ef4444',
+  'Scarico': '#22c55e',
+  '': 'rgba(255,255,255,.12)'
+};
+// Translucent fill per fase (var() non supporta il trucco ${c}22 → serve rgba esplicito)
+const _MACRO_FILL = {
+  'Accumulo': 'rgba(59,130,246,.28)',
+  'Intensificazione': 'rgba(249,115,22,.28)',
+  'Picco': 'rgba(239,68,68,.28)',
+  'Scarico': 'rgba(34,197,94,.22)',
+  '': 'rgba(255,255,255,.03)'
 };
 const _MACRO_SHORT = { 'Accumulo':'ACC', 'Intensificazione':'INT', 'Picco':'PIC', 'Scarico':'SCA', '':'—' };
 
@@ -5309,20 +5303,21 @@ export function renderMacro() {
 
   const weekCols = mp.plan.map(wp => {
   const c = _MACRO_COLORS[wp.phase];
+  const fill = _MACRO_FILL[wp.phase];
   const s = _MACRO_SHORT[wp.phase];
   const h = hist[wp.week];
   const done = h ? h.count : null;
   const vol = h ? (h.vol / 1000).toFixed(1) + 't' : '—';
   const hit = done !== null && done >= (wp.targetSessions || 4);
 
-  return `<div style="min-width:68px;text-align:center;padding:0 3px">
-  <div style="font-size:10px;font-weight:700;color:var(--muted);margin-bottom:5px">W${wp.week}</div>
+  return `<div style="min-width:70px;text-align:center;padding:0 3px">
   <div onclick="cycleMacroPhase(${wp.week})" title="Clicca per cambiare fase"
-  style="background:${c}22;border:2px solid ${c};border-radius:8px;
-  padding:8px 2px;cursor:pointer;margin-bottom:6px;
-  font-size:11px;font-weight:800;color:${c};
-  letter-spacing:.04em;user-select:none;transition:opacity .15s">
-  ${escHtml(s)}
+  style="background:${fill};border:1px solid ${c};border-radius:9px;
+  min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  cursor:pointer;margin-bottom:7px;user-select:none;transition:filter .15s"
+  onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter=''">
+  <div style="font-size:13px;font-weight:800;color:var(--text);letter-spacing:.02em">W${wp.week}</div>
+  <div style="font-size:9px;font-weight:800;color:${c};letter-spacing:.08em">${escHtml(s)}</div>
   </div>
   <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Target</div>
   <input type="number" min="1" max="7" value="${wp.targetSessions || 4}"

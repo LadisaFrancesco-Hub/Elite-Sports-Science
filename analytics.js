@@ -318,9 +318,9 @@ export function renderAnalytics() {
 
   // ── c) SPARK CARDS — Volume / sRPE / e1RM ───────────────
   const metrics = [
-  { key: 'vol', label: 'Volume (t)', fmt: v => (v / 1000).toFixed(2), color: 'var(--teal)' },
+  { key: 'vol', label: 'Volume (t)', fmt: v => (v / 1000).toFixed(2), color: 'var(--blue)' },
   { key: 'sRPE', label: 'Carico Interno (UA)',fmt: v => Math.round(v), color: 'var(--purple)' },
-  { key: 'maxE1rm',label: 'e1RM Max (kg)', fmt: v => Math.round(v), color: 'var(--amber)' }
+  { key: 'maxE1rm',label: 'e1RM Max (kg)', fmt: v => Math.round(v), color: 'var(--teal)' }
   ];
 
   const sw = document.getElementById('an-sparks');
