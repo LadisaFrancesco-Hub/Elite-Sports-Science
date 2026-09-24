@@ -1021,6 +1021,9 @@ export function renderDashboard() {
   statusEl.textContent = 'Inviato oggi ✓';
   }
 
+  // Cruscotto settimanale — tutti gli atleti in un colpo d'occhio (sempre)
+  _renderWeeklyCockpit();
+
   // AI Insight settimanale — executive summary per l'atleta selezionato
   _renderInsightCard();
 
@@ -1438,6 +1441,105 @@ function _renderInsightCard() {
   <div style="color:${tk.c};font-family:var(--fmono);font-size:10.5px;letter-spacing:.05em;font-weight:800;margin-bottom:3px">RACCOMANDAZIONE</div>
   ${escHtml(ins.rec)}
   </div>`;
+}
+
+// Colore semantico per un valore ACWR (alto = pericolo).
+function _acwrColor(v) {
+  if (v === null) return 'var(--dim)';
+  if (v > 1.5) return 'var(--coral)';
+  if (v > 1.3) return 'var(--amber)';
+  if (v >= 0.8) return 'var(--green)';
+  if (v > 0) return 'var(--amber)';
+  return 'var(--dim)';
+}
+
+// Cruscotto settimanale — tutti gli atleti in un colpo d'occhio.
+// Una riga per atleta: verdetto (dall'insight engine), aderenza, ACWR peggiore,
+// ultimo log, rischio, infortunio + il rilievo prioritario. Ordinati per gravità.
+// Clic sulla riga → seleziona l'atleta e aggiorna il resto della dashboard.
+function _renderWeeklyCockpit() {
+  const el = document.getElementById('dh-cockpit');
+  if (!el) return;
+  if (!DB.athletes.length) { el.style.display = 'none'; return; }
+
+  const TONE = {
+    good: { c: 'var(--green)', t: 'OK' },
+    warn: { c: 'var(--amber)', t: 'MONITORA' },
+    bad:  { c: 'var(--coral)', t: 'CRITICO' },
+  };
+
+  const rows = DB.athletes.map(a => {
+    const ins = generateWeeklyInsight(a.id) || { tone: 'good', findings: [], nWeek: 0, target: a.freq || 3, rec: '' };
+    const adopt = _athAdoptionStatus(a.id);
+    const risk = getAthleteRiskScore(a.id);
+    const acwr = calculateACWR(a.id);
+    const vals = [acwr.gym, acwr.field]
+      .map(x => (x && x.value !== 'N/A' && x.value !== null) ? parseFloat(x.value) : null)
+      .filter(v => v !== null && !isNaN(v));
+    const worst = vals.length ? vals.reduce((m, v) => (v > m ? v : m), vals[0]) : null;
+    const inj = (DB.injuries || []).some(x => x.athlete === a.id && x.status === 'Attivo');
+    const topFinding = ins.findings.find(f => f.level === 'bad') || ins.findings.find(f => f.level === 'warn') || null;
+    return { a, ins, adopt, risk, worst, inj, topFinding };
+  });
+
+  const toneRank = { bad: 0, warn: 1, good: 2 };
+  rows.sort((x, y) => toneRank[x.ins.tone] - toneRank[y.ins.tone] || y.risk - x.risk);
+
+  const nBad = rows.filter(r => r.ins.tone === 'bad').length;
+  const nWarn = rows.filter(r => r.ins.tone === 'warn').length;
+  const nGood = rows.filter(r => r.ins.tone === 'good').length;
+
+  const ADOPT = { active: 'var(--green)', warn: 'var(--amber)', silent: 'var(--coral)' };
+
+  el.style.display = '';
+  el.innerHTML = `
+  <div class="card-t" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+  <span>Cruscotto settimanale — tutti gli atleti</span>
+  <span style="font-size:10px;color:var(--dim);font-family:var(--fmono);font-weight:500;text-transform:none;letter-spacing:0">clic su un atleta per aprirlo</span>
+  </div>
+  <div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px;font-family:var(--fmono)">
+  <span style="color:var(--coral)">● ${nBad} ${nBad === 1 ? 'critico' : 'critici'}</span>
+  <span style="color:var(--amber)">● ${nWarn} da monitorare</span>
+  <span style="color:var(--green)">● ${nGood} ok</span>
+  </div>
+  ${rows.map(r => {
+    const tk = TONE[r.ins.tone];
+    const sel = appState.selAthId === r.a.id;
+    const chips = [];
+    chips.push(`<span style="color:${r.ins.nWeek >= Math.ceil(r.ins.target * 0.6) ? 'var(--muted)' : 'var(--amber)'}">Aderenza <b style="color:var(--text)">${r.ins.nWeek}/${r.ins.target}</b></span>`);
+    if (r.worst !== null) chips.push(`<span style="color:${_acwrColor(r.worst)}">ACWR <b>${r.worst.toFixed(2)}</b></span>`);
+    chips.push(`<span style="color:${ADOPT[r.adopt.tier]}">Log ${escHtml(r.adopt.label)}</span>`);
+    if (r.risk > 0) chips.push(`<span style="color:var(--coral)">Rischio <b>${r.risk}</b></span>`);
+    if (r.inj) chips.push(`<span style="color:var(--coral)">◆ Infortunio</span>`);
+    return `<div class="cockpit-row" onclick="cockpitSelectAthlete('${r.a.id}')" style="cursor:pointer;padding:10px 8px;margin:0 -8px;border-bottom:1px solid var(--border);${sel ? 'background:rgba(255,255,255,.03);box-shadow:inset 3px 0 0 ' + tk.c : ''}">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
+    <div style="display:flex;align-items:center;gap:9px;min-width:0">
+    <span style="width:9px;height:9px;border-radius:50%;background:${tk.c};flex:0 0 9px"></span>
+    <span style="color:var(--text);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.a.name)}</span>
+    </div>
+    <span style="font-size:10px;font-weight:800;font-family:var(--fmono);color:${tk.c};border:1px solid ${tk.c};border-radius:4px;padding:2px 7px;flex:0 0 auto">${tk.t}</span>
+    </div>
+    <div style="display:flex;gap:13px;flex-wrap:wrap;margin:6px 0 0 18px;font-family:var(--fmono);font-size:11px">${chips.join('')}</div>
+    ${r.topFinding ? `<div style="margin:5px 0 0 18px;font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">▸ ${escHtml(r.topFinding.text)}</div>` : ''}
+    </div>`;
+  }).join('')}`;
+}
+
+// Seleziona un atleta dal cruscotto e ri-renderizza. Setta selAthId direttamente
+// (robusto anche se il dropdown non è ancora popolato) e sincronizza selettore/editor.
+export function cockpitSelectAthlete(id) {
+  appState.selAthId = id;
+  const sel = document.getElementById('g-ath');
+  if (sel) sel.value = id;
+  const edAth = document.getElementById('ed-ath');
+  if (edAth) {
+    edAth.value = id;
+    const sch = DB.schedules[id];
+    appState.edSessId = (sch && sch.sessions && sch.sessions.length) ? sch.sessions[0].id : '';
+  }
+  go(appState.curPanel, document.querySelector('.nav-btn.on'));
+  const panel = document.getElementById('p-dashboard');
+  if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 export function getAthleteRiskScore(athId) {

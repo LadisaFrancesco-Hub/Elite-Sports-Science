@@ -310,6 +310,13 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: smoke Playwright (Chrome reale, coach console): **13/13 icone** rese a 15×15 con stroke corretto (Team/Branding a 15×15 quando il gruppo `#nav-team-group` è visibile), **icona attiva teal** confermata, **banner install** simulato (`beforeinstallprompt` → compare → "Installa" chiama `prompt()` → si nasconde), **0 errori console**. Screenshot sidebar rivisto a occhio = pulito e coerente. SW bump v6.77.
 - **Deployato** — vedi sotto.
 
+**Cruscotto settimanale coach — tutti gli atleti in un colpo d'occhio (2026-09-24)**
+- Consiglio #2 dalla review (il "wow" in demo per chi ha più atleti). Prima l'analisi settimanale era per singolo atleta selezionato; ora c'è la panoramica dell'intero roster.
+- **Nuova card `dh-cockpit`** in cima alla dashboard (dopo il sottotitolo, prima dei KPI): una riga per atleta con verdetto (dall'engine `generateWeeklyInsight`: OK / MONITORA / CRITICO), aderenza (n/target), ACWR peggiore (colore semantico), ultimo log (tier adozione), rischio (se >0), infortunio attivo + il **rilievo prioritario** (primo finding bad→warn). Righe ordinate per gravità (bad→warn→good, poi rischio desc). Header con summary "X critici · Y da monitorare · Z ok". Clic su una riga → `cockpitSelectAthlete` (setta `appState.selAthId` direttamente, sincronizza dropdown/editor, ri-renderizza la dashboard e scrolla in alto) così KPI/insight/grafici sottostanti riflettono l'atleta.
+- `_renderWeeklyCockpit` + `_acwrColor` + `cockpitSelectAthlete` in `app.js`; chiamata in `renderDashboard` prima del return anticipato (si vede anche senza atleta selezionato); riusa gli engine esistenti (`generateWeeklyInsight`, `_athAdoptionStatus`, `getAthleteRiskScore`, `calculateACWR`) → nessuna logica sports-science duplicata. Hover row + `:last-child` no-border in `styles.css`. Bridge in `main.js`.
+- Verifica: `node --check` OK; smoke Playwright sul **seed demo reale** → card visibile, **4 righe** ordinate (Elena Riva CRITICO in cima con ACWR 1.62/Rischio 160/◆Infortunio + rilievo DANGER; Giulia Fontana CRITICO con aderenza 0/3 e "18 giorni fa"; Niccolò e Marco OK in verde), summary "2 critici · 0 da monitorare · 2 ok", clic riga → title dashboard = "Elena Riva" + insight card aperta, **0 errori console**, screenshot rivisto = pulito. SW bump v6.78.
+- **Deployato** — vedi sotto.
+
 ## Prossimo passo — roadmap dalla review prodotto (2026-09-19)
 
 Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA). Diagnosi chiave: prodotto forte ma **disallineato** — analytics elite-S&C per un mercato raggiungibile (PT generalisti) che non li capisce; il collo di bottiglia è *fiducia + primo utente reale + time-to-value*, non le feature.

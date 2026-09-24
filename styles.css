@@ -248,6 +248,9 @@ body {
 .nav-btn .ico    { width: 16px; height: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
 .nav-btn .ico svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .nav-btn.on .ico { color: var(--teal); }
+.cockpit-row { transition: background .12s; }
+.cockpit-row:hover { background: rgba(255,255,255,.03); }
+.cockpit-row:last-child { border-bottom: none !important; }
 .nav-badge { margin-left: auto; background: oklch(0.18 0.04 22); color: var(--coral); font-family: var(--fmono); font-size: 9px; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
 .nav-badge-warn { margin-left: 4px; background: oklch(0.26 0.06 88); color: var(--amber); font-family: var(--fmono); font-size: 9px; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
 
