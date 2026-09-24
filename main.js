@@ -9,6 +9,7 @@ import { initApp, loadDB, startRealtime,
          setLoginLanguage, backToCodeStep, showCoachLogin,
          handleLoginStepCode, handleLoginAdmin,
          handleAthletePasswordLogin, handleAthleteFirstTimeSetup,
+         _clearLoginErr,
          toggleOtherSport, nextOnbStep, submitOnboarding,
          subscribePush, _showPushBanner, _showUpdateBanner } from './auth.js';
 
@@ -90,6 +91,7 @@ Object.assign(window, {
     setLoginLanguage, backToCodeStep, showCoachLogin,
     handleLoginStepCode, handleLoginAdmin,
     handleAthletePasswordLogin, handleAthleteFirstTimeSetup,
+    _clearLoginErr,
     toggleOtherSport, nextOnbStep, submitOnboarding,
     // Wellness
     setW, mkPips, upW, openInjuryMo, saveInjury, resolveInjury,

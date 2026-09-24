@@ -129,11 +129,24 @@ export function setLoginLanguage(lang) {
 // ─────────────────────────────────────────────────────────────
 // 5. Rate limiting
 // ─────────────────────────────────────────────────────────────
-export function _isLoginLocked() {
+// ── Errori inline sotto i campi di login ──────────────────────
+// Mostrano il messaggio nello slot dello step corrente (fallback a toast).
+function _loginErr(slotId, msg) {
+    const el = document.getElementById(slotId);
+    if (!el) { toast(msg, { type: 'error' }); return; }
+    el.textContent = msg;
+    el.classList.add('show');
+}
+export function _clearLoginErr(slotId) {
+    const el = document.getElementById(slotId);
+    if (el) { el.textContent = ''; el.classList.remove('show'); }
+}
+
+export function _isLoginLocked(errSlot) {
     const now = Date.now();
     if (loginLockUntil > now) {
         const secsLeft = Math.ceil((loginLockUntil - now) / 1000);
-        toast(`Troppi tentativi. Riprova tra ${secsLeft} secondi.`, { type: 'error', duration: 4000 });
+        _loginErr(errSlot || 'err-code', `Troppi tentativi. Riprova tra ${secsLeft} secondi.`);
         return true;
     }
     return false;
@@ -151,14 +164,15 @@ export function _registerFailedAttempt() {
 // 6. handleLoginStepCode
 // ─────────────────────────────────────────────────────────────
 export async function handleLoginStepCode() {
-    if (_isLoginLocked()) return;
+    _clearLoginErr('err-code');
+    if (_isLoginLocked('err-code')) return;
 
     // Normalize: uppercase + strip spaces (mobile autocorrect can alter case)
     const codice = document.getElementById('input-login-code').value.trim().toUpperCase().replace(/\s/g, '');
     const t      = loginTranslations[currentLoginLang];
 
-    if (!codice) { toast(t.alertEmpty, { type: 'error' }); return; }
-    if (!window.mySupabase) { toast('Connessione non disponibile. Riprova tra un momento.', { type: 'error', duration: 4000 }); return; }
+    if (!codice) { _loginErr('err-code', t.alertEmpty); return; }
+    if (!window.mySupabase) { _loginErr('err-code', 'Connessione non disponibile. Riprova tra un momento.'); return; }
 
     const btn = document.getElementById('btn-login-code');
     btn.disabled = true;
@@ -187,7 +201,7 @@ export async function handleLoginStepCode() {
 
         if (!athleteInfo) {
             _registerFailedAttempt();
-            toast(t.alertErrorCode, { type: 'error', duration: 4000 });
+            _loginErr('err-code', t.alertErrorCode);
             return;
         }
 
@@ -216,7 +230,7 @@ export async function handleLoginStepCode() {
         }
     } catch (err) {
         console.error('[login] Errore imprevisto durante il login:', err);
-        toast('Si è verificato un errore durante il login. Riprova o contatta il coach.', { type: 'error', duration: 4500 });
+        _loginErr('err-code', 'Si è verificato un errore durante il login. Riprova o contatta il coach.');
     } finally {
         btn.disabled = false;
         btn.textContent = loginTranslations[currentLoginLang].btnCode;
@@ -228,11 +242,12 @@ export async function handleLoginStepCode() {
 // 7. handleAthletePasswordLogin
 // ─────────────────────────────────────────────────────────────
 export async function handleAthletePasswordLogin() {
-    if (_isLoginLocked()) return;
+    _clearLoginErr('err-ath-pass');
+    if (_isLoginLocked('err-ath-pass')) return;
     if (!pendingAthlete) { backToCodeStep(); return; }
 
     const password = document.getElementById('input-ath-password').value;
-    if (!password) { toast('Inserisci la password.', { type: 'error' }); return; }
+    if (!password) { _loginErr('err-ath-pass', 'Inserisci la password.'); return; }
 
     const { data, error } = await window.mySupabase.auth.signInWithPassword({
         email: pendingAthlete.email,
@@ -241,7 +256,7 @@ export async function handleAthletePasswordLogin() {
 
     if (error) {
         _registerFailedAttempt();
-        toast('Password errata. Riprova.', { type: 'error', duration: 4000 });
+        _loginErr('err-ath-pass', 'Password errata. Riprova.');
         document.getElementById('input-ath-password').value = '';
         return;
     }
@@ -262,10 +277,11 @@ export async function handleAthleteFirstTimeSetup() {
     const pass    = document.getElementById('input-ath-setup-password').value;
     const confirm = document.getElementById('input-ath-setup-confirm').value;
 
-    if (!email || !pass)      { toast('Compila tutti i campi.', { type: 'error' });                    return; }
-    if (pass.length < 8)      { toast('La password deve avere almeno 8 caratteri.', { type: 'error' }); return; }
-    if (pass !== confirm)     { toast('Le password non coincidono.', { type: 'error' });                return; }
-    if (!email.includes('@')) { toast("Inserisci un'email valida.", { type: 'error' });                 return; }
+    _clearLoginErr('err-ath-setup');
+    if (!email || !pass)      { _loginErr('err-ath-setup', 'Compila tutti i campi.');                    return; }
+    if (pass.length < 8)      { _loginErr('err-ath-setup', 'La password deve avere almeno 8 caratteri.'); return; }
+    if (pass !== confirm)     { _loginErr('err-ath-setup', 'Le password non coincidono.');                return; }
+    if (!email.includes('@')) { _loginErr('err-ath-setup', "Inserisci un'email valida.");                 return; }
 
     const btn = document.querySelector('#login-step-athlete-setup button');
     if (btn) { btn.disabled = true; btn.textContent = 'Creazione account...'; }
@@ -273,7 +289,7 @@ export async function handleAthleteFirstTimeSetup() {
     try {
         const { data: signUpData, error: signUpErr } = await window.mySupabase.auth.signUp({ email, password: pass });
 
-        if (signUpErr) { toast('Errore: ' + signUpErr.message, { type: 'error', duration: 4500 }); return; }
+        if (signUpErr) { _loginErr('err-ath-setup', 'Errore: ' + signUpErr.message); return; }
 
         const userId = signUpData?.user?.id;
         if (!userId) {
@@ -288,7 +304,7 @@ export async function handleAthleteFirstTimeSetup() {
         });
 
         if (!linked) {
-            toast("Errore nel collegamento account. Il codice non corrisponde o l'account è già collegato.", { type: 'error', duration: 5000 });
+            _loginErr('err-ath-setup', "Errore nel collegamento account. Il codice non corrisponde o l'account è già collegato.");
             return;
         }
 
@@ -331,6 +347,7 @@ async function _completeAthleteLogin() {
 // 10. showCoachLogin
 // ─────────────────────────────────────────────────────────────
 export function showCoachLogin() {
+    ['err-code', 'err-admin'].forEach(_clearLoginErr);
     document.getElementById('login-step-code').style.display  = 'none';
     document.getElementById('login-step-admin').style.display = 'block';
     document.getElementById('login-card').style.borderLeft    = '4px solid #f97316';
@@ -345,11 +362,12 @@ export async function handleLoginAdmin() {
     const password = document.getElementById('input-admin-password').value.trim();
     const t        = loginTranslations[currentLoginLang];
 
-    if (!email || !password) { toast(t.alertFields, { type: 'error' }); return; }
+    _clearLoginErr('err-admin');
+    if (!email || !password) { _loginErr('err-admin', t.alertFields); return; }
 
     const { data, error } = await window.mySupabase.auth.signInWithPassword({ email, password });
 
-    if (error) { toast('Accesso negato: ' + error.message, { type: 'error', duration: 4500 }); return; }
+    if (error) { _loginErr('err-admin', 'Accesso negato: ' + error.message); return; }
 
     document.getElementById('login-screen').style.display = 'none';
     _showPushBanner(data.user.id, 'coach');
@@ -365,6 +383,8 @@ export async function handleLoginAdmin() {
 export function backToCodeStep() {
     pendingAthlete = null;
     pendingCode    = '';
+
+    ['err-code', 'err-admin', 'err-ath-pass', 'err-ath-setup'].forEach(_clearLoginErr);
 
     ['login-step-admin', 'login-step-athlete-password', 'login-step-athlete-setup']
         .forEach(id => {

@@ -719,6 +719,10 @@ tr:hover td { background: #171C22; }
 .toast-error   { background: var(--coral) !important; color: #fff !important; box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 8px 20px rgba(0,0,0,.45) !important; }
 .toast-success { background: var(--green) !important; color: #08130f !important; box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 8px 20px rgba(0,0,0,.4) !important; }
 
+/* Errore inline sotto un campo di login */
+.login-err { display: none; text-align: left; color: #fb7185; font-size: 12px; line-height: 1.4; margin: -8px 0 14px; }
+.login-err.show { display: block; }
+
 /* Update banner (service worker) */
 .sw-update-banner {
   position: fixed; top: -80px; left: 50%; transform: translateX(-50%);

@@ -325,6 +325,14 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: `node --check` OK (utils/auth/app/main); 0 `alert()` residui in tutti i .js; smoke Playwright → toast-error=coral / toast-success=verde (distinti dal base teal), errore JS non gestito → toast di sicurezza mostrato, unhandledrejection loggata, regex console-gating corretta (localhost locale, dominio prod gated), **screenshot login con toast coral "Password errata" visibile sopra l'overlay**. SW bump v6.79.
 - **Deployato** — vedi sotto.
 
+**Login: errori inline sotto il campo (2026-09-24)**
+- Rifinitura UX della schermata di login: gli errori di validazione ora appaiono **inline sotto il campo** (rosso, allineato a sinistra, sopra il bottone) invece che come toast in basso a destra — la UX standard per i form.
+- **HTML** (`index.html`): 4 slot `.login-err` (`err-code`, `err-ath-pass`, `err-ath-setup`, `err-admin`), uno per step, inseriti tra l'ultimo campo e il bottone. `oninput` su tutti i campi per pulire l'errore mentre si digita. Aggiunto anche `onkeydown` Enter sul campo password coach (mancava).
+- **CSS** (`styles.css`): `.login-err` (rose `#fb7185`, 12px, `margin:-8px 0 14px` per incastrarsi nel gap del campo) + `.login-err.show`.
+- **auth.js**: helper `_loginErr(slot, msg)` (fallback a toast se lo slot manca) e `_clearLoginErr(slot)` (esportato + bridge in `main.js` per l'`oninput` inline). `_isLoginLocked(errSlot)` ora scrive nello slot dello step corrente. Sostituiti i toast di validazione dei 4 handler con inline; **i 2 messaggi di successo restano toast** (conferma email / account creato) perché navigano subito a `backToCodeStep`. Gli errori si puliscono a inizio submit, on-input e al cambio step (`backToCodeStep`, `showCoachLogin`).
+- Verifica: `node --check` OK (auth/main); smoke Playwright → codice vuoto → `err-code` inline ("Inserisci un codice valido.") senza toast, digitando si pulisce (oninput), coach campi vuoti → `err-admin` inline ("Compila tutti i campi.") dentro la card, **screenshot conferma l'errore rosso sotto il campo sopra il bottone**, 6/6 asserzioni verdi. SW bump v6.80.
+- **Deployato** — vedi sotto.
+
 ## Prossimo passo — roadmap dalla review prodotto (2026-09-19)
 
 Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA). Diagnosi chiave: prodotto forte ma **disallineato** — analytics elite-S&C per un mercato raggiungibile (PT generalisti) che non li capisce; il collo di bottiglia è *fiducia + primo utente reale + time-to-value*, non le feature.
