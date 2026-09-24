@@ -133,7 +133,7 @@ export function _isLoginLocked() {
     const now = Date.now();
     if (loginLockUntil > now) {
         const secsLeft = Math.ceil((loginLockUntil - now) / 1000);
-        alert(`Troppi tentativi. Riprova tra ${secsLeft} secondi.`);
+        toast(`Troppi tentativi. Riprova tra ${secsLeft} secondi.`, { type: 'error', duration: 4000 });
         return true;
     }
     return false;
@@ -157,8 +157,8 @@ export async function handleLoginStepCode() {
     const codice = document.getElementById('input-login-code').value.trim().toUpperCase().replace(/\s/g, '');
     const t      = loginTranslations[currentLoginLang];
 
-    if (!codice) { alert(t.alertEmpty); return; }
-    if (!window.mySupabase) { alert('Connessione non disponibile. Riprova tra un momento.'); return; }
+    if (!codice) { toast(t.alertEmpty, { type: 'error' }); return; }
+    if (!window.mySupabase) { toast('Connessione non disponibile. Riprova tra un momento.', { type: 'error', duration: 4000 }); return; }
 
     const btn = document.getElementById('btn-login-code');
     btn.disabled = true;
@@ -187,7 +187,7 @@ export async function handleLoginStepCode() {
 
         if (!athleteInfo) {
             _registerFailedAttempt();
-            alert(t.alertErrorCode);
+            toast(t.alertErrorCode, { type: 'error', duration: 4000 });
             return;
         }
 
@@ -216,7 +216,7 @@ export async function handleLoginStepCode() {
         }
     } catch (err) {
         console.error('[login] Errore imprevisto durante il login:', err);
-        alert('Si è verificato un errore durante il login. Riprova o contatta il coach.');
+        toast('Si è verificato un errore durante il login. Riprova o contatta il coach.', { type: 'error', duration: 4500 });
     } finally {
         btn.disabled = false;
         btn.textContent = loginTranslations[currentLoginLang].btnCode;
@@ -232,7 +232,7 @@ export async function handleAthletePasswordLogin() {
     if (!pendingAthlete) { backToCodeStep(); return; }
 
     const password = document.getElementById('input-ath-password').value;
-    if (!password) { alert('Inserisci la password.'); return; }
+    if (!password) { toast('Inserisci la password.', { type: 'error' }); return; }
 
     const { data, error } = await window.mySupabase.auth.signInWithPassword({
         email: pendingAthlete.email,
@@ -241,7 +241,7 @@ export async function handleAthletePasswordLogin() {
 
     if (error) {
         _registerFailedAttempt();
-        alert('Password errata. Riprova.');
+        toast('Password errata. Riprova.', { type: 'error', duration: 4000 });
         document.getElementById('input-ath-password').value = '';
         return;
     }
@@ -262,10 +262,10 @@ export async function handleAthleteFirstTimeSetup() {
     const pass    = document.getElementById('input-ath-setup-password').value;
     const confirm = document.getElementById('input-ath-setup-confirm').value;
 
-    if (!email || !pass)      { alert('Compila tutti i campi.');                    return; }
-    if (pass.length < 8)      { alert('La password deve avere almeno 8 caratteri.'); return; }
-    if (pass !== confirm)     { alert('Le password non coincidono.');                return; }
-    if (!email.includes('@')) { alert("Inserisci un'email valida.");                 return; }
+    if (!email || !pass)      { toast('Compila tutti i campi.', { type: 'error' });                    return; }
+    if (pass.length < 8)      { toast('La password deve avere almeno 8 caratteri.', { type: 'error' }); return; }
+    if (pass !== confirm)     { toast('Le password non coincidono.', { type: 'error' });                return; }
+    if (!email.includes('@')) { toast("Inserisci un'email valida.", { type: 'error' });                 return; }
 
     const btn = document.querySelector('#login-step-athlete-setup button');
     if (btn) { btn.disabled = true; btn.textContent = 'Creazione account...'; }
@@ -273,11 +273,11 @@ export async function handleAthleteFirstTimeSetup() {
     try {
         const { data: signUpData, error: signUpErr } = await window.mySupabase.auth.signUp({ email, password: pass });
 
-        if (signUpErr) { alert('Errore: ' + signUpErr.message); return; }
+        if (signUpErr) { toast('Errore: ' + signUpErr.message, { type: 'error', duration: 4500 }); return; }
 
         const userId = signUpData?.user?.id;
         if (!userId) {
-            alert("Controlla la tua email per confermare l'account, poi accedi con email e password.");
+            toast("Controlla l'email per confermare l'account, poi accedi.", { type: 'success', duration: 7000 });
             backToCodeStep();
             return;
         }
@@ -288,13 +288,13 @@ export async function handleAthleteFirstTimeSetup() {
         });
 
         if (!linked) {
-            alert("Errore nel collegamento account. Il codice non corrisponde o l'account è già collegato.");
+            toast("Errore nel collegamento account. Il codice non corrisponde o l'account è già collegato.", { type: 'error', duration: 5000 });
             return;
         }
 
         const { error: signInErr } = await window.mySupabase.auth.signInWithPassword({ email, password: pass });
         if (signInErr) {
-            alert('Account creato! Accedi ora con email e password.');
+            toast('Account creato! Ora accedi con email e password.', { type: 'success', duration: 6000 });
             backToCodeStep();
             return;
         }
@@ -345,11 +345,11 @@ export async function handleLoginAdmin() {
     const password = document.getElementById('input-admin-password').value.trim();
     const t        = loginTranslations[currentLoginLang];
 
-    if (!email || !password) { alert(t.alertFields); return; }
+    if (!email || !password) { toast(t.alertFields, { type: 'error' }); return; }
 
     const { data, error } = await window.mySupabase.auth.signInWithPassword({ email, password });
 
-    if (error) { alert('Accesso negato: ' + error.message); return; }
+    if (error) { toast('Accesso negato: ' + error.message, { type: 'error', duration: 4500 }); return; }
 
     document.getElementById('login-screen').style.display = 'none';
     _showPushBanner(data.user.id, 'coach');

@@ -29,11 +29,18 @@ export function athById(id) {
 // ─────────────────────────────────────────────────────────────
 // DOM HELPERS
 // ─────────────────────────────────────────────────────────────
-export function toast(msg) {
+// Toast non bloccante. Retrocompatibile: toast('msg') resta valido.
+// opts.type: 'error' | 'success' (colore) · opts.duration: ms (default 2500).
+export function toast(msg, opts = {}) {
     const t = document.getElementById('toast');
+    if (!t) return;
     t.textContent = msg;
+    t.classList.remove('toast-error', 'toast-success');
+    if (opts.type === 'error') t.classList.add('toast-error');
+    else if (opts.type === 'success') t.classList.add('toast-success');
     t.classList.add('show');
-    setTimeout(() => t.classList.remove('show'), 2500);
+    clearTimeout(t._hideTimer);   // evita che un timer precedente nasconda un toast più recente
+    t._hideTimer = setTimeout(() => t.classList.remove('show'), opts.duration || 2500);
 }
 
 export function openMo(id)  { document.getElementById(id).classList.add('show'); }

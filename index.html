@@ -38,6 +38,47 @@
   });
 })();
 </script>
+<script>
+// Silenzia i console.log/debug in produzione: riducono il rumore ed evitano di
+// stampare dati degli atleti in console (i canali realtime dumpano i payload).
+// warn/error restano visibili. Riattivabile con localStorage.ess_debug='1'.
+(function(){
+  var isLocal = /^(localhost$|127\.|192\.168\.|\[?::1)/.test(location.hostname);
+  if (!isLocal && !localStorage.getItem('ess_debug')) {
+    console.log = function(){};
+    console.debug = function(){};
+  }
+})();
+</script>
+<script>
+// Rete di sicurezza globale: evita la "schermata bianca" muta. Un errore JS non
+// gestito o una promise rifiutata mostrano un toast gentile (throttled 15s) e
+// vengono comunque loggati (console.error resta attivo anche in produzione).
+(function(){
+  var lastNotify = 0;
+  function notify(){
+    var now = Date.now();
+    if (now - lastNotify < 15000) return;
+    lastNotify = now;
+    var t = document.getElementById('toast');
+    if (!t) return;
+    t.textContent = 'Qualcosa non ha risposto. Se noti problemi, ricarica la pagina.';
+    t.classList.remove('toast-success');
+    t.classList.add('toast-error', 'show');
+    clearTimeout(t._hideTimer);
+    t._hideTimer = setTimeout(function(){ t.classList.remove('show'); }, 5000);
+  }
+  window.addEventListener('error', function(e){
+    if (!e || !e.message) return;   // ignora errori di caricamento risorse (img/script)
+    console.error('[global error]', e.message, (e.filename || '') + ':' + (e.lineno || ''));
+    notify();
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    console.error('[unhandled rejection]', (e && e.reason) || e);
+    notify();
+  });
+})();
+</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
