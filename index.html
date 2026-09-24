@@ -22,6 +22,22 @@
   }
 })();
 </script>
+<script>
+// Cattura l'evento di installabilità PWA il prima possibile (può scattare
+// prima che i moduli ES vengano caricati). La UI lo consuma dopo il boot.
+(function(){
+  window._deferredInstallPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault();
+    window._deferredInstallPrompt = e;
+    window.dispatchEvent(new Event('pwa-installable'));
+  });
+  window.addEventListener('appinstalled', function(){
+    window._deferredInstallPrompt = null;
+    window.dispatchEvent(new Event('pwa-installed'));
+  });
+})();
+</script>
 <link rel="manifest" href="manifest.json">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
@@ -388,30 +404,47 @@
   </div>
 </header>
 
+<!-- Sprite icone sidebar (monoline, stroke ereditato da currentColor via CSS) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <symbol id="ic-dash" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="ic-ath" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.8"/><path d="M4.5 20.5v-1a6 6 0 0 1 6-6h3a6 6 0 0 1 6 6v1"/></symbol>
+  <symbol id="ic-hist" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.2 2"/></symbol>
+  <symbol id="ic-msg" viewBox="0 0 24 24"><path d="M21 14.5a2 2 0 0 1-2 2H8l-4 4V5.5a2 2 0 0 1 2-2h13a2 2 0 0 1 2 2z"/></symbol>
+  <symbol id="ic-cal" viewBox="0 0 24 24"><rect x="3" y="4.5" width="18" height="16.5" rx="2"/><path d="M3 9.5h18M8 2.5v4M16 2.5v4"/></symbol>
+  <symbol id="ic-edit" viewBox="0 0 24 24"><path d="M12 4.5H5.5a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2h13a2 2 0 0 0 2-2V13"/><path d="M18.4 3.1a2 2 0 0 1 2.8 2.8L12 15l-3.8 1 1-3.8z"/></symbol>
+  <symbol id="ic-macro" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5z"/><path d="m3 13 9 5 9-5"/></symbol>
+  <symbol id="ic-lib" viewBox="0 0 24 24"><path d="M2.5 4.5h6a3 3 0 0 1 3 3v13a2.5 2.5 0 0 0-2.5-2.5h-6.5z"/><path d="M21.5 4.5h-6a3 3 0 0 0-3 3v13a2.5 2.5 0 0 1 2.5-2.5h6.5z"/></symbol>
+  <symbol id="ic-analytics" viewBox="0 0 24 24"><path d="M3.5 20.5h17"/><path d="M7 20.5V11M12 20.5V4M17 20.5v-6"/></symbol>
+  <symbol id="ic-prog" viewBox="0 0 24 24"><path d="M3 16.5 9 10.5l4 4 7.5-7.5"/><path d="M15 6.5h5.5V12"/></symbol>
+  <symbol id="ic-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8"/><path d="M9 12h0M12 12h0M15 12h0M9 16h0M12 16h0M15 16h0"/></symbol>
+  <symbol id="ic-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.3"/><path d="M2.8 20v-.8a5 5 0 0 1 5-5H10"/><path d="M15.5 5.2a3.3 3.3 0 0 1 0 6.2"/><path d="M14.5 14.2h.5a5 5 0 0 1 5 5v.8"/></symbol>
+  <symbol id="ic-brand" viewBox="0 0 24 24"><path d="M12 3s6.2 5.6 6.2 10.2A6.2 6.2 0 0 1 5.8 13.2C5.8 8.6 12 3 12 3z"/></symbol>
+</svg>
+
 <nav class="sidebar">
   <div class="nav-group">
   <span class="nav-lbl">Coach</span>
-  <button class="nav-btn on" onclick="go('dashboard',this)"><span class="ico"></span>Dashboard</button>
-  <button class="nav-btn" onclick="go('athletes',this)"><span class="ico"></span>Atleti <span class="nav-badge" id="nb-ath">0</span></button>
-  <button class="nav-btn" onclick="go('storico',this)"><span class="ico"></span>Storico <span class="nav-badge" id="nb-sto">0</span><span class="nav-badge-warn" id="nb-reply" style="display:none">0</span></button>
-  <button class="nav-btn" onclick="go('messaggi',this)"><span class="ico"></span>Messaggi <span class="nav-badge" id="nb-msg" style="display:none">0</span></button>
-  <button class="nav-btn" onclick="go('calendario',this)"><span class="ico"></span>Calendario</button>
-  <button class="nav-btn" onclick="go('editor',this)"><span class="ico"></span>Editor schede</button>
-  <button class="nav-btn" onclick="go('macro',this)"><span class="ico"></span>Macro Periodiz.</button>
-  <button class="nav-btn" onclick="go('libreria',this)"><span class="ico"></span>Libreria Esercizi</button>
+  <button class="nav-btn on" onclick="go('dashboard',this)"><span class="ico"><svg><use href="#ic-dash"/></svg></span>Dashboard</button>
+  <button class="nav-btn" onclick="go('athletes',this)"><span class="ico"><svg><use href="#ic-ath"/></svg></span>Atleti <span class="nav-badge" id="nb-ath">0</span></button>
+  <button class="nav-btn" onclick="go('storico',this)"><span class="ico"><svg><use href="#ic-hist"/></svg></span>Storico <span class="nav-badge" id="nb-sto">0</span><span class="nav-badge-warn" id="nb-reply" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="go('messaggi',this)"><span class="ico"><svg><use href="#ic-msg"/></svg></span>Messaggi <span class="nav-badge" id="nb-msg" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="go('calendario',this)"><span class="ico"><svg><use href="#ic-cal"/></svg></span>Calendario</button>
+  <button class="nav-btn" onclick="go('editor',this)"><span class="ico"><svg><use href="#ic-edit"/></svg></span>Editor schede</button>
+  <button class="nav-btn" onclick="go('macro',this)"><span class="ico"><svg><use href="#ic-macro"/></svg></span>Macro Periodiz.</button>
+  <button class="nav-btn" onclick="go('libreria',this)"><span class="ico"><svg><use href="#ic-lib"/></svg></span>Libreria Esercizi</button>
   </div>
   <!-- [RIMOSSO dalla sidebar coach] Wellness, Sessione, Feedback coach sono pannelli atleta.
   Accessibili dall'atleta via bottom bar. Il coach accede al feedback atleta da Storico e Messaggi. -->
   <div class="nav-group">
   <span class="nav-lbl">Analisi</span>
-  <button class="nav-btn" onclick="go('analytics',this)"><span class="ico"></span>Analytics</button>
-  <button class="nav-btn" onclick="go('progressione',this)"><span class="ico"></span>Progressione</button>
-  <button class="nav-btn" onclick="go('calcolatori',this)"><span class="ico"></span>Calcolatori S&C</button>
+  <button class="nav-btn" onclick="go('analytics',this)"><span class="ico"><svg><use href="#ic-analytics"/></svg></span>Analytics</button>
+  <button class="nav-btn" onclick="go('progressione',this)"><span class="ico"><svg><use href="#ic-prog"/></svg></span>Progressione</button>
+  <button class="nav-btn" onclick="go('calcolatori',this)"><span class="ico"><svg><use href="#ic-calc"/></svg></span>Calcolatori S&C</button>
   </div>
   <div class="nav-group" id="nav-team-group" style="display:none">
   <span class="nav-lbl">Team</span>
-  <button class="nav-btn" onclick="go('team',this)"><span class="ico"></span>Team & Coach</button>
-  <button class="nav-btn" onclick="go('branding',this)"><span class="ico"></span>Branding</button>
+  <button class="nav-btn" onclick="go('team',this)"><span class="ico"><svg><use href="#ic-team"/></svg></span>Team & Coach</button>
+  <button class="nav-btn" onclick="go('branding',this)"><span class="ico"><svg><use href="#ic-brand"/></svg></span>Branding</button>
   </div>
   <div class="sidebar-foot">
   <div id="plan-badge-wrap" style="text-align:center;padding:6px 0 4px;cursor:pointer;" onclick="window._showUpgradeModal && window._showUpgradeModal()">
@@ -1546,6 +1579,39 @@
   </div>
 </div>
 
+<!-- ── Banner installa PWA (Android/desktop, via beforeinstallprompt) ── -->
+<div id="pwa-install-banner" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(74px + env(safe-area-inset-bottom));z-index:9998;max-width:360px;width:calc(100% - 28px);background:linear-gradient(145deg,#161A20,#12161B);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.5);padding:11px 13px;align-items:center;gap:11px">
+  <div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(145deg,oklch(0.72 0.16 52),oklch(0.56 0.15 40));display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Mono',monospace;color:#120A04;flex-shrink:0">ES</div>
+  <div style="flex:1;min-width:0">
+  <div style="font-size:13px;font-weight:700;color:var(--text)">Installa l'app</div>
+  <div style="font-size:11px;color:var(--muted);margin-top:1px">Accesso rapido dalla schermata Home</div>
+  </div>
+  <button class="btn btn-p btn-sm" onclick="window._pwaInstall && window._pwaInstall()">Installa</button>
+  <button onclick="window._pwaDismiss && window._pwaDismiss()" aria-label="Chiudi" style="background:none;border:none;color:var(--dim);font-size:16px;line-height:1;cursor:pointer;padding:2px 4px;flex-shrink:0">✕</button>
+</div>
+<script>
+(function(){
+  var banner = document.getElementById('pwa-install-banner');
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+  function show(){
+    if (!banner || standalone) return;
+    if (sessionStorage.getItem('pwa_dismissed')) return;
+    if (!window._deferredInstallPrompt) return;
+    banner.style.display = 'flex';
+  }
+  function hide(){ if (banner) banner.style.display = 'none'; }
+  window._pwaInstall = function(){
+    var p = window._deferredInstallPrompt;
+    if (!p) { hide(); return; }
+    p.prompt();
+    p.userChoice.then(function(){ window._deferredInstallPrompt = null; hide(); });
+  };
+  window._pwaDismiss = function(){ sessionStorage.setItem('pwa_dismissed','1'); hide(); };
+  window.addEventListener('pwa-installable', show);
+  window.addEventListener('pwa-installed', hide);
+  if (window._deferredInstallPrompt) show();   // evento già scattato prima di questo script
+})();
+</script>
 <script type="module" src="main.js"></script>
 </body>
 </html>

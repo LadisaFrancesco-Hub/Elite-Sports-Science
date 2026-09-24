@@ -303,6 +303,13 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: `node --check` OK (app/main); sandbox del **codice reale** → `_cloneSchedule` 11/11 + split/replace/append 12/12 (replace = solo seduta scelta con meta sorgente + id fresco + progressione azzerata; append = accoda preservando id/progressioni esistenti e meta del destinatario; append senza scheda = crea dalla sorgente; sorgente sempre intatta). `showConfirm` usa `textContent` → nomi safe.
 - **Non ancora deployato/committato** — SW bump + `vercel --prod` + commit quando confermi.
 
+**Qualità percepita — icone sidebar coach + install PWA (2026-09-24)**
+- Consiglio #1 dalla review su richiesta utente. Due interventi piccoli e a rischio basso sulla percezione di qualità e l'adozione.
+- **Icone sidebar** (`index.html` + `styles.css`): le 13 voci nav avevano `<span class="ico"></span>` **vuoti** ma larghi 16px (gutter vuoto = aspetto non finito). Aggiunto uno **sprite SVG** (`<symbol>` monoline, viewBox 24) referenziato via `<use href="#ic-…">` in ogni voce (dash/grid, user, clock, message, calendar, edit, layers, book-open, bar-chart, trending-up, calculator, users, droplet). CSS `.nav-btn .ico svg`: stroke `currentColor` (eredita il colore della voce, 1.7px, round) → default `--dim`, hover/active `--text`; `.nav-btn.on .ico` in `--teal` (icona attiva coordinata col bordo sinistro teal). Zero dipendenze, ~15 righe di sprite.
+- **Install PWA** (`index.html`): prima non c'era alcun install prompt per Android/desktop (solo guida iOS per le notifiche). Aggiunto capture di `beforeinstallprompt` in `<head>` (registrato prestissimo, salva `window._deferredInstallPrompt` + emette `pwa-installable`) e un **banner** in-app (pill fissa sopra la bottom bar atleta): "Installa l'app" + bottone che chiama `prompt()` e `✕` che silenzia per la sessione (`sessionStorage`). Nascosto se già in standalone o su `appinstalled`.
+- Verifica: smoke Playwright (Chrome reale, coach console): **13/13 icone** rese a 15×15 con stroke corretto (Team/Branding a 15×15 quando il gruppo `#nav-team-group` è visibile), **icona attiva teal** confermata, **banner install** simulato (`beforeinstallprompt` → compare → "Installa" chiama `prompt()` → si nasconde), **0 errori console**. Screenshot sidebar rivisto a occhio = pulito e coerente. SW bump v6.77.
+- **Deployato** — vedi sotto.
+
 ## Prossimo passo — roadmap dalla review prodotto (2026-09-19)
 
 Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA). Diagnosi chiave: prodotto forte ma **disallineato** — analytics elite-S&C per un mercato raggiungibile (PT generalisti) che non li capisce; il collo di bottiglia è *fiducia + primo utente reale + time-to-value*, non le feature.

@@ -245,7 +245,9 @@ body {
 .nav-btn { display: flex; align-items: center; gap: 9px; padding: 7px 9px; border-radius: var(--radius-btn); width: 100%; border: none; background: none; color: var(--dim); font-family: var(--fm); font-size: 12.5px; font-weight: 500; cursor: pointer; text-align: left; transition: background .12s, color .12s; position: relative; }
 .nav-btn:hover   { background: #171C22; color: var(--text); }
 .nav-btn.on      { background: rgba(255,255,255,.03); color: var(--text); box-shadow: inset 3px 0 0 var(--teal); }
-.nav-btn .ico    { font-size: 14px; width: 16px; text-align: center; flex-shrink: 0; }
+.nav-btn .ico    { width: 16px; height: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }
+.nav-btn .ico svg { width: 15px; height: 15px; display: block; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.nav-btn.on .ico { color: var(--teal); }
 .nav-badge { margin-left: auto; background: oklch(0.18 0.04 22); color: var(--coral); font-family: var(--fmono); font-size: 9px; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
 .nav-badge-warn { margin-left: 4px; background: oklch(0.26 0.06 88); color: var(--amber); font-family: var(--fmono); font-size: 9px; padding: 2px 6px; border-radius: 20px; font-weight: 600; }
 
