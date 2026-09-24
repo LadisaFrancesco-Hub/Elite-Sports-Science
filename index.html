@@ -529,6 +529,7 @@
   <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
   <button class="btn btn-p btn-sm" onclick="openTemplatesModal()"> Parti da un template</button>
   <button class="btn btn-g btn-sm" onclick="openDuplicateModal()"> Duplica da un altro atleta</button>
+  <button class="btn btn-g btn-sm" onclick="openCopyToModal()"> Copia scheda su altri atleti</button>
   </div>
   <div class="card" style="margin-bottom:12px">
   <div class="card-t">Atleta e contesto</div>
@@ -1487,6 +1488,43 @@
   <div id="dup-list" style="max-height:60vh;overflow-y:auto"></div>
   <div style="display:flex;justify-content:flex-end;margin-top:6px">
   <button class="btn btn-g" onclick="closeMo('mo-dup')">Chiudi</button>
+  </div>
+</div>
+</div>
+
+<!-- ── Modale Copia Scheda su più atleti ─────────────── -->
+<div class="mo" id="mo-copyto">
+<div class="mo-box" style="max-width:540px">
+  <div class="mo-t">Copia scheda su altri atleti <button class="mo-x" onclick="closeMo('mo-copyto')">✕</button></div>
+  <div id="copyto-src" style="font-size:12px;color:var(--muted);margin-bottom:12px;line-height:1.5"></div>
+
+  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px;font-family:var(--fmono)">1 · Cosa copiare (sedute)</div>
+  <div id="copyto-sessions" style="max-height:26vh;overflow-y:auto;margin-bottom:14px"></div>
+
+  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:7px;font-family:var(--fmono)">2 · Come incollarla</div>
+  <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:14px">
+  <label style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--text);cursor:pointer">
+  <input type="radio" name="copyto-mode" value="replace" checked style="accent-color:var(--teal);margin-top:2px">
+  <span>Sostituisci la scheda <span style="color:var(--dim)">— rimpiazza il programma dell'atleta con le sedute scelte</span></span>
+  </label>
+  <label style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--text);cursor:pointer">
+  <input type="radio" name="copyto-mode" value="append" style="accent-color:var(--teal);margin-top:2px">
+  <span>Aggiungi le sedute <span style="color:var(--dim)">— accoda le sedute scelte alla scheda esistente (es. una giornata Push in più)</span></span>
+  </label>
+  </div>
+
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;font-family:var(--fmono)">3 · Su chi</div>
+  <div style="display:flex;gap:12px">
+  <a onclick="toggleAllCopyTargets(true)" style="font-size:11px;color:var(--teal);cursor:pointer;font-family:var(--fmono)">Tutti</a>
+  <a onclick="toggleAllCopyTargets(false)" style="font-size:11px;color:var(--dim);cursor:pointer;font-family:var(--fmono)">Nessuno</a>
+  </div>
+  </div>
+  <div id="copyto-list" style="max-height:34vh;overflow-y:auto"></div>
+
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
+  <button class="btn btn-g" onclick="closeMo('mo-copyto')">Annulla</button>
+  <button class="btn btn-p" id="copyto-btn" onclick="copyScheduleToTargets()">Incolla</button>
   </div>
 </div>
 </div>

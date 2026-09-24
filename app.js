@@ -3619,6 +3619,32 @@ export function openDuplicateModal() {
   openMo('mo-dup');
 }
 
+// Meta della scheda (tutto tranne le sessioni) — usata per ricostruire una
+// scheda destinazione partendo dalla sorgente.
+function _scheduleMeta(src) {
+  return {
+    meso: src.meso, phase: src.phase, duration: src.duration || 4,
+    coachNote: src.coachNote || '', objective: src.objective || '',
+    scheduledDays: [...(src.scheduledDays || [])],
+  };
+}
+
+// Deep-clone di un array di sessioni con id freschi e progressioni azzerate
+// (le progressioni sono dati live legati all'atleta di origine).
+function _cloneSessions(sessions) {
+  return (sessions || []).map(s => {
+    const clone = JSON.parse(JSON.stringify(s));
+    clone.id = uid();
+    (clone.exercises || []).forEach(ex => { ex.progression = {}; });
+    return clone;
+  });
+}
+
+// Deep-clone dell'intera scheda (meta + tutte le sessioni).
+function _cloneSchedule(src) {
+  return { ..._scheduleMeta(src), sessions: _cloneSessions(src.sessions) };
+}
+
 // Copia l'intera scheda di un atleta di origine su quello selezionato.
 export async function duplicateScheduleFrom(srcAthId) {
   const destId = appState.selAthId;
@@ -3626,18 +3652,7 @@ export async function duplicateScheduleFrom(srcAthId) {
   if (!src || !destId || srcAthId === destId) { toast('Atleta di origine non valido'); return; }
 
   const doCopy = async () => {
-    DB.schedules[destId] = {
-      meso: src.meso, phase: src.phase, duration: src.duration || 4,
-      coachNote: src.coachNote || '', objective: src.objective || '',
-      scheduledDays: [...(src.scheduledDays || [])],
-      sessions: (src.sessions || []).map(s => {
-        const clone = JSON.parse(JSON.stringify(s));
-        clone.id = uid();
-        // Azzera le progressioni: sono dati live legati all'atleta di origine
-        (clone.exercises || []).forEach(ex => { ex.progression = {}; });
-        return clone;
-      }),
-    };
+    DB.schedules[destId] = _cloneSchedule(src);
     appState.edSessId = DB.schedules[destId].sessions[0]?.id;
     closeMo('mo-dup');
     renderEditor();
@@ -3670,6 +3685,196 @@ export async function duplicateCurrentSession() {
   renderEditor();
   await saveSchedule();
   toast('Sessione duplicata ✓');
+}
+
+// Sincronizza su Supabase la scheda di un atleta arbitrario (non quello aperto
+// nell'editor): usata dalla copia in blocco. Legge da DB.schedules[athId],
+// non dal DOM. Rispecchia l'upsert di saveSchedule (progressioni remote
+// preservate, sessioni obsolete rimosse). Se non c'è Supabase esce senza errori
+// (la copia locale è già in DB).
+async function _pushScheduleToCloud(athId) {
+  const sch = DB.schedules[athId];
+  if (!sch || !sch.sessions || !window.mySupabase) return;
+
+  const { data: currentRows } = await window.mySupabase
+    .from('schedules').select('id, exercises').eq('athlete_id', athId);
+  const remoteIds = new Set((currentRows || []).map(r => r.id));
+  const localIds = new Set(sch.sessions.map(s => s.id));
+
+  const supabaseProgs = {};
+  (currentRows || []).forEach(row => {
+    supabaseProgs[row.id] = {};
+    (row.exercises || []).forEach(ex => {
+      if (ex.name && ex.progression) supabaseProgs[row.id][ex.name] = ex.progression;
+    });
+  });
+
+  const rows = sch.sessions.map(s => {
+    const sessionProgs = supabaseProgs[s.id] || {};
+    const exercises = s.exercises.map(ex => {
+      if (!ex.progression && ex.name && sessionProgs[ex.name]) return { ...ex, progression: sessionProgs[ex.name] };
+      return ex;
+    });
+    return {
+      id: s.id, athlete_id: athId, session_name: s.name,
+      meso: sch.meso, duration: sch.duration, phase: sch.phase,
+      coach_note: sch.coachNote, objective: sch.objective, exercises
+    };
+  });
+
+  const { error: upsertErr } = await window.mySupabase
+    .from('schedules').upsert(rows, { onConflict: 'id' });
+  if (upsertErr) throw upsertErr;
+
+  const idsToDelete = [...remoteIds].filter(id => !localIds.has(id));
+  if (idsToDelete.length > 0) {
+    const { error: delErr } = await window.mySupabase.from('schedules').delete().in('id', idsToDelete);
+    if (delErr) console.warn('[copySchedule] Rimozione sessioni obsolete fallita:', delErr);
+  }
+
+  if (window._rtBroadcast) {
+    await window._rtBroadcast.send({ type: 'broadcast', event: 'schedule_updated', payload: { athlete_id: athId } });
+  }
+  _sendPushNotification('athlete', athId, ' Nuova Scheda', 'Il tuo coach ha aggiornato il tuo programma di allenamento', 'sessione');
+}
+
+// Apre il modal "Copia scheda su altri atleti" (push verso 1+ atleti).
+// Sorgente = l'atleta aperto nell'editor. Il coach può copiare l'intera scheda
+// o solo alcune sedute (split, es. la sola giornata Push), scegliendo se
+// sostituire la scheda di destinazione o aggiungere le sedute a quella esistente.
+export function openCopyToModal() {
+  const srcId = document.getElementById('ed-ath')?.value || appState.selAthId;
+  const src = DB.schedules[srcId];
+  const hasContent = src && (src.sessions || []).some(s => (s.exercises || []).length > 0);
+  if (!hasContent) { toast('Apri prima un atleta con una scheda da copiare'); return; }
+
+  const srcName = DB.athletes.find(a => a.id === srcId)?.name || 'atleta';
+  const srcEl = document.getElementById('copyto-src');
+  if (srcEl) srcEl.innerHTML = `Sorgente: <b style="color:var(--text)">${escHtml(srcName)}</b> — <span style="font-family:var(--fmono)">${escHtml(src.meso || 'scheda')}</span>`;
+
+  // Sedute (split) copiabili — solo quelle con almeno un esercizio, tutte spuntate di default.
+  const sessEl = document.getElementById('copyto-sessions');
+  if (sessEl) {
+    sessEl.innerHTML = src.sessions.map((s, i) => {
+      const nEx = (s.exercises || []).length;
+      const disabled = nEx === 0;
+      return `<label style="display:flex;align-items:center;gap:9px;padding:8px 11px;border:1px solid var(--border);border-radius:8px;margin-bottom:6px;background:var(--s1);cursor:${disabled ? 'not-allowed' : 'pointer'};opacity:${disabled ? '.45' : '1'}">
+        <input type="checkbox" class="copyto-sess" value="${escHtml(s.id)}" ${disabled ? 'disabled' : 'checked'} onchange="refreshCopyToBtn()" style="accent-color:var(--teal);width:15px;height:15px">
+        <div style="min-width:0;flex:1">
+          <div style="font-size:12.5px;font-weight:700;color:var(--text)">${escHtml(s.name || ('Seduta ' + (i + 1)))}</div>
+          <div style="font-size:10px;color:var(--dim);font-family:var(--fmono)">${escHtml(s.sessType || 'Palestra')} · ${nEx} eserciz${nEx === 1 ? 'io' : 'i'}</div>
+        </div>
+      </label>`;
+    }).join('');
+  }
+
+  // Destinazioni.
+  const targets = DB.athletes.filter(a => a.id !== srcId);
+  const listEl = document.getElementById('copyto-list');
+  if (listEl) {
+    listEl.innerHTML = targets.length ? targets.map(a => {
+      const t = DB.schedules[a.id];
+      const tHas = t && (t.sessions || []).some(s => (s.exercises || []).length > 0);
+      return `<label style="display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:10px;padding:11px 14px;margin-bottom:8px;background:var(--s1);cursor:pointer">
+        <input type="checkbox" class="copyto-cb" value="${a.id}" onchange="refreshCopyToBtn()" style="accent-color:var(--teal);width:16px;height:16px">
+        <div style="min-width:0;flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--text)">${escHtml(a.name)}</div>
+          ${tHas
+            ? `<div style="font-size:10px;color:var(--coral);margin-top:2px;font-family:var(--fmono)">ha già una scheda (${(t.sessions || []).filter(s => (s.exercises || []).length > 0).length} sedute)</div>`
+            : `<div style="font-size:10px;color:var(--dim);margin-top:2px;font-family:var(--fmono)">nessuna scheda</div>`}
+        </div>
+      </label>`;
+    }).join('') : '<div style="text-align:center;color:var(--muted);font-size:13px;padding:20px 0">Non ci sono altri atleti su cui incollare la scheda.</div>';
+  }
+
+  // Reset modalità → Sostituisci.
+  const rr = document.querySelector('input[name="copyto-mode"][value="replace"]');
+  if (rr) rr.checked = true;
+
+  window._copyToSrcId = srcId;
+  refreshCopyToBtn();
+  openMo('mo-copyto');
+}
+
+// Seleziona / deseleziona tutte le destinazioni.
+export function toggleAllCopyTargets(check) {
+  document.querySelectorAll('#copyto-list .copyto-cb').forEach(cb => { cb.checked = check; });
+  refreshCopyToBtn();
+}
+
+// Aggiorna l'etichetta/stato del bottone in base a sedute e atleti selezionati.
+export function refreshCopyToBtn() {
+  const nSess = document.querySelectorAll('#copyto-sessions .copyto-sess:checked').length;
+  const nAth = document.querySelectorAll('#copyto-list .copyto-cb:checked').length;
+  const btn = document.getElementById('copyto-btn');
+  if (!btn) return;
+  btn.disabled = !nSess || !nAth;
+  btn.textContent = (nSess && nAth)
+    ? `Incolla ${nSess} sedut${nSess > 1 ? 'e' : 'a'} su ${nAth} atlet${nAth > 1 ? 'i' : 'a'}`
+    : 'Incolla';
+}
+
+// Incolla le sedute selezionate sugli atleti selezionati.
+// Modalità "replace": la scheda destinazione viene sostituita (meta della sorgente
+// + sedute scelte). Modalità "append": le sedute scelte vengono aggiunte alla
+// scheda esistente (o ne creano una nuova se l'atleta non ne ha).
+export async function copyScheduleToTargets() {
+  const srcId = window._copyToSrcId;
+  const src = DB.schedules[srcId];
+  if (!src) { toast('Scheda di origine non valida'); return; }
+
+  const sessIds = [...document.querySelectorAll('#copyto-sessions .copyto-sess:checked')].map(cb => cb.value);
+  const selSessions = src.sessions.filter(s => sessIds.includes(s.id));
+  if (!selSessions.length) { toast('Seleziona almeno una seduta da copiare'); return; }
+
+  const ids = [...document.querySelectorAll('#copyto-list .copyto-cb:checked')].map(cb => cb.value);
+  if (!ids.length) { toast('Seleziona almeno un atleta'); return; }
+
+  const mode = document.querySelector('input[name="copyto-mode"]:checked')?.value || 'replace';
+
+  const doCopy = async () => {
+    closeMo('mo-copyto');
+    let ok = 0;
+    for (const id of ids) {
+      const t = DB.schedules[id];
+      const tHasContent = t && (t.sessions || []).some(s => (s.exercises || []).length > 0);
+      if (mode === 'append' && tHasContent) {
+        t.sessions = [...t.sessions, ..._cloneSessions(selSessions)];
+      } else {
+        // replace, oppure append su atleta senza scheda → crea dalla sorgente
+        DB.schedules[id] = { ..._scheduleMeta(src), sessions: _cloneSessions(selSessions) };
+      }
+      try { await _pushScheduleToCloud(id); ok++; }
+      catch (e) { console.error('[copyScheduleToTargets] sync fallita per', id, e); }
+    }
+    await saveDB();
+
+    // Se ho copiato sull'atleta aperto nell'editor, ri-renderizzalo.
+    const openAth = document.getElementById('ed-ath')?.value;
+    if (openAth && ids.includes(openAth) && DB.schedules[openAth]) {
+      appState.edSessId = DB.schedules[openAth].sessions[0]?.id;
+      renderEditor();
+    }
+
+    const nS = selSessions.length, nA = ids.length;
+    const verb = mode === 'append' ? 'aggiunte' : 'copiate';
+    if (ok < nA) toast(`${nS} sedut${nS > 1 ? 'e' : 'a'} ${verb} su ${nA} atlet${nA > 1 ? 'i' : 'a'} (in locale) — ${nA - ok} non sincronizzat${nA - ok > 1 ? 'i' : 'o'}`);
+    else toast(`${nS} sedut${nS > 1 ? 'e' : 'a'} ${verb} su ${nA} atlet${nA > 1 ? 'i' : 'a'} ✓`);
+  };
+
+  // Conferma solo in "replace" quando esistono schede da sovrascrivere.
+  if (mode === 'replace') {
+    const overwrite = ids.filter(id => {
+      const t = DB.schedules[id];
+      return t && (t.sessions || []).some(s => (s.exercises || []).length > 0);
+    });
+    if (overwrite.length) {
+      const names = overwrite.map(id => DB.athletes.find(a => a.id === id)?.name || '').filter(Boolean).join(', ');
+      showConfirm(`${overwrite.length} atlet${overwrite.length > 1 ? 'i hanno' : 'a ha'} già una scheda (${names}) che verrà sostituita. Procedere?`, doCopy, 'Sostituisci');
+      return;
+    }
+  }
+  await doCopy();
 }
 
 
