@@ -169,8 +169,9 @@ export function upW() {
     const tSt = ['', 'Rilassato', 'Lieve', 'Moderato', 'Alto', 'Estremo'];
     const tSo = ['', 'Nessun dolore', 'Lieve fastidio', 'Gestibile', 'Acuti', 'Limitanti'];
     const tMo = ['', 'Assente', 'Bassa', 'Normale', 'Alta', 'Focus Totale'];
-    const cG  = ['', 'var(--coral)', 'var(--amber)', 'var(--amber)', 'var(--teal)', 'var(--teal)'];  // good-high
-    const cB  = ['', 'var(--teal)',  'var(--teal)',  'var(--amber)', 'var(--coral)', 'var(--coral)']; // good-low
+    // Semantica rigida: verde = buono (l'arancione è riservato ad azione/selezione)
+    const cG  = ['', 'var(--coral)', 'var(--amber)', 'var(--amber)', 'var(--green)', 'var(--green)'];  // good-high
+    const cB  = ['', 'var(--green)', 'var(--green)', 'var(--amber)', 'var(--coral)', 'var(--coral)']; // good-low
 
     // Descrizioni testuali
     if (document.getElementById('wd-sl')) { document.getElementById('wd-sl').textContent = tSl[sl]; document.getElementById('wd-sl').style.color = cG[sl]; }
@@ -272,12 +273,14 @@ export function upW() {
 
     // ── g) AGGIORNAMENTO RING SVG ─────────────────────────────
     const circ  = 2 * Math.PI * 46;
-    const color = score >= 75 ? 'var(--teal)' : score >= 50 ? 'var(--amber)' : 'var(--coral)';
+    const color = score >= 75 ? 'var(--green)' : score >= 50 ? 'var(--amber)' : 'var(--coral)';
     const rf    = document.getElementById('ring-f');
 
     if (rf) {
         rf.style.strokeDashoffset = circ - (circ * score / 100);
         rf.style.stroke           = color;
+        rf.style.color            = color;   // alimenta il glow (drop-shadow currentColor)
+        rf.closest('.hero-readiness')?.style.setProperty('--tone', color);
     }
     if (document.getElementById('ring-n')) {
         document.getElementById('ring-n').textContent = score;
@@ -289,7 +292,7 @@ export function upW() {
     const vs = [
         { v: 'Recupero Attivo', r: 'Parametri compromessi.', c: 'var(--coral)' },
         { v: 'Caution',         r: 'Stato instabile.',       c: 'var(--amber)' },
-        { v: 'Pronto',          r: 'Omeostasi ottimale.',    c: 'var(--teal)'  }
+        { v: 'Pronto',          r: 'Omeostasi ottimale.',    c: 'var(--green)' }
     ];
 
     if (document.getElementById('r-verd')) {
@@ -548,8 +551,9 @@ export function renderInjuries() {
 
     if (!act.length) {
         wrap.innerHTML = `
-            <div style="font-size:11px; color:var(--teal); text-align:center;
-                        padding:10px; background:rgba(249, 115, 22, 0.1); border-radius:8px;">
+            <div style="font-size:11.5px; color:var(--green); text-align:center;
+                        padding:10px; background:oklch(0.74 0.11 175 / .08);
+                        border:1px solid oklch(0.74 0.11 175 / .18); border-radius:10px;">
               Nessun infortunio attivo registrato.
             </div>`;
         return;

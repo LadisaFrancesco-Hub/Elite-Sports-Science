@@ -226,6 +226,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 if (saveTxt) saveTxt.style.setProperty('display', 'none', 'important');
                 const roleBadge = document.getElementById('role-badge');
                 if (roleBadge) roleBadge.textContent = 'ATLETA';
+                document.body.classList.add('is-athlete');   // scope del redesign v4 (styles.css §APP ATLETA)
                 document.getElementById('athlete-bottom-bar').classList.add('show');
                 go('ath-home');
             }

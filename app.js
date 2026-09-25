@@ -13,7 +13,7 @@
   ══════════════════════════════════════════════════════════════ */
 
 import { DB, appState, KEY, EXERCISE_LIBRARY, PROGRAM_TEMPLATES, rpeDescs, starDescs } from './state.js';
-import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus } from './utils.js';
+import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus, playEntrance } from './utils.js';
 
 // Importazioni circolari risolte: questi moduli importano da state+utils,
 // e app.js li chiama solo dentro funzioni (mai al top-level).
@@ -679,6 +679,7 @@ export function go(id, btn) {
   'libreria': () => { import('./library.js').then(m => m.renderExerciseLibrary()); }
   };
   if (renders[id]) renders[id]();
+  playEntrance(document.getElementById('p-' + id));   // no-op fuori dall'app atleta
 
   document.querySelectorAll('.bb-item').forEach(b => b.classList.remove('on'));
   const activeBb = document.querySelector(`.bb-item[onclick*="'${id}'"]`);
@@ -791,7 +792,7 @@ export function renderWeekWidget() {
 
   const bg = sess ? 'var(--teal)' : isToday ? 'rgba(249,115,22,0.15)' : 'var(--s1)';
   const border = sess ? 'var(--teal)' : isToday ? 'var(--teal)' : 'var(--border)';
-  const color = sess ? '#000' : isToday ? 'var(--teal)' : isFuture ? 'var(--border)' : 'var(--muted)';
+  const color = sess ? 'var(--accent-ink)' : isToday ? 'var(--teal)' : isFuture ? 'var(--dim3)' : 'var(--muted)';
   const symbol = sess ? '✓' : isToday ? '●' : '·';
   const label = sess ? `<div style="font-size:8px;color:var(--teal);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:36px">${escHtml(sess.session.replace('Seduta ', ''))}</div>` : '<div style="height:12px"></div>';
 
@@ -806,7 +807,7 @@ export function renderWeekWidget() {
   <div class="card" style="padding:12px 8px !important">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
   <div style="font-size:12px;font-weight:700;color:var(--text)">Questa settimana</div>
-  <div style="font-size:11px;color:${thisWeek.length >= freq ? 'var(--teal)' : 'var(--muted)'}">
+  <div style="font-family:var(--fmono);font-size:11px;color:${thisWeek.length >= freq ? 'var(--ok)' : 'var(--muted)'}">
   ${thisWeek.length}/${freq} sessioni
   </div>
   </div>
@@ -1878,10 +1879,9 @@ export function renderCoachReply() {
   const a = s.rpe || null;
   const delta = (p && a) ? (a - p) : null;
   const absDelta = delta !== null ? Math.abs(delta) : null;
-  const col = absDelta === null ? 'var(--muted)' : absDelta <= 1 ? 'var(--teal)' : absDelta <= 2 ? 'var(--amber)' : 'var(--coral)';
+  const col = absDelta === null ? 'var(--muted)' : absDelta <= 1 ? 'var(--ok)' : absDelta <= 2 ? 'var(--warn)' : 'var(--bad)';
   const rpeHtml = (p || a) ? `
-  <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;padding:6px 10px;
-  background:var(--s1);border-radius:6px;font-size:12px;">
+  <div class="ax-soft" style="display:flex;align-items:center;gap:8px;">
   <span style="color:var(--muted);font-weight:600;">RPE:</span>
   ${p ? `<span style="color:var(--muted)">Prog. <strong style="color:var(--text)">${p}</strong></span>` : ''}
   ${p && a ? `<span style="color:var(--border)">→</span>` : ''}
@@ -1892,13 +1892,13 @@ export function renderCoachReply() {
   <div class="card" style="margin-bottom:12px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
   <span class="tag tn">${escHtml(s.session)}</span>
-  <span style="color:var(--muted);font-size:11px">${s.date}</span>
+  <span style="color:var(--muted);font-size:11px;font-family:var(--fmono)">${s.date}</span>
   </div>
   ${s.flag ? `<span style="background:rgba(239,68,68,.12);color:var(--coral);font-size:10px;font-weight:700;padding:3px 8px;border-radius:6px;display:inline-block;margin-bottom:8px">${escHtml(s.flag)}</span>` : ''}
   ${rpeHtml}
-  ${s.notes ? `<div style="font-size:12px;color:var(--muted);margin-bottom:8px;padding:6px 10px;background:var(--s1);border-radius:6px;"><span style="font-weight:600;color:var(--text)">La mia nota:</span> ${escHtml(s.notes.replace('NOTE: ',''))}</div>` : ''}
-  <div style="font-size:13px;color:var(--purple);line-height:1.6;white-space:pre-wrap;padding:8px 10px;background:var(--s2);border-left:3px solid var(--purple);border-radius:0 6px 6px 0;margin-bottom:10px">${escHtml(s.reply)}</div>
-  <button onclick="document.getElementById('athlete-chat-input')?.focus()" style="width:100%;padding:8px;background:var(--s1);border:1px solid var(--border);border-radius:8px;color:var(--teal);font-size:12px;font-weight:700;cursor:pointer">
+  ${s.notes ? `<div class="ax-soft"><span style="font-weight:600;color:var(--text2)">La mia nota:</span> ${escHtml(s.notes.replace('NOTE: ',''))}</div>` : ''}
+  <div class="ax-coach-quote"><div class="ax-overline">◇ Coach</div><div>${escHtml(s.reply)}</div></div>
+  <button onclick="document.getElementById('athlete-chat-input')?.focus()" class="ax-ghost is-accent" style="min-height:42px;font-size:12.5px">
   Rispondi al coach →
   </button>
   </div>`;
@@ -1934,7 +1934,8 @@ export function renderAthWeek() {
   const weekCount = weekSessions.length;
   const targetFreq = athById(athId)?.freq || 3;
   const pct = Math.min(100, Math.round(weekCount/targetFreq*100));
-  const pctColor = pct >= 100 ? 'var(--teal)' : pct >= 60 ? 'var(--amber)' : 'var(--coral)';
+  // lunedì 0/4 non è un errore: numero neutro finché il target non è raggiunto
+  const pctColor = pct >= 100 ? 'var(--ok)' : 'var(--text)';
 
   // mappa data → sessioni fatte
   const doneByDate = {};
@@ -1969,52 +1970,49 @@ export function renderAthWeek() {
   if (done.length) {
   content = done.map(s => {
   const p = s.plannedRpe ?? null;
-  const rpeCol = p && s.rpe ? (Math.abs(s.rpe-p) <= 1 ? 'var(--teal)' : Math.abs(s.rpe-p) <= 2 ? 'var(--amber)' : 'var(--coral)') : 'var(--teal)';
+  const rpeCol = p && s.rpe ? (Math.abs(s.rpe-p) <= 1 ? 'var(--ok)' : Math.abs(s.rpe-p) <= 2 ? 'var(--warn)' : 'var(--bad)') : 'var(--text)';
   return `
-  <div style="margin-top:6px;padding:6px 8px;background:rgba(20,184,166,.1);border-left:3px solid var(--teal);border-radius:0 6px 6px 0">
-  <div style="font-size:11px;font-weight:700;color:var(--teal)">${escHtml(s.session)}</div>
-  <div style="font-size:10px;color:var(--muted)">RPE <strong style="color:${rpeCol}">${s.rpe}</strong>${p ? ` (prog. ${p})` : ''} · ${s.vol ? (s.vol/1000).toFixed(1)+'t' : '—'}</div>
+  <div class="ax-day-item is-done">
+  <div class="ax-day-item-t">${escHtml(s.session)}</div>
+  <div class="ax-day-item-s">RPE <strong style="color:${rpeCol}">${s.rpe}</strong>${p ? ` (prog. ${p})` : ''} · ${s.vol ? (s.vol/1000).toFixed(1)+'t' : '—'}</div>
   </div>`;
   }).join('');
   } else if (isScheduled && sug) {
   content = `
-  <div style="margin-top:6px;padding:6px 8px;background:${isToday ? 'rgba(20,184,166,.1)' : 'var(--s2)'};border-left:3px solid ${isToday ? 'var(--teal)' : 'var(--amber)'};border-radius:0 6px 6px 0">
-  <div style="font-size:11px;font-weight:600;color:${isToday ? 'var(--teal)' : 'var(--amber)'}"> ${escHtml(sug.name)}</div>
-  ${sug.exercises?.length ? `<div style="font-size:10px;color:var(--muted)">${sug.exercises.length} esercizi</div>` : ''}
+  <div class="ax-day-item">
+  <div class="ax-day-item-t">${escHtml(sug.name)}</div>
+  ${sug.exercises?.length ? `<div class="ax-day-item-s">${sug.exercises.length} esercizi</div>` : ''}
   </div>
-  ${isToday ? `<button onclick="go('sessione')" style="margin-top:8px;width:100%;padding:8px;background:var(--teal);border:none;border-radius:8px;color:#fff;font-weight:700;font-size:11px;cursor:pointer">Vai all'allenamento →</button>` : ''}`;
+  ${isToday ? `<button onclick="go('sessione')" class="ax-cta ax-cta-sm">Vai all'allenamento →</button>` : ''}`;
   } else if (!scheduledDays && !isPast && sessions.length) {
   // fallback legacy: stima rotazione
   const nextIdx = weekCount % sessions.length;
-  content = `<div style="margin-top:6px;font-size:11px;color:var(--muted);font-style:italic">${escHtml(sessions[nextIdx]?.name || 'Riposo')}</div>`;
+  content = `<div class="ax-day-rest" style="font-style:italic">${escHtml(sessions[nextIdx]?.name || 'Riposo')}</div>`;
   } else if (!sessions.length) {
   // nessuna scheda assegnata: neutro, NON "Riposo" (non è un riposo prescritto)
-  content = `<div style="margin-top:6px;font-size:11px;color:var(--border)">—</div>`;
+  content = `<div class="ax-day-rest">—</div>`;
   } else {
-  content = `<div style="margin-top:6px;font-size:11px;color:var(--border)">— Riposo</div>`;
+  content = `<div class="ax-day-rest">— Riposo</div>`;
   }
 
-  return `<div style="padding:12px;background:${isToday ? 'rgba(249,115,22,.06)' : 'var(--s1)'};border:1px solid ${isToday ? 'var(--teal)' : 'var(--border)'};border-radius:12px">
-  <div style="display:flex;align-items:center;justify-content:space-between">
-  <div style="font-size:11px;font-weight:700;color:${isToday ? 'var(--teal)' : 'var(--muted)'}">
-  ${dayName}${isToday ? ' · Oggi' : ''}
+  return `<div class="ax-day${isToday ? ' is-today' : ''}${done.length ? ' is-done' : ''}">
+  <div class="ax-day-h">
+  <div class="ax-day-n">${dayName}${isToday ? ' · Oggi' : ''}</div>
+  <div class="ax-day-d">${dayNum}</div>
   </div>
-  <div style="font-size:16px;font-weight:800;color:${done.length ? 'var(--teal)' : isToday ? 'var(--text)' : 'var(--muted)'}">${dayNum}</div>
-  </div>
-  ${done.length ? `<span style="font-size:9px;font-weight:800;color:var(--teal)">✓ COMPLETATO</span>` : ''}
+  ${done.length ? `<span class="ax-day-tag">✓ COMPLETATO</span>` : ''}
   ${content}
   </div>`;
   }).join('');
 
   // Barra 7-dot
-  const dotBar = `<div style="display:flex;gap:4px;justify-content:center;margin-bottom:12px">
+  const dotBar = `<div class="ax-weekbar">
   ${days.map(d => {
   const dk = d.toISOString().slice(0,10);
   const done = !!(doneByDate[dk]?.length);
   const sched = scheduledDays ? scheduledDays.includes(d.getDay()) : false;
-  const color = done ? 'var(--teal)' : sched ? 'var(--amber)' : 'var(--s2)';
   const isT = dk === todayKey;
-  return `<div style="flex:1;height:${isT ? 8 : 5}px;border-radius:3px;background:${color};${isT ? 'border:1px solid var(--teal)' : ''};transition:all .3s"></div>`;
+  return `<i class="${done ? 'is-done' : sched ? 'is-sched' : ''}${isT ? ' is-today' : ''}"></i>`;
   }).join('')}
   </div>`;
 
@@ -2026,9 +2024,9 @@ export function renderAthWeek() {
 
   el.innerHTML = `
   <div style="padding-bottom:100px">
-  <div style="margin-bottom:16px">
-  <div style="font-size:28px;font-weight:800;color:var(--text);letter-spacing:-0.5px">La mia settimana</div>
-  <div style="font-size:13px;color:var(--muted);margin-top:2px">
+  <div style="margin-bottom:18px">
+  <div class="ax-h1">La mia settimana</div>
+  <div class="ax-overline" style="margin-top:6px">
   ${mon.toLocaleDateString('it-IT',{day:'numeric',month:'long'})} — ${days[6].toLocaleDateString('it-IT',{day:'numeric',month:'long'})}
   </div>
   </div>
@@ -2036,18 +2034,16 @@ export function renderAthWeek() {
   ${noSchedBanner}
   ${dotBar}
 
-  <div class="card" style="margin-bottom:16px;border:1px solid var(--border)">
-  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
-  <div style="font-size:13px;font-weight:700;color:var(--text)">Compliance settimana</div>
-  <div style="font-size:16px;font-weight:800;color:${pctColor}">${weekCount}/${targetFreq}</div>
+  <div class="card" style="margin-bottom:16px">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:12px">
+  <div style="font-size:13.5px;font-weight:700;color:var(--text)">Compliance settimana</div>
+  <div style="font-family:var(--fmono);font-size:20px;font-weight:600;color:${pctColor}">${weekCount}<span style="color:var(--muted);font-size:14px">/${targetFreq}</span></div>
   </div>
-  <div style="background:var(--s2);border-radius:4px;height:6px;overflow:hidden">
-  <div style="width:${pct}%;height:100%;background:${pctColor};border-radius:4px;transition:width .5s"></div>
-  </div>
-  <div style="font-size:10px;color:var(--muted);margin-top:8px;display:flex;gap:10px">
-  <span><span style="display:inline-block;width:8px;height:8px;background:var(--teal);border-radius:2px;margin-right:3px"></span>Completato</span>
-  <span><span style="display:inline-block;width:8px;height:8px;background:var(--amber);border-radius:2px;margin-right:3px"></span>Programmato</span>
-  <span><span style="display:inline-block;width:8px;height:8px;background:var(--s2);border:1px solid var(--border);border-radius:2px;margin-right:3px"></span>Riposo</span>
+  <div class="ax-progress${pct >= 100 ? ' is-ok' : ''}"><i style="width:${pct}%"></i></div>
+  <div class="ax-legend">
+  <span><i style="background:var(--accent)"></i>Completato</span>
+  <span><i style="background:oklch(0.76 0.16 52 / .28)"></i>Programmato</span>
+  <span><i style="background:rgba(255,255,255,.07)"></i>Riposo</span>
   </div>
   </div>
 
@@ -2214,7 +2210,7 @@ export function renderAthHome() {
   </div>
   </div>
   ${sch0?.sessions?.length ? `
-  <button onclick="go('sessione')" style="width:100%;padding:16px;background:var(--teal);border:none;border-radius:12px;color:#fff;font-weight:800;font-size:16px;cursor:pointer;margin-bottom:10px">
+  <button onclick="go('sessione')" class="ax-cta" style="margin-bottom:10px">
   Inizia il tuo primo allenamento →
   </button>` : `
   <div class="card" style="text-align:center;border:1px solid var(--border);margin-bottom:16px;padding:20px">
@@ -2240,7 +2236,7 @@ export function renderAthHome() {
   // ── SEZIONE A: Wellness ──────────────────────────────────
   const welldone = localStorage.getItem(`qw_done_${athId}`) === todayKey;
   const readiness = DB.wellness?.readinessScore ?? null;
-  const readColor = readiness >= 75 ? 'var(--teal)' : readiness >= 50 ? 'var(--amber)' : 'var(--coral)';
+  const readColor = readiness >= 75 ? 'var(--ok)' : readiness >= 50 ? 'var(--warn)' : 'var(--bad)';
   const readLabel = readiness >= 75 ? 'Pronto' : readiness >= 50 ? 'Moderato' : 'Affaticato';
 
   // ── SEZIONE B: Sessione ──────────────────────────────────
@@ -2286,14 +2282,12 @@ export function renderAthHome() {
   });
   if (recentPR && Math.floor((today - new Date(recentPR.date)) / 86400000) < 7) {
   const dAgo = Math.floor((today - new Date(recentPR.date)) / 86400000);
-  motivHtml = `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:10px;margin-bottom:14px">
-  <span style="font-size:20px"></span>
-  <div style="font-size:13px;color:var(--text)"><strong style="color:var(--amber)">${recentPR.maxE1rm} kg e1RM</strong> — ${dAgo === 0 ? 'oggi' : dAgo === 1 ? 'ieri' : dAgo+'gg fa'} su ${escHtml(recentPR.session)}</div>
+  motivHtml = `<div class="ax-highlight"><span class="ax-highlight-k">PR</span>
+  <div><strong>${recentPR.maxE1rm} kg e1RM</strong> — ${dAgo === 0 ? 'oggi' : dAgo === 1 ? 'ieri' : dAgo+'gg fa'} su ${escHtml(recentPR.session)}</div>
   </div>`;
   } else if (streak >= 3) {
-  motivHtml = `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);border-radius:10px;margin-bottom:14px">
-  <span style="font-size:20px"></span>
-  <div style="font-size:13px;color:var(--text)"><strong style="color:var(--teal)">${streak} sessioni</strong> consecutive — continua così!</div>
+  motivHtml = `<div class="ax-highlight"><span class="ax-highlight-k">STREAK</span>
+  <div><strong>${streak} sessioni</strong> consecutive — continua così!</div>
   </div>`;
   } else {
   const thisMo = todayKey.slice(0,7);
@@ -2303,29 +2297,30 @@ export function renderAthHome() {
   const bestThis = Math.max(...moSess.map(s => s.maxE1rm));
   const bestPrev = Math.max(...prevSess2.map(s => s.maxE1rm));
   if (bestThis > bestPrev) {
-  motivHtml = `<div style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:rgba(59,130,246,.08);border:1px solid rgba(59,130,246,.25);border-radius:10px;margin-bottom:14px">
-  <span style="font-size:20px"></span>
-  <div style="font-size:13px;color:var(--text)">Il tuo massimale è cresciuto di <strong style="color:var(--blue)">+${bestThis-bestPrev} kg</strong> questo mese</div>
+  motivHtml = `<div class="ax-highlight"><span class="ax-highlight-k">e1RM</span>
+  <div>Il tuo massimale è cresciuto di <strong>+${bestThis-bestPrev} kg</strong> questo mese</div>
   </div>`;
   }
   }
   if (!motivHtml) {
   const quotes = ['La consistenza batte sempre il talento.','Ogni rep ti avvicina alla versione migliore di te.','Il progresso è fatto di piccoli passi quotidiani.','Non esistono scorciatoie — solo lavoro e metodo.','Chi si ferma è perduto. Buon allenamento!'];
-  motivHtml = `<div style="padding:12px 14px;background:var(--s1);border:1px solid var(--border);border-radius:10px;margin-bottom:14px;font-size:13px;color:var(--muted);font-style:italic">"${quotes[today.getDate() % quotes.length]}"</div>`;
+  motivHtml = `<div class="ax-quote">"${quotes[today.getDate() % quotes.length]}"</div>`;
   }
   }
 
   // ── SEZIONE D: Stats + sparkline ─────────────────────────
   const last8 = [...DB.sessions].slice(-8);
-  const sparkline = (vals, color) => {
+  const sparkline = (vals, tone) => {
   const maxV = Math.max(...vals, 1);
-  return `<div style="display:flex;gap:2px;align-items:flex-end;height:20px;margin-top:4px">
-  ${vals.map(v => `<div style="flex:1;min-width:4px;height:${Math.max(2,Math.round(v/maxV*20))}px;background:${color};border-radius:2px;opacity:.75"></div>`).join('')}
+  return `<div class="ax-spark${tone === 'accent' ? ' is-accent' : ''}">
+  ${vals.map(v => `<i style="height:${Math.max(3,Math.round(v/maxV*22))}px"></i>`).join('')}
   </div>`;
   };
   const rpeVals = last8.map(s => s.rpe || 0);
   const volVals = last8.map(s => Math.round((s.vol||0)/1000));
   const avgRpe = DB.sessions.length ? (DB.sessions.reduce((a,s)=>a+(s.rpe||0),0)/DB.sessions.length).toFixed(1) : '—';
+  // media volume/seduta sulle ultime N (prima il KPI "Volume" mostrava per errore lo streak)
+  const avgVolT = last8.length ? (last8.reduce((a,s)=>a+(s.vol||0),0) / last8.length / 1000).toFixed(1) : null;
 
   // ── Feedback pendente: sessione completata oggi senza RPE ──
   const pendingFeedback = DB.sessions.find(s =>
@@ -2356,16 +2351,13 @@ export function renderAthHome() {
   if (isHidden) localStorage.setItem(`coach_note_read_${aId}_${meso}`, '1');
   };
   const coachNoteHtml = hasCoachContent ? `
-  <div style="margin-bottom:14px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.3);border-radius:12px;overflow:hidden;">
-  <div onclick="toggleCoachNote('${escHtml(athId)}','${escHtml(sch.meso)}')"
-  style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;cursor:pointer;min-height:44px;">
-  <div style="display:flex;align-items:center;gap:8px;">
-  <span style="font-size:14px"></span>
-  <span style="font-size:12px;font-weight:700;color:#A78BFA;">Messaggio del Coach — ${escHtml(sch.meso)}</span>
-  </div>
+  <div class="ax-card ax-coachnote">
+  <div onclick="toggleCoachNote('${escHtml(athId)}','${escHtml(sch.meso)}')" class="ax-coachnote-h">
+  <span class="ax-coach-mark">◇</span>
+  <span class="ax-coachnote-t">Messaggio del Coach — ${escHtml(sch.meso)}</span>
   <span id="cn-arr-${escHtml(sch.meso)}" style="font-size:11px;color:var(--muted);">${coachNoteRead ? '▾' : '▴'}</span>
   </div>
-  <div id="cn-body-${escHtml(sch.meso)}" style="padding:0 14px 14px;display:${coachNoteRead ? 'none' : 'block'};">
+  <div id="cn-body-${escHtml(sch.meso)}" style="padding:0 16px 16px 52px;display:${coachNoteRead ? 'none' : 'block'};">
   ${sch.objective ? `<div style="font-size:13px;font-style:italic;color:var(--muted);margin-bottom:8px;line-height:1.5;">${escHtml(sch.objective)}</div>` : ''}
   ${sch.coachNote ? `<div style="font-size:13px;color:var(--text);line-height:1.6;">${escHtml(sch.coachNote)}</div>` : ''}
   </div>
@@ -2376,67 +2368,61 @@ export function renderAthHome() {
 
   <!-- SEZIONE A: Wellness ring / banner -->
   ${!welldone ? `
-  <div onclick="go('wellness')" style="cursor:pointer;margin-bottom:18px;padding:14px 16px;
-  background:rgba(239,68,68,0.12);border:1px solid rgba(239,68,68,0.4);border-radius:12px;
-  display:flex;align-items:center;gap:12px;animation:pulse-border 2s ease infinite;">
-  <div style="font-size:28px;flex-shrink:0"></div>
-  <div style="flex:1">
-  <div style="font-size:14px;font-weight:800;color:#f87171;margin-bottom:2px;">Check-in wellness mancante</div>
-  <div style="font-size:12px;color:var(--muted);">${hour < 11 ? 'Fallo prima di allenarti — ti aiuta a regolare il carico.' : 'Il tuo coach non vede il tuo stato. Ci vogliono 30 secondi.'}</div>
+  <div onclick="go('wellness')" class="ax-task">
+  <span class="ax-task-dot"></span>
+  <div style="flex:1;min-width:0">
+  <div class="ax-task-t">Check-in wellness mancante</div>
+  <div class="ax-sub">${hour < 11 ? 'Fallo prima di allenarti — ti aiuta a regolare il carico.' : 'Il tuo coach non vede il tuo stato. Ci vogliono 30 secondi.'}</div>
   </div>
-  <div style="background:#ef4444;color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;flex-shrink:0;">Fai ora →</div>
+  <div class="ax-task-btn">Fai ora →</div>
   </div>` : readiness !== null ? `
-  <div onclick="go('wellness')" style="cursor:pointer;margin-bottom:18px;padding:16px;background:var(--s1);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;gap:16px">
-  <div style="width:72px;height:72px;border-radius:50%;border:3px solid ${readColor};display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 0 0 6px ${readiness>=75?'rgba(20,184,166,.1)':'rgba(245,158,11,.1)'}">
-  <span style="font-size:22px;font-weight:900;color:${readColor}">${readiness}</span>
-  </div>
+  <div onclick="go('wellness')" class="ax-card ax-ready" style="--tone:${readColor};--pct:${readiness}">
+  <div class="ax-ready-ring"><span>${readiness}</span></div>
   <div style="flex:1">
-  <div style="font-size:18px;font-weight:800;color:${readColor};margin-bottom:2px">${readLabel}</div>
-  <div style="font-size:12px;color:var(--muted)">Readiness · check-in completato ✓</div>
+  <div class="ax-ready-l">${readLabel}</div>
+  <div class="ax-sub">Readiness · check-in completato ✓</div>
   </div>
   </div>` : ''}
 
   <!-- Banner feedback pendente -->
   ${pendingFeedback ? `
-  <div onclick="go('feedback')" style="cursor:pointer;margin-bottom:18px;padding:14px 16px;
-  background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.4);border-radius:12px;
-  display:flex;align-items:center;gap:12px;">
-  <div style="font-size:24px;flex-shrink:0"></div>
-  <div style="flex:1">
-  <div style="font-size:14px;font-weight:800;color:var(--coral);margin-bottom:2px;">Feedback mancante</div>
-  <div style="font-size:12px;color:var(--muted);">Hai completato <strong>${escHtml(pendingFeedback.session || 'l\'allenamento')}</strong> — il coach aspetta il tuo report.</div>
+  <div onclick="go('feedback')" class="ax-task">
+  <span class="ax-task-dot"></span>
+  <div style="flex:1;min-width:0">
+  <div class="ax-task-t">Feedback mancante</div>
+  <div class="ax-sub">Hai completato <strong style="color:var(--text2)">${escHtml(pendingFeedback.session || 'l\'allenamento')}</strong> — il coach aspetta il tuo report.</div>
   </div>
-  <div style="background:var(--coral);color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:800;flex-shrink:0;white-space:nowrap;">Compila →</div>
+  <div class="ax-task-btn">Compila →</div>
   </div>` : ''}
 
   <!-- Greeting -->
-  <div style="margin-bottom:20px">
-  <div style="font-size:12px;color:var(--muted);margin-bottom:4px">${dateStr}</div>
-  <div style="font-size:24px;font-weight:800;color:var(--text);letter-spacing:-0.5px">${greeting}, <span style="color:var(--teal)">${escHtml(ath?.name?.split(' ')[0] || 'Atleta')}</span></div>
+  <div class="ax-greet">
+  <div class="ax-overline">${dateStr}</div>
+  <div class="ax-h1">${greeting}, <span class="ax-accent-text">${escHtml(ath?.name?.split(' ')[0] || 'Atleta')}</span></div>
   </div>
 
   ${coachNoteHtml}
 
   <!-- SEZIONE B: Il tuo allenamento -->
-  <div class="card" style="margin-bottom:14px;border:1px solid var(--border)">
+  <div class="card ax-hero" style="margin-bottom:14px">
   <div class="card-t">Il tuo allenamento</div>
   ${nextSess ? (sessHoje ? `
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
-  <div style="width:38px;height:38px;background:rgba(20,184,166,.15);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">✓</div>
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px">
+  <div class="ax-done-ic">✓</div>
   <div>
-  <div style="font-size:16px;font-weight:800;color:var(--teal)">${escHtml(nextSess.name)}</div>
-  <div style="font-size:12px;color:var(--muted)">Completata oggi · RPE ${sessHoje.rpe||'—'}</div>
+  <div class="ax-hero-t" style="margin-bottom:2px">${escHtml(nextSess.name)}</div>
+  <div class="ax-sub">Completata oggi · RPE ${sessHoje.rpe||'—'}</div>
   </div>
   </div>
-  <button onclick="go('sessione')" style="width:100%;padding:10px;background:var(--s1);border:1px solid var(--border);border-radius:8px;color:var(--muted);font-size:13px;cursor:pointer">Ri-apri sessione →</button>
+  <button onclick="go('sessione')" class="ax-ghost">Ri-apri sessione →</button>
   ` : `
-  <div style="font-size:18px;font-weight:800;color:var(--text);margin-bottom:6px">${escHtml(nextSess.name)}</div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:14px">
-  ${phaseStr ? `<span style="font-size:11px;color:var(--muted)">${phaseStr}</span>` : ''}
-  ${estMin > 0 ? `<span style="font-size:11px;color:var(--muted)">· ~${estMin} min</span>` : ''}
-  ${sch?.phase ? `<span style="background:rgba(20,184,166,.12);color:var(--teal);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px">${escHtml(sch.phase)}</span>` : ''}
+  <div class="ax-hero-t">${escHtml(nextSess.name)}</div>
+  <div class="ax-meta-row">
+  ${phaseStr ? `<span class="ax-meta">${phaseStr}</span>` : ''}
+  ${estMin > 0 ? `<span class="ax-meta">· ~${estMin} min</span>` : ''}
+  ${sch?.phase ? `<span class="tag tn">${escHtml(sch.phase)}</span>` : ''}
   </div>
-  <button onclick="go('sessione')" style="width:100%;padding:14px;background:var(--teal);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:15px;cursor:pointer;letter-spacing:0.3px;">
+  <button onclick="go('sessione')" class="ax-cta">
   Inizia allenamento →
   </button>
   `) : `
@@ -2453,46 +2439,44 @@ export function renderAthHome() {
   <!-- SEZIONE D: Stats con sparkline -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
   <div class="kpi"><div class="kpi-l">Sessioni tot.</div><div class="kpi-v">${DB.sessions.length}</div></div>
-  <div class="kpi"><div class="kpi-l">Questa sett.</div><div class="kpi-v" style="color:var(--teal)">${weekSess.length}</div></div>
+  <div class="kpi"><div class="kpi-l">Questa sett.</div><div class="kpi-v" style="color:var(--accent)">${weekSess.length}</div></div>
   ${last8.length >= 3 ? `
   <div class="kpi">
   <div class="kpi-l">RPE (ult. ${last8.length})</div>
-  <div class="kpi-v" style="font-size:16px">${avgRpe}</div>
-  ${sparkline(rpeVals, 'var(--amber)')}
+  <div class="kpi-v" style="font-size:22px">${avgRpe}</div>
+  ${sparkline(rpeVals, 'neutral')}
   </div>
   <div class="kpi">
-  <div class="kpi-l">Volume (ult. ${last8.length})</div>
-  <div class="kpi-v" style="font-size:16px">${streak > 0 ? streak+'' : '—'}</div>
-  ${sparkline(volVals, 'var(--teal)')}
+  <div class="kpi-l">Vol. medio (ult. ${last8.length})</div>
+  <div class="kpi-v" style="font-size:22px">${avgVolT !== null ? avgVolT + '<span style="font-size:13px;color:var(--muted)"> t</span>' : '—'}</div>
+  ${sparkline(volVals, 'accent')}
   </div>` : `
-  <div class="kpi"><div class="kpi-l">Streak</div><div class="kpi-v" style="color:var(--amber)">${streak}</div></div>
+  <div class="kpi"><div class="kpi-l">Streak</div><div class="kpi-v" style="color:var(--accent)">${streak}</div></div>
   <div class="kpi"><div class="kpi-l">RPE medio</div><div class="kpi-v">${avgRpe}</div></div>`}
   </div>
 
   <!-- SEZIONE E: Reply non letta + Messaggio coach -->
   ${unreadReply ? `
-  <div onclick="go('coach-reply')" style="cursor:pointer;margin-bottom:14px;padding:14px 16px;
-  background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.35);border-radius:12px;
-  display:flex;align-items:center;gap:12px">
-  <div style="font-size:22px;flex-shrink:0"></div>
-  <div style="flex:1">
-  <div style="font-size:13px;font-weight:800;color:var(--text)">Il coach ha risposto</div>
-  <div style="font-size:12px;color:var(--muted)">alla sessione del ${unreadReply.date} →</div>
+  <div onclick="go('coach-reply')" class="ax-card ax-notify">
+  <span class="ax-notify-dot"></span>
+  <div style="flex:1;min-width:0">
+  <div class="ax-notify-t">Il coach ha risposto</div>
+  <div class="ax-sub">alla sessione del ${unreadReply.date} →</div>
   </div>
-  <div style="background:var(--purple);color:#fff;border-radius:8px;padding:6px 10px;font-size:11px;font-weight:800;flex-shrink:0">Leggi</div>
+  <span class="ax-pill-btn">Leggi</span>
   </div>` : ''}
 
   ${nextSess ? `
   <div style="margin-bottom:14px">
-  <button onclick="exportProgramPDF()" style="width:100%;padding:12px;background:var(--s1);border:1px solid var(--border);border-radius:10px;color:var(--teal);font-weight:700;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-  <span></span> Scarica scheda PDF
+  <button onclick="exportProgramPDF()" class="ax-ghost">
+  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14"/></svg> Scarica scheda PDF
   </button>
   </div>` : ''}
 
-  <div class="card" style="border:1px solid var(--border);cursor:pointer" onclick="go('coach-reply')">
+  <div class="card" style="cursor:pointer" onclick="go('coach-reply')">
   <div class="card-t" style="display:flex;justify-content:space-between;align-items:center">
   <span>Messaggi Coach</span>
-  ${unreadCount ? `<span style="background:var(--coral);color:#fff;font-size:9px;font-weight:800;border-radius:999px;padding:2px 7px">${unreadCount} nuovi</span>` : ''}
+  ${unreadCount ? `<span class="ax-count">${unreadCount} nuovi</span>` : ''}
   </div>
   ${lastMsg ? `
   <div style="font-size:13px;color:var(--text);line-height:1.5;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical">"${escHtml(lastMsg.content)}"</div>
@@ -2501,11 +2485,9 @@ export function renderAthHome() {
   </div>
 
   <!-- Libreria Esercizi -->
-  <div onclick="go('libreria')" style="cursor:pointer;margin-top:14px;padding:14px 16px;
-  background:var(--s2);border:1px solid var(--border);border-radius:12px;
-  display:flex;align-items:center;gap:14px;transition:border-color .15s;"
-  onmouseenter="this.style.borderColor='var(--teal)'" onmouseleave="this.style.borderColor='var(--border)'">
-  <div style="width:40px;height:40px;background:var(--teal-d);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:20px;">▶</div>
+  <div onclick="go('libreria')" class="ax-card" style="cursor:pointer;margin-top:14px;display:flex;align-items:center;gap:14px;"
+  onmouseenter="this.style.borderColor='var(--accent-line)'" onmouseleave="this.style.borderColor=''">
+  <div style="width:40px;height:40px;background:var(--e3);border:1px solid var(--line-hi);border-radius:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;color:var(--accent);">▶</div>
   <div style="flex:1">
   <div style="font-size:13px;font-weight:700;color:var(--text);margin-bottom:2px;">Libreria Esercizi</div>
   <div style="font-size:11px;color:var(--muted);">Video tutorial per ogni movimento della tua scheda</div>
@@ -5130,8 +5112,8 @@ export function renderAthleteChat() {
   const isAth = m.from_type === 'athlete';
   const time = m.created_at ? new Date(m.created_at).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
   return `<div style="display:flex;flex-direction:column;align-items:${isAth ? 'flex-end' : 'flex-start'};margin-bottom:10px">
-  <div style="max-width:78%;padding:10px 14px;border-radius:${isAth ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isAth ? 'rgba(139,92,246,0.7)' : 'var(--teal)'};color:${isAth ? '#fff' : '#000'};font-size:13px;line-height:1.5;word-break:break-word">${escHtml(m.content)}</div>
-  <div style="font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px">${time}</div>
+  <div class="ax-bubble ${isAth ? 'is-me' : 'is-coach'}">${escHtml(m.content)}</div>
+  <div class="ax-time">${time}</div>
   </div>`;
   }).join('');
   thread.scrollTop = thread.scrollHeight;

@@ -41,10 +41,11 @@ export const BADGE_DEFS = [
     { id: 'wellness_7',     name: 'Mindful Athlete',    icon: '🧘', desc: '7 check-in wellness di fila',         rarity: 'common',    check: (s,a) => _wellnessStreak(a) >= 7  },
 ];
 
+// v4: rarità come intensità dello stesso accento (niente blu/viola fuori palette)
 const RARITY_COLOR = {
-    common:  { bg: 'rgba(160,168,180,.12)', border: 'rgba(160,168,180,.25)', text: 'var(--muted)'  },
-    rare:    { bg: 'rgba(96,165,250,.10)',  border: 'rgba(96,165,250,.3)',   text: '#60a5fa'        },
-    epic:    { bg: 'rgba(167,139,250,.12)', border: 'rgba(167,139,250,.3)', text: '#a78bfa'        },
+    common:  { bg: 'rgba(255,255,255,.04)',        border: 'rgba(255,255,255,.14)',        text: 'var(--text2)'     },
+    rare:    { bg: 'oklch(0.76 0.16 52 / .08)',    border: 'oklch(0.76 0.16 52 / .35)',    text: 'var(--accent)'    },
+    epic:    { bg: 'oklch(0.76 0.16 52 / .18)',    border: 'oklch(0.83 0.14 62 / .75)',    text: 'var(--accent-hi)' },
 };
 
 
@@ -170,12 +171,14 @@ export function badgeStripHtml(athId, streak = 0) {
         : 'Completa una sessione per sbloccare il primo';
     const streakTxt = streak >= 2 ? ` · 🔥 ${streak} di fila` : '';
 
+    const pct = total ? Math.round(earnedIds.length / total * 100) : 0;
     return `
-    <div onclick="go('ath-progressi')" style="cursor:pointer;margin-bottom:14px;padding:12px 14px;background:var(--s1);border:1px solid var(--border);border-radius:12px;display:flex;align-items:center;gap:12px;min-height:44px">
-        <span style="font-size:22px;flex-shrink:0">🏆</span>
+    <div onclick="go('ath-progressi')" class="ax-card ax-trophy">
+        <span class="ax-trophy-ic">🏆</span>
         <div style="flex:1;min-width:0">
-            <div style="font-size:13px;font-weight:800;color:var(--text)">${earnedIds.length}/${total} trofei${streakTxt}</div>
-            <div style="font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div>
+            <div style="font-size:13.5px;font-weight:700;color:var(--text)"><span style="font-family:var(--fmono)">${earnedIds.length}/${total}</span> trofei${streakTxt}</div>
+            <div style="font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${sub}</div>
+            <div class="ax-progress"><i style="width:${Math.max(pct, 2)}%"></i></div>
         </div>
         <span style="color:var(--dim);font-size:14px;flex-shrink:0">›</span>
     </div>`;
@@ -198,11 +201,8 @@ export function renderBadgesSection(containerId, athId) {
         const col      = RARITY_COLOR[def.rarity];
         const dateStr  = earned[def.id] ? `<div style="font-size:9px;color:var(--muted);margin-top:2px">${earned[def.id]}</div>` : '';
         return `
-        <div title="${def.desc}" style="display:flex;flex-direction:column;align-items:center;text-align:center;
-             width:72px;padding:10px 6px;border-radius:10px;
-             border:1px solid ${isEarned ? col.border : 'var(--border)'};
-             background:${isEarned ? col.bg : 'transparent'};
-             opacity:${isEarned ? 1 : 0.3};transition:all .2s;">
+        <div title="${def.desc}" class="ax-badge${isEarned ? '' : ' is-locked'}"
+             style="${isEarned ? `border:1px solid ${col.border};background:${col.bg};` : ''}">
             <div style="font-size:24px;line-height:1.2">${def.icon}</div>
             <div style="font-size:9px;font-weight:700;color:${isEarned ? col.text : 'var(--muted)'};margin-top:4px;line-height:1.3">${def.name}</div>
             ${dateStr}
@@ -211,9 +211,9 @@ export function renderBadgesSection(containerId, athId) {
 
     const earnedCount = Object.keys(earned).length;
     el.innerHTML = `
-    <div class="card" style="border:1px solid var(--border)">
-        <div class="card-t" style="margin-bottom:14px">🏆 Trofei — ${earnedCount}/${BADGE_DEFS.length} sbloccati</div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:flex-start">
+    <div class="card">
+        <div class="card-t" style="display:flex;justify-content:space-between;align-items:center"><span>Trofei</span><span style="color:var(--accent);letter-spacing:.04em">${earnedCount}/${BADGE_DEFS.length}</span></div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:8px;justify-items:center">
             ${badgeHTML}
         </div>
     </div>`;

@@ -27,7 +27,7 @@
   ══════════════════════════════════════════════════════════════ */
 
 import { DB, appState } from './state.js';
-import { uid, escHtml, toast, athName, athById } from './utils.js';
+import { uid, escHtml, toast, athName, athById, AX, axAreaFill, axChartOptions, axLastPointOnly, axHonestRange } from './utils.js';
 import { renderBadgesSection } from './badges.js';
 import { renderNutritionCard } from './nutrition.js';
 
@@ -193,9 +193,10 @@ export function renderE1rmChart(sessionFilter, exerciseFilter) {
 
   if (e1rmChartInstance) e1rmChartInstance.destroy();
 
-  const gradient = ctxE1rm.getContext('2d').createLinearGradient(0, 0, 0, 220);
-  gradient.addColorStop(0, 'oklch(0.76 0.16 52 / 0.35)');
-  gradient.addColorStop(1, 'oklch(0.76 0.16 52 / 0.0)');
+  const _opts = axChartOptions();
+  Object.assign(_opts.scales.y, axHonestRange(chartDataValues));
+  _opts.scales.y.ticks.callback = v => v + ' kg';
+  _opts.plugins.tooltip.callbacks = { label: c => `${c.parsed.y} kg e1RM` };
 
   e1rmChartInstance = new Chart(ctxE1rm, {
   type: 'line',
@@ -204,44 +205,20 @@ export function renderE1rmChart(sessionFilter, exerciseFilter) {
   datasets: [{
   label: datasetLabel,
   data: chartDataValues,
-  borderColor: 'oklch(0.74 0.15 52)',
-  backgroundColor: gradient,
-  borderWidth: 2.2,
-  pointBackgroundColor: 'oklch(0.76 0.16 52)',
-  pointBorderColor: '#0A0C0F',
-  pointBorderWidth: 1.5,
-  pointRadius: 3.5,
+  borderColor: AX.accent,
+  backgroundColor: axAreaFill(0.34),
+  borderWidth: 2.5,
+  pointBackgroundColor: AX.accentHi,
+  pointBorderColor: AX.bg,
+  pointBorderWidth: 2.5,
+  pointRadius: axLastPointOnly(chartDataValues.length, 5.5),
   pointHoverRadius: 6,
-  tension: 0.3,
+  tension: 0.35,
+  cubicInterpolationMode: 'monotone',
   fill: true
   }]
   },
-  options: {
-  responsive: true,
-  maintainAspectRatio: false,
-  interaction: { mode: 'index', intersect: false },
-  plugins: {
-  legend: { display: false },
-  tooltip: {
-  backgroundColor: 'rgba(12, 15, 19, 0.95)',
-  titleFont: { family: "'IBM Plex Mono', monospace", size: 11, weight: '600' },
-  bodyFont: { family: "'IBM Plex Mono', monospace", size: 11 },
-  padding: 10,
-  cornerRadius: 6,
-  displayColors: false
-  }
-  },
-  scales: {
-  x: {
-  grid: { display: false },
-  ticks: { color: '#5E6873', font: { family: "'IBM Plex Mono', monospace", size: 9, weight: '500' } }
-  },
-  y: {
-  grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-  ticks: { color: '#5E6873', font: { family: "'IBM Plex Mono', monospace", size: 9, weight: '500' }, suggestedMin: 40 }
-  }
-  }
-  }
+  options: _opts
   });
 
   // Aggiorna il sottotitolo dinamicamente
@@ -1151,6 +1128,13 @@ export function getRollingHrvTrend(athId, days = 30) {
 // ─────────────────────────────────────────────────────────────
 let apE1rmChart = null;
 
+// ACWR: 0.8–1.3 ok · 1.3–1.5 / <0.8 attenzione · >1.5 rischio
+function _acwrTone(v) {
+  const n = parseFloat(v);
+  if (!isFinite(n)) return 'var(--text)';
+  return n > 1.5 ? 'var(--bad)' : (n > 1.3 || n < 0.8) ? 'var(--warn)' : 'var(--ok)';
+}
+
 export function renderAthProgressi() {
   const athId = window.mioIdLoggato || appState.selAthId;
   const ath = athById(athId);
@@ -1178,27 +1162,27 @@ export function renderAthProgressi() {
   const thisVol = thisMonthSess.reduce((a, s) => a + (s.vol||0), 0);
   const lastVol = lastMonthSess.reduce((a, s) => a + (s.vol||0), 0);
   const volDelta = lastVol > 0 ? Math.round((thisVol-lastVol)/lastVol*100) : null;
-  const volColor = volDelta === null ? 'var(--muted)' : volDelta >= 0 ? 'var(--teal)' : 'var(--coral)';
+  const volColor = volDelta === null ? 'var(--muted)' : volDelta >= 0 ? 'var(--ok)' : 'var(--bad)';
   const thisE1rm = thisMonthSess.length ? Math.max(...thisMonthSess.map(s => s.maxE1rm||0)) : 0;
   const targetSess = freq * schWeeks;
   const compliance = targetSess > 0 ? Math.min(100, Math.round(thisMonthSess.length / targetSess * 100)) : null;
   monthEl.innerHTML = `
-  <div class="card" style="border:1px solid var(--border)">
+  <div class="card">
   <div class="card-t">Il mio mese — ${now.toLocaleDateString('it-IT',{month:'long'})}</div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px 10px">
   <div>
-  <div style="font-size:11px;color:var(--muted)">Volume totale</div>
-  <div style="font-size:16px;font-weight:800;color:var(--teal)">${(thisVol/1000).toFixed(1)}t</div>
-  ${volDelta !== null ? `<div style="font-size:10px;color:${volColor}">${volDelta>=0?'+':''}${volDelta}% vs mese prec.</div>` : ''}
+  <div class="ax-stat-l">Volume totale</div>
+  <div class="ax-stat-v" style="color:var(--accent)">${(thisVol/1000).toFixed(1)}<span style="font-size:13px;color:var(--muted)"> t</span></div>
+  ${volDelta !== null ? `<div style="font-family:var(--fmono);font-size:10px;margin-top:2px;color:${volColor}">${volDelta>=0?'+':''}${volDelta}% vs mese prec.</div>` : ''}
   </div>
   <div>
-  <div style="font-size:11px;color:var(--muted)">Sessioni</div>
-  <div style="font-size:16px;font-weight:800;color:var(--text)">${thisMonthSess.length}${compliance !== null ? `<span style="font-size:12px;font-weight:500;color:${compliance>=100?'var(--teal)':'var(--muted)'}"> (${compliance}%)</span>` : ''}</div>
+  <div class="ax-stat-l">Sessioni</div>
+  <div class="ax-stat-v">${thisMonthSess.length}${compliance !== null ? `<span style="font-size:12px;font-weight:500;color:${compliance>=100?'var(--ok)':'var(--muted)'}"> (${compliance}%)</span>` : ''}</div>
   </div>
   ${thisE1rm > 0 ? `
   <div>
-  <div style="font-size:11px;color:var(--muted)">Miglior e1RM mese</div>
-  <div style="font-size:16px;font-weight:800;color:var(--amber)">${thisE1rm} kg</div>
+  <div class="ax-stat-l">Miglior e1RM mese</div>
+  <div class="ax-stat-v">${thisE1rm}<span style="font-size:13px;color:var(--muted)"> kg</span></div>
   </div>` : ''}
   </div>
   </div>`;
@@ -1285,35 +1269,35 @@ export function renderAthProgressi() {
   kpisHtml = `
   <div class="kpi"><div class="kpi-l">Sessioni totali</div><div class="kpi-v">${all.length}</div></div>
   <div class="kpi"><div class="kpi-l">Questa settimana</div>
-  <div class="kpi-v" style="color:${thisWeek.length >= freq ? 'var(--teal)' : 'var(--text)'}">
+  <div class="kpi-v" style="color:${thisWeek.length >= freq ? 'var(--ok)' : 'var(--text)'}">
   ${thisWeek.length}<span style="font-size:14px;font-weight:500;color:var(--muted)">/${freq}</span>
   </div></div>
   <div class="kpi"><div class="kpi-l">Miglior e1RM</div>
-  <div class="kpi-v" style="color:var(--amber)">${bestE1rm > 0 ? bestE1rm + ' kg' : '—'}</div></div>
+  <div class="kpi-v" style="color:var(--accent)">${bestE1rm > 0 ? bestE1rm + '<span style="font-size:14px;color:var(--muted)"> kg</span>' : '—'}</div></div>
   <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>`;
   } else if (ath.goal === 'Dimagrimento') {
   const wLabel = lastWeight ? `${lastWeight.weight} kg${weightDelta !== null ? ` (${weightDelta >= 0 ? '+' : ''}${weightDelta})` : ''}` : '—';
-  const wColor = weightDelta !== null ? (parseFloat(weightDelta) <= 0 ? 'var(--teal)' : 'var(--coral)') : 'var(--text)';
+  const wColor = weightDelta !== null ? (parseFloat(weightDelta) <= 0 ? 'var(--ok)' : 'var(--bad)') : 'var(--text)';
   kpisHtml = `
   <div class="kpi"><div class="kpi-l">Sessioni mese</div><div class="kpi-v">${all.filter(s=>s.date.startsWith(new Date().toISOString().slice(0,7))).length}</div></div>
   <div class="kpi"><div class="kpi-l">Compliance %</div>
-  <div class="kpi-v" style="color:${compPct >= 80 ? 'var(--teal)' : 'var(--amber)'}">${compPct !== null ? compPct + '%' : '—'}</div></div>
+  <div class="kpi-v" style="color:${compPct >= 80 ? 'var(--ok)' : 'var(--warn)'}">${compPct !== null ? compPct + '%' : '—'}</div></div>
   <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>
   <div class="kpi"><div class="kpi-l">${lastWeight ? 'Peso attuale' : 'Volume 30gg'}</div>
   <div class="kpi-v" style="color:${lastWeight ? wColor : 'var(--text)'}">${lastWeight ? wLabel : Math.round(vol30/1000) + 't'}</div></div>`;
   } else if (ath.goal === 'Forza') {
   kpisHtml = `
   <div class="kpi"><div class="kpi-l">Miglior e1RM</div>
-  <div class="kpi-v" style="color:var(--amber)">${bestE1rm > 0 ? bestE1rm + ' kg' : '—'}</div></div>
+  <div class="kpi-v" style="color:var(--accent)">${bestE1rm > 0 ? bestE1rm + '<span style="font-size:14px;color:var(--muted)"> kg</span>' : '—'}</div></div>
   <div class="kpi"><div class="kpi-l">Sessioni totali</div><div class="kpi-v">${all.length}</div></div>
   <div class="kpi"><div class="kpi-l">Volume mese (t)</div>
-  <div class="kpi-v" style="color:var(--teal)">${(all.filter(s=>s.date.startsWith(new Date().toISOString().slice(0,7))).reduce((a,s)=>a+(s.vol||0),0)/1000).toFixed(1)}</div></div>
+  <div class="kpi-v">${(all.filter(s=>s.date.startsWith(new Date().toISOString().slice(0,7))).reduce((a,s)=>a+(s.vol||0),0)/1000).toFixed(1)}</div></div>
   <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>`;
   } else if (ath.goal === 'Performance Atletica') {
   kpisHtml = `
   <div class="kpi"><div class="kpi-l">Sessioni mese</div><div class="kpi-v">${all.filter(s=>s.date.startsWith(new Date().toISOString().slice(0,7))).length}</div></div>
   <div class="kpi"><div class="kpi-l">ACWR (sRPE)</div>
-  <div class="kpi-v" style="color:var(--teal)">${acwrVal}</div></div>
+  <div class="kpi-v" style="color:${_acwrTone(acwrVal)}">${acwrVal}</div></div>
   <div class="kpi"><div class="kpi-l">Volume 30gg (t)</div>
   <div class="kpi-v" style="color:var(--text)">${(vol30/1000).toFixed(1)}</div></div>
   <div class="kpi"><div class="kpi-l">RPE medio (ult. 5)</div><div class="kpi-v">${avgRpe}</div></div>`;
@@ -1321,9 +1305,9 @@ export function renderAthProgressi() {
   kpisHtml = `
   <div class="kpi"><div class="kpi-l">Sessioni completate</div><div class="kpi-v">${all.length}</div></div>
   <div class="kpi"><div class="kpi-l">Compliance %</div>
-  <div class="kpi-v" style="color:${compPct >= 80 ? 'var(--teal)' : 'var(--amber)'}">${compPct !== null ? compPct + '%' : '—'}</div></div>
+  <div class="kpi-v" style="color:${compPct >= 80 ? 'var(--ok)' : 'var(--warn)'}">${compPct !== null ? compPct + '%' : '—'}</div></div>
   <div class="kpi"><div class="kpi-l">Streak</div>
-  <div class="kpi-v" style="color:${streak >= 3 ? 'var(--teal)' : 'var(--text)'}">
+  <div class="kpi-v" style="color:${streak >= 3 ? 'var(--accent)' : 'var(--text)'}">
   ${streak}<span style="font-size:14px;font-weight:500;color:var(--muted)"> gg</span>
   </div></div>
   <div class="kpi"><div class="kpi-l">Sessioni (30gg)</div><div class="kpi-v">${sess30}</div></div>`;
@@ -1331,11 +1315,11 @@ export function renderAthProgressi() {
   kpisHtml = `
   <div class="kpi"><div class="kpi-l">Sessioni mese</div><div class="kpi-v">${all.filter(s=>s.date.startsWith(new Date().toISOString().slice(0,7))).length}</div></div>
   <div class="kpi"><div class="kpi-l">Compliance %</div>
-  <div class="kpi-v" style="color:${compPct >= 80 ? 'var(--teal)' : 'var(--amber)'}">${compPct !== null ? compPct + '%' : '—'}</div></div>
+  <div class="kpi-v" style="color:${compPct >= 80 ? 'var(--ok)' : 'var(--warn)'}">${compPct !== null ? compPct + '%' : '—'}</div></div>
   <div class="kpi"><div class="kpi-l">Volume 30gg (t)</div>
   <div class="kpi-v" style="color:var(--text)">${(vol30/1000).toFixed(1)}</div></div>
   <div class="kpi"><div class="kpi-l">Streak</div>
-  <div class="kpi-v" style="color:${streak >= 3 ? 'var(--teal)' : 'var(--text)'}">
+  <div class="kpi-v" style="color:${streak >= 3 ? 'var(--accent)' : 'var(--text)'}">
   ${streak}<span style="font-size:14px;font-weight:500;color:var(--muted)"> gg</span>
   </div></div>`;
   }
@@ -1362,20 +1346,18 @@ export function renderAthProgressi() {
 
   const weekEl = document.getElementById('ap-week');
   if (weekEl) weekEl.innerHTML = `
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-  <div style="font-size:22px;font-weight:800;color:${thisWeek.length >= freq ? 'var(--teal)' : 'var(--text)'}">
-  ${thisWeek.length} / ${freq} sessioni
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px">
+  <div style="font-family:var(--fmono);font-size:24px;font-weight:600;letter-spacing:-.02em;color:${thisWeek.length >= freq ? 'var(--ok)' : 'var(--text)'}">
+  ${thisWeek.length}<span style="color:var(--muted);font-size:15px">/${freq}</span> <span style="font-family:var(--fm);font-size:13px;font-weight:600;color:var(--muted);letter-spacing:0">sessioni</span>
   </div>
   ${daysSinceLast !== null
   ? `<div style="font-size:12px;color:var(--muted)">${daysSinceLast === 0 ? 'Allenato oggi ✓' : daysSinceLast === 1 ? 'Ultima sessione ieri' : `Ultima sessione ${daysSinceLast}gg fa`}</div>`
   : ''}
   </div>
-  <div style="height:8px;background:var(--s1);border-radius:4px;overflow:hidden">
-  <div style="height:100%;width:${pct}%;background:${pct >= 100 ? 'var(--teal)' : 'var(--amber)'};border-radius:4px"></div>
-  </div>
+  <div class="ax-progress${pct >= 100 ? ' is-ok' : ''}"><i style="width:${pct}%"></i></div>
   ${thisWeek.length > 0
   ? `<div style="margin-top:10px;font-size:12px;color:var(--muted);display:flex;flex-wrap:wrap;gap:4px">
-  ${thisWeek.map(s => `<span style="background:var(--s2);padding:3px 8px;border-radius:4px">${s.date.slice(5)} · ${escHtml(s.session)}</span>`).join('')}
+  ${thisWeek.map(s => `<span class="tag tn">${s.date.slice(5)} · ${escHtml(s.session)}</span>`).join('')}
   </div>` : ''}`;
 
   // ── Volume bar chart ─────────────────────────────────────
@@ -1387,12 +1369,12 @@ export function renderAthProgressi() {
   if (last8.length === 0) {
   bcEl.innerHTML = '<div style="color:var(--muted);font-size:12px;text-align:center;padding:20px">Nessuna sessione ancora</div>';
   } else {
-  last8.forEach(s => {
-  const h = Math.round((s.vol || 0) / maxVol * 85);
+  last8.forEach((s, idx) => {
+  const h = Math.max(4, Math.round((s.vol || 0) / maxVol * 110));
   const col = document.createElement('div');
-  col.className = 'bc-col';
+  col.className = 'bc-col' + (idx === last8.length - 1 ? ' is-last' : '');
   col.innerHTML = `<div class="bc-val">${((s.vol || 0) / 1000).toFixed(1)}k</div>
-  <div class="bc-bar" style="height:${h}px;background:var(--teal)"></div>
+  <div class="bc-bar" style="height:${h}px"></div>
   <div class="bc-lbl">${s.date.slice(5)}</div>`;
   bcEl.appendChild(col);
   });
@@ -1405,11 +1387,17 @@ export function renderAthProgressi() {
   )].filter(Boolean).sort();
 
   const filterEl2 = document.getElementById('ap-e1rm-filter');
-  const savedExFilter = localStorage.getItem('ap_e1rm_ex') || '';
+  // "Tutti" unisce in una linea il massimo di esercizi DIVERSI (squat un giorno, panca il giorno dopo)
+  // → finti crolli. Senza scelta salvata si parte dall'esercizio con più dati; "Tutti" resta selezionabile.
+  const _exCount = {};
+  all.forEach(s => Object.entries(s.e1rmPerExercise || {}).forEach(([n, v]) => { if (v > 0) _exCount[n] = (_exCount[n] || 0) + 1; }));
+  const _defaultEx = Object.keys(_exCount).sort((a, b) => _exCount[b] - _exCount[a])[0] || '';
+  const _savedEx = localStorage.getItem('ap_e1rm_ex');
+  const savedExFilter = (_savedEx !== null && (_savedEx === '' || allExNames.includes(_savedEx))) ? _savedEx : _defaultEx;
   if (filterEl2 && allExNames.length > 0) {
   filterEl2.innerHTML = `
   <select onchange="localStorage.setItem('ap_e1rm_ex',this.value);renderAthProgressi()"
-  style="width:100%;padding:8px;background:var(--s2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:12px">
+  style="width:100%">
   <option value="">Tutti gli esercizi (e1RM massimo)</option>
   ${allExNames.map(n => `<option value="${escHtml(n)}" ${savedExFilter===n?'selected':''}>${escHtml(n)}</option>`).join('')}
   </select>`;
@@ -1428,32 +1416,36 @@ export function renderAthProgressi() {
   } else {
   wrapEl.innerHTML = '<canvas id="ap-e1rm-chart"></canvas>';
   const ctx = document.getElementById('ap-e1rm-chart');
+  const _opts = axChartOptions();
+  _opts.scales.y.ticks.callback = v => v + ' kg';
+  Object.assign(_opts.scales.y, axHonestRange(e1rmSess.map(s => s.maxE1rm)));
+  _opts.plugins.tooltip.callbacks = { label: c => `${c.parsed.y} kg e1RM` };
   apE1rmChart = new Chart(ctx, {
   type: 'line',
   data: {
   labels: e1rmSess.map(s => s.date.slice(5)),
   datasets: [{
   data: e1rmSess.map(s => s.maxE1rm),
-  borderColor: 'oklch(0.82 0.13 88)',
-  backgroundColor: 'oklch(0.82 0.13 88 / .08)',
-  borderWidth: 2,
-  pointBackgroundColor: 'oklch(0.82 0.13 88)',
-  pointBorderColor: '#0A0C0F',
-  pointBorderWidth: 1.5,
-  pointRadius: 3.5,
-  tension: 0.3,
+  borderColor: AX.accent,
+  backgroundColor: axAreaFill(0.34),
+  borderWidth: 2.5,
+  pointBackgroundColor: AX.accentHi,
+  pointBorderColor: AX.bg,
+  pointBorderWidth: 2.5,
+  pointRadius: axLastPointOnly(e1rmSess.length, 5.5),
+  pointHoverRadius: 6,
+  pointHoverBackgroundColor: AX.accentHi,
+  tension: 0.35,
+  cubicInterpolationMode: 'monotone',
   fill: true
   }]
   },
-  options: {
-  responsive: true, maintainAspectRatio: false,
-  plugins: { legend: { display: false } },
-  scales: {
-  x: { grid: { display: false }, ticks: { color: '#5E6873', font: { size: 9, family: "'IBM Plex Mono', monospace" } } },
-  y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#5E6873', font: { size: 9, family: "'IBM Plex Mono', monospace" }, callback: v => v + ' kg' } }
-  }
-  }
+  options: _opts
   });
+  let _note = document.getElementById('ap-e1rm-note');
+  if (!_note) { _note = document.createElement('div'); _note.id = 'ap-e1rm-note'; _note.className = 'ax-chart-note'; wrapEl.after(_note); }
+  _note.style.display = wrapEl.style.display;
+  _note.textContent = savedExFilter ? `${savedExFilter} · e1RM per seduta` : 'Massimo e1RM per seduta (esercizi misti)';
   }
   }
 
@@ -1480,8 +1472,8 @@ export function renderAthProgressi() {
   </div>`).join('')}
   </div>
   <div style="margin-top:8px;font-size:11px;color:var(--muted);display:flex;gap:12px">
-  ${wDelta !== null ? `<span>Peso <strong style="color:${parseFloat(wDelta)<0?'var(--teal)':'var(--coral)'}">${parseFloat(wDelta)>=0?'+':''}${wDelta}kg</strong></span>` : ''}
-  ${bfDelta !== null ? `<span>BF% <strong style="color:${parseFloat(bfDelta)<0?'var(--teal)':'var(--coral)'}">${parseFloat(bfDelta)>=0?'+':''}${bfDelta}%</strong></span>` : ''}
+  ${wDelta !== null ? `<span>Peso <strong style="color:${parseFloat(wDelta)<0?'var(--ok)':'var(--bad)'}">${parseFloat(wDelta)>=0?'+':''}${wDelta}kg</strong></span>` : ''}
+  ${bfDelta !== null ? `<span>BF% <strong style="color:${parseFloat(bfDelta)<0?'var(--ok)':'var(--bad)'}">${parseFloat(bfDelta)>=0?'+':''}${bfDelta}%</strong></span>` : ''}
   </div>
   </div>`;
   } else {
@@ -1502,23 +1494,23 @@ export function renderAthProgressi() {
   const recEl = document.getElementById('ap-records');
   if (recEl) recEl.innerHTML = [
   {
-  label: 'Miglior e1RM', value: bestE1rm > 0 ? `${bestE1rm} kg` : '—', color: 'var(--amber)',
+  label: 'Miglior e1RM', value: bestE1rm > 0 ? `${bestE1rm} kg` : '—', color: 'var(--accent)',
   sub: bestE1rmSess ? `${bestE1rmSess.date} · ${escHtml(bestE1rmSess.session)}` : ''
   },
   {
-  label: 'Volume record', value: bestVol > 0 ? `${(bestVol/1000).toFixed(1)} t` : '—', color: 'var(--teal)',
+  label: 'Volume record', value: bestVol > 0 ? `${(bestVol/1000).toFixed(1)} t` : '—', color: 'var(--text)',
   sub: bestVolSess ? `${bestVolSess.date} · ${escHtml(bestVolSess.session)}` : ''
   },
   {
-  label: 'Sessioni totali', value: all.length, color: 'var(--purple)', sub: ''
+  label: 'Sessioni totali', value: all.length, color: 'var(--text)', sub: ''
   },
   ].map(r => `
-  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+  <div class="ax-rec">
   <div>
-  <div style="font-size:13px;color:var(--muted)">${r.label}</div>
-  ${r.sub ? `<div style="font-size:10px;color:var(--border);margin-top:2px">${r.sub}</div>` : ''}
+  <div style="font-size:13px;color:var(--text2)">${r.label}</div>
+  ${r.sub ? `<div style="font-family:var(--fmono);font-size:10px;color:var(--dim2);margin-top:3px">${r.sub}</div>` : ''}
   </div>
-  <span style="font-size:16px;font-weight:800;color:${r.color}">${r.value}</span>
+  <span class="ax-rec-v" style="color:${r.color}">${r.value}</span>
   </div>`).join('');
 }
 

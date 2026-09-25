@@ -5,7 +5,7 @@
    ══════════════════════════════════════════════════════════════ */
 
 import { DB, appState } from './state.js';
-import { toast, escHtml, openMo, closeMo } from './utils.js';
+import { toast, escHtml, openMo, closeMo, AX, axAreaFill, axChartOptions } from './utils.js';
 
 let nutChartAthlete = null;
 let nutChartCoach   = null;
@@ -98,6 +98,9 @@ export function renderNutritionCard(athId) {
     const targets = DB.nutritionTargets?.[athId] || {};
     const today   = new Date().toISOString().slice(0, 10);
     const todayLog = logs.find(r => r.date === today);
+    // Grafico 14gg solo se c'è almeno un dato: prima comparivano assi vuoti "0–1 kcal"
+    const _cut = new Date(); _cut.setDate(_cut.getDate() - 13);
+    const hasSeries = (DB.nutrition[athId] || []).some(r => r.date >= _cut.toISOString().slice(0, 10) && (r.kcal || r.proteine));
 
     const macroBar = (val, target, color, label) => {
         if (!val && !target) return '';
@@ -106,9 +109,9 @@ export function renderNutritionCard(athId) {
         <div style="margin-bottom:8px">
             <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px">
                 <span style="color:var(--muted)">${label}</span>
-                <span style="color:${color};font-weight:700">${val ?? '—'}${target ? ` / ${target}g` : 'g'}</span>
+                <span style="color:var(--text);font-family:var(--fmono);font-weight:600">${val ?? '—'}${target ? `<span style="color:var(--muted)"> / ${target}g</span>` : 'g'}</span>
             </div>
-            ${target ? `<div style="height:4px;background:var(--s1);border-radius:2px"><div style="height:100%;width:${pct}%;background:${color};border-radius:2px"></div></div>` : ''}
+            ${target ? `<div class="ax-progress" style="height:4px"><i style="width:${pct}%"></i></div>` : ''}
         </div>`;
     };
 
@@ -116,37 +119,36 @@ export function renderNutritionCard(athId) {
         <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:11px">
             <span style="color:var(--muted)">${r.date.slice(5)}</span>
             <div style="display:flex;gap:10px">
-                ${r.kcal ? `<span style="color:var(--teal);font-weight:700">${r.kcal} kcal</span>` : ''}
-                ${r.proteine    ? `<span style="color:#60a5fa">P ${r.proteine}g</span>` : ''}
-                ${r.carboidrati ? `<span style="color:var(--amber)">C ${r.carboidrati}g</span>` : ''}
-                ${r.grassi      ? `<span style="color:#f472b6">G ${r.grassi}g</span>` : ''}
+                ${r.kcal ? `<span style="color:var(--text);font-family:var(--fmono);font-weight:600">${r.kcal} kcal</span>` : ''}
+                ${r.proteine    ? `<span style="color:var(--text2);font-family:var(--fmono)"><span style="color:var(--dim2)">P</span> ${r.proteine}g</span>` : ''}
+                ${r.carboidrati ? `<span style="color:var(--text2);font-family:var(--fmono)"><span style="color:var(--dim2)">C</span> ${r.carboidrati}g</span>` : ''}
+                ${r.grassi      ? `<span style="color:var(--text2);font-family:var(--fmono)"><span style="color:var(--dim2)">G</span> ${r.grassi}g</span>` : ''}
             </div>
         </div>`).join('');
 
     el.innerHTML = `
-    <div class="card" style="border:1px solid var(--border)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-            <div class="card-t">🥗 Nutrizione</div>
-            <button onclick="openNutritionModal('${athId}')"
-                style="font-size:11px;padding:4px 10px;background:var(--teal-d);border:1px solid rgba(249,115,22,.3);border-radius:6px;color:var(--teal);font-weight:700;cursor:pointer">
+    <div class="card">
+        <div class="card-t" style="display:flex;justify-content:space-between;align-items:center">
+            <span>Nutrizione</span>
+            <button onclick="openNutritionModal('${athId}')" class="ax-pill-btn" style="cursor:pointer;letter-spacing:0;font-family:var(--fm)">
                 + Log oggi
             </button>
         </div>
         ${todayLog ? `
-        <div style="background:var(--s1);border-radius:8px;padding:12px;margin-bottom:12px">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:8px;font-weight:700;letter-spacing:.05em">OGGI</div>
-            ${todayLog.kcal ? `<div style="font-size:20px;font-weight:800;color:var(--teal);margin-bottom:8px">${todayLog.kcal} kcal</div>` : ''}
-            ${macroBar(todayLog.proteine,    targets.proteine,    '#60a5fa', 'Proteine')}
-            ${macroBar(todayLog.carboidrati, targets.carboidrati, 'var(--amber)', 'Carboidrati')}
-            ${macroBar(todayLog.grassi,      targets.grassi,      '#f472b6', 'Grassi')}
+        <div style="background:var(--e2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px">
+            <div class="ax-overline" style="margin-bottom:6px">Oggi</div>
+            ${todayLog.kcal ? `<div class="ax-stat-v" style="color:var(--accent);margin-bottom:10px">${todayLog.kcal}<span style="font-size:13px;color:var(--muted)"> kcal</span></div>` : ''}
+            ${macroBar(todayLog.proteine,    targets.proteine,    null, 'Proteine')}
+            ${macroBar(todayLog.carboidrati, targets.carboidrati, null, 'Carboidrati')}
+            ${macroBar(todayLog.grassi,      targets.grassi,      null, 'Grassi')}
         </div>` : `
-        <div style="text-align:center;padding:16px;color:var(--muted);font-size:12px;margin-bottom:12px">
+        <div style="text-align:center;padding:14px;color:var(--muted);font-size:12.5px;margin-bottom:${hasSeries ? '12px' : '0'};border:1px dashed var(--line-hi);border-radius:12px">
             Nessun log per oggi — registra i tuoi macro
         </div>`}
-        ${histHtml ? `<div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.05em;margin-bottom:4px">ULTIMI 5 GIORNI</div>${histHtml}` : ''}
-        <div style="position:relative;height:180px;margin-top:16px;">
+        ${histHtml ? `<div class="ax-overline" style="margin:4px 0 4px">Ultimi 5 giorni</div>${histHtml}` : ''}
+        ${hasSeries ? `<div style="position:relative;height:180px;margin-top:16px;">
             <canvas id="nut-chart-athlete"></canvas>
-        </div>
+        </div>` : ''}
     </div>`;
 
     if (nutChartAthlete) { nutChartAthlete.destroy(); nutChartAthlete = null; }
@@ -179,7 +181,7 @@ export function renderNutritionCoach(athId, containerId) {
         ${logs.length === 0 ? `<div style="color:var(--muted);font-size:12px;text-align:center;padding:12px">Nessun log ancora</div>` : `
         <div style="display:flex;gap:12px;margin-bottom:12px">
             <div class="kpi" style="flex:1"><div class="kpi-l">Media kcal/giorno</div><div class="kpi-v" style="font-size:18px;color:var(--teal)">${avgKcal || '—'}</div></div>
-            <div class="kpi" style="flex:1"><div class="kpi-l">Media proteine/g</div><div class="kpi-v" style="font-size:18px;color:#60a5fa">${avgProt || '—'}</div></div>
+            <div class="kpi" style="flex:1"><div class="kpi-l">Media proteine/g</div><div class="kpi-v" style="font-size:18px;color:var(--text2)">${avgProt || '—'}</div></div>
         </div>
         <div style="font-size:10px;color:var(--muted);font-weight:700;letter-spacing:.05em;margin-bottom:6px">TARGET COACH</div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
@@ -230,13 +232,13 @@ function _buildNutChart(canvasId, athId, instanceRef, days = 14) {
         {
             label: 'kcal',
             data: kcalData,
-            borderColor: 'oklch(0.76 0.16 52)',
-            backgroundColor: 'oklch(0.76 0.16 52 / .08)',
-            borderWidth: 2,
-            pointBackgroundColor: 'oklch(0.76 0.16 52)',
-            pointBorderColor: '#0A0C0F',
-            pointBorderWidth: 1.5,
-            pointRadius: 3.5,
+            borderColor: AX.accent,
+            backgroundColor: axAreaFill(0.22),
+            borderWidth: 2.5,
+            pointBackgroundColor: AX.accentHi,
+            pointBorderColor: AX.bg,
+            pointBorderWidth: 2,
+            pointRadius: 3,
             tension: 0.3,
             fill: true,
             spanGaps: false,
@@ -245,11 +247,12 @@ function _buildNutChart(canvasId, athId, instanceRef, days = 14) {
         {
             label: 'proteine (g)',
             data: protData,
-            borderColor: '#60a5fa',
-            backgroundColor: 'rgba(96,165,250,0.06)',
-            borderWidth: 2,
-            pointBackgroundColor: '#60a5fa',
-            pointBorderColor: '#0A0C0F',
+            borderColor: AX.neutral,
+            backgroundColor: 'transparent',
+            borderWidth: 1.75,
+            borderDash: [5, 4],
+            pointBackgroundColor: AX.neutral,
+            pointBorderColor: AX.bg,
             pointBorderWidth: 1.5,
             pointRadius: 3.5,
             tension: 0.3,
@@ -262,7 +265,7 @@ function _buildNutChart(canvasId, athId, instanceRef, days = 14) {
     if (targets.kcal) datasets.push({
         label: 'target kcal',
         data: Array(days).fill(targets.kcal),
-        borderColor: 'oklch(0.76 0.16 52 / .4)',
+        borderColor: 'rgba(255,144,68,.4)',
         borderWidth: 1.5,
         borderDash: [4, 4],
         pointRadius: 0,
@@ -273,7 +276,7 @@ function _buildNutChart(canvasId, athId, instanceRef, days = 14) {
     if (targets.proteine) datasets.push({
         label: 'target proteine',
         data: Array(days).fill(targets.proteine),
-        borderColor: 'rgba(96,165,250,0.4)',
+        borderColor: 'rgba(154,163,174,.35)',
         borderWidth: 1.5,
         borderDash: [4, 4],
         pointRadius: 0,
@@ -293,18 +296,10 @@ function _buildNutChart(canvasId, athId, instanceRef, days = 14) {
             plugins: {
                 legend: {
                     display: true,
-                    labels: { color: tickCol, font: monoFont, boxWidth: 12, padding: 10,
+                    labels: { color: tickCol, font: monoFont, boxWidth: 8, boxHeight: 8, usePointStyle: true, padding: 12,
                         filter: item => !item.text.startsWith('target') }
                 },
-                tooltip: {
-                    backgroundColor: 'rgba(12,15,19,.95)',
-                    titleColor: '#E2DDD4',
-                    bodyColor: '#9CA3AF',
-                    borderColor: 'rgba(255,255,255,.08)',
-                    borderWidth: 1,
-                    titleFont: monoFont,
-                    bodyFont: monoFont
-                }
+                tooltip: axChartOptions().plugins.tooltip
             },
             scales: {
                 x: {
@@ -314,12 +309,12 @@ function _buildNutChart(canvasId, athId, instanceRef, days = 14) {
                 yKcal: {
                     position: 'left',
                     grid: { color: gridCol },
-                    ticks: { color: 'oklch(0.76 0.16 52)', font: monoFont, callback: v => v + ' kcal' }
+                    ticks: { color: AX.accent, font: monoFont, maxTicksLimit: 5, callback: v => v + ' kcal' }
                 },
                 yProt: {
                     position: 'right',
                     grid: { display: false },
-                    ticks: { color: '#60a5fa', font: monoFont, callback: v => v + 'g' }
+                    ticks: { color: AX.neutral, font: monoFont, maxTicksLimit: 5, callback: v => v + 'g' }
                 }
             }
         }

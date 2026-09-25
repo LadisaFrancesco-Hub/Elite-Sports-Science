@@ -62,6 +62,39 @@
   --transition-snap:   cubic-bezier(0.22, 1, 0.36, 1);
   --transition-base:   0.15s ease;
   --focus-ring: 0 0 0 3px oklch(0.76 0.16 52 / .18);
+
+  /* ── v4 · App Atleta — un solo accento + semantica rigida ──────────
+     ARANCIONE = azione e "i tuoi dati" (CTA, progresso, completato, PR, oggi).
+     VERDE / AMBRA / CORALLO = SOLO stato (ok / attenzione / rischio).
+     Tutto il resto è neutro. Viola e blu non esistono nell'app atleta. */
+  --accent:      oklch(0.76 0.16 52);          /* ≈ #FF9044 */
+  --accent-hi:   oklch(0.83 0.14 62);          /* ≈ #FFB160 */
+  --accent-lo:   oklch(0.68 0.17 44);          /* ≈ #EB6F32 */
+  --accent-ink:  #1A0C02;                      /* testo su accento: 8.5:1 (il bianco è 2.25:1) */
+  --accent-wash: oklch(0.76 0.16 52 / .10);
+  --accent-line: oklch(0.76 0.16 52 / .32);
+  --grad-accent: linear-gradient(180deg, var(--accent-hi) 0%, var(--accent) 52%, var(--accent-lo) 100%);
+  --glow-accent: 0 0 0 1px oklch(0.76 0.16 52 / .30), 0 10px 28px -8px oklch(0.70 0.17 48 / .60);
+
+  --ok:        var(--green);
+  --ok-wash:   oklch(0.74 0.11 175 / .12);
+  --warn:      var(--amber);
+  --warn-wash: oklch(0.82 0.13 88 / .10);
+  --bad:       var(--coral);
+  --bad-wash:  oklch(0.66 0.20 22 / .12);
+
+  /* Elevazione: 3 livelli neutri (niente superfici bluastre) */
+  --e1: #111419;
+  --e2: #161A20;
+  --e3: #1D2229;
+  --line:    rgba(255,255,255,.07);
+  --line-hi: rgba(255,255,255,.12);
+  --sheen:   linear-gradient(180deg, rgba(255,255,255,.035) 0%, rgba(255,255,255,0) 46%);
+  --sh-card:  0 1px 0 rgba(255,255,255,.05) inset, 0 1px 2px rgba(0,0,0,.45), 0 16px 32px -20px rgba(0,0,0,.9);
+  --sh-float: 0 1px 0 rgba(255,255,255,.07) inset, 0 22px 44px -18px rgba(0,0,0,.9);
+  --r-card: 16px;
+  --r-ctl:  12px;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -716,6 +749,10 @@ tr:hover td { background: #171C22; }
   box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 8px 20px rgba(215,94,20,.40);
 }
 .toast.show { transform: translateY(0); }
+/* Fix: il toast "nascosto" era solo traslato di 80px — su mobile (bottom:80px)
+   restava visibile come pillola arancione vuota sopra la bottom bar. */
+.toast { opacity: 0; visibility: hidden; transition: transform .25s, opacity .2s, visibility 0s linear .25s; }
+.toast.show { opacity: 1; visibility: visible; transition: transform .25s var(--transition-snap), opacity .2s, visibility 0s; }
 .toast { max-width: min(340px, calc(100vw - 32px)); white-space: normal; line-height: 1.4; text-align: left; }
 .toast-error   { background: var(--coral) !important; color: #fff !important; box-shadow: 0 1px 0 rgba(255,255,255,.18) inset, 0 8px 20px rgba(0,0,0,.45) !important; }
 .toast-success { background: var(--green) !important; color: #08130f !important; box-shadow: 0 1px 0 rgba(255,255,255,.25) inset, 0 8px 20px rgba(0,0,0,.4) !important; }
@@ -1387,3 +1424,340 @@ html body select:focus {
 }
 .wr-chip:active { opacity: .75; }
 .wr-connected   { box-shadow: 0 0 6px rgba(20,184,166,.2); }
+
+/* ══════════════════════════════════════════════════════════════
+   APP ATLETA v4 — Redesign visivo (scope: body.is-athlete)
+   Classe impostata in main.js al login atleta → la Coach Console non cambia.
+   Regole: 1 accento (arancione) per azione/"i tuoi dati"; verde/ambra/corallo
+   SOLO per stato; tutto il resto neutro. Un solo CTA pieno per schermata.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Superfici, profondità, tipografia ─────────────────────── */
+.is-athlete { background: radial-gradient(120% 60% at 50% -10%, #14171C 0%, var(--bg) 60%) fixed; }
+.is-athlete .content { background: transparent; }
+.is-athlete .ph { font-size: 26px !important; font-weight: 700 !important; letter-spacing: -.025em !important; margin-bottom: 4px; }
+.is-athlete .ps { color: var(--muted) !important; margin-bottom: 22px; }
+
+.is-athlete .card,
+.is-athlete .kpi,
+.is-athlete .wc,
+.is-athlete .ax-card {
+  background: var(--sheen), var(--e1) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-card) !important;
+  box-shadow: var(--sh-card);
+}
+.is-athlete .card { padding: 18px !important; }
+.is-athlete .ax-card { padding: 14px 16px; margin-bottom: 14px; }
+
+/* Header card: overline pulita (niente banda gradiente, che su radius 16 sbordava) */
+.is-athlete .panel:not(#p-editor) .card > .card-t,
+.is-athlete .card-t {
+  background: none !important;
+  margin: 0 0 14px !important;
+  padding: 0 0 11px !important;
+  border-bottom: 1px solid var(--line) !important;
+  color: var(--muted) !important;
+  letter-spacing: .16em !important;
+}
+
+/* Overline / testi di servizio */
+.ax-overline { font-family: var(--fmono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.ax-h1 { font-size: 27px; font-weight: 700; letter-spacing: -.025em; line-height: 1.12; color: var(--text); }
+.ax-sub { font-size: 12.5px; color: var(--muted); line-height: 1.45; }
+.ax-accent-text { color: var(--accent); }
+.ax-dim { color: var(--dim2); font-size: 11px; }
+
+/* ── 2. KPI: numeri mono grandi, etichette uniformi ───────────── */
+.is-athlete .kpi { padding: 14px 15px !important; }
+.is-athlete .kpi-l { font-size: 9.5px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.is-athlete .kpi-v { font-size: 28px; font-weight: 600; color: var(--text); }
+.is-athlete .kpi-s { color: var(--muted); }
+
+/* Sparkline KPI home (neutra; ultima barra = accento) */
+.ax-spark { display: flex; gap: 3px; align-items: flex-end; height: 22px; margin-top: 10px; }
+.ax-spark i { flex: 1; min-width: 4px; border-radius: 2px; background: rgba(255,255,255,.14); }
+.ax-spark.is-accent i { background: oklch(0.76 0.16 52 / .38); }
+.ax-spark i:last-child { background: var(--accent); box-shadow: 0 0 10px -1px oklch(0.76 0.16 52 / .7); }
+
+/* Barra di progresso generica */
+.ax-progress { height: 6px; background: rgba(255,255,255,.06); border-radius: 99px; overflow: hidden; }
+.ax-progress > i { display: block; height: 100%; border-radius: inherit; background: var(--grad-accent); box-shadow: 0 0 12px -2px oklch(0.76 0.16 52 / .8); transition: width .6s var(--ease-out); }
+.ax-progress.is-ok > i { background: var(--ok); box-shadow: 0 0 12px -2px oklch(0.74 0.11 175 / .7); }
+
+/* ── 3. Bottoni ───────────────────────────────────────────────── */
+.is-athlete .btn-p,
+.ax-cta {
+  background: var(--grad-accent) !important;
+  color: var(--accent-ink) !important;
+  border: none !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.35) inset, var(--glow-accent) !important;
+  font-weight: 700 !important;
+}
+.ax-cta {
+  width: 100%; min-height: 52px; padding: 14px 18px; border-radius: 14px;
+  font-family: var(--fm); font-size: 15.5px; letter-spacing: .01em; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  position: relative; overflow: hidden; transition: transform .12s, filter .15s;
+}
+/* sheen che attraversa il CTA principale: il dettaglio "vivo" */
+.ax-cta::after {
+  content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255,255,255,.38) 50%, transparent 65%);
+  transform: translateX(-120%);
+}
+/* solo sui CTA d'ingresso (home, conferma wellness): durante l'allenamento niente movimento superfluo */
+@media (prefers-reduced-motion: no-preference) {
+  .ax-hero .ax-cta::after, #p-wellness .ax-cta::after { animation: ax-sheen 3.6s var(--ease-out) 1.2s infinite; }
+}
+@keyframes ax-sheen { 0% { transform: translateX(-120%); } 38%, 100% { transform: translateX(120%); } }
+.ax-cta:active { transform: scale(.975); filter: brightness(.95); }
+.ax-cta-sm { min-height: 40px; padding: 9px 14px; font-size: 12.5px; border-radius: 10px; margin-top: 10px; }
+.ax-cta-lg { min-height: 58px; font-size: 16px; letter-spacing: .02em; }
+
+.ax-ghost {
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  width: 100%; min-height: 46px; padding: 12px; border-radius: 12px; cursor: pointer;
+  background: var(--e2); border: 1px solid var(--line-hi); color: var(--text2);
+  font-family: var(--fm); font-size: 13px; font-weight: 600;
+  transition: border-color .15s, background .15s, transform .12s;
+}
+.ax-ghost:hover { border-color: var(--accent-line); color: var(--text); }
+.ax-ghost:active { transform: scale(.98); }
+.ax-ghost svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ax-ghost.is-accent { color: var(--accent); }
+
+/* Tag neutro (fasi, split) */
+.is-athlete .tag.tn { background: rgba(255,255,255,.05); border-color: var(--line-hi); color: var(--text2); border-radius: 6px; }
+
+/* ── 4. OGGI ──────────────────────────────────────────────────── */
+.ax-greet { margin: 4px 0 20px; }
+.ax-greet .ax-overline { margin-bottom: 6px; }
+
+/* "Da fare" (check-in / feedback mancante): è un promemoria → AMBRA, non allarme rosso */
+.ax-task {
+  display: flex; align-items: center; gap: 12px; cursor: pointer;
+  margin-bottom: 18px; padding: 14px 14px 14px 16px; border-radius: var(--r-card);
+  background: linear-gradient(180deg, oklch(0.82 0.13 88 / .07), oklch(0.82 0.13 88 / .03)), var(--e1);
+  border: 1px solid oklch(0.82 0.13 88 / .22);
+  box-shadow: var(--sh-card);
+}
+.ax-task-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; background: var(--warn); box-shadow: 0 0 0 0 oklch(0.82 0.13 88 / .5); }
+@media (prefers-reduced-motion: no-preference) { .ax-task-dot { animation: ax-ping 2.2s var(--ease-out) infinite; } }
+@keyframes ax-ping { 0% { box-shadow: 0 0 0 0 oklch(0.82 0.13 88 / .55); } 70%, 100% { box-shadow: 0 0 0 10px oklch(0.82 0.13 88 / 0); } }
+.ax-task-t { font-size: 14px; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.ax-task-btn { flex-shrink: 0; white-space: nowrap; padding: 9px 12px; border-radius: 10px; background: var(--e3); border: 1px solid var(--line-hi); color: var(--warn); font-size: 12px; font-weight: 700; }
+
+/* Readiness compatta (check-in fatto) */
+.ax-ready { display: flex; align-items: center; gap: 16px; cursor: pointer; margin-bottom: 18px; }
+.ax-ready-ring {
+  width: 64px; height: 64px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: radial-gradient(closest-side, var(--e1) 78%, transparent 80% 100%), conic-gradient(var(--tone) calc(var(--pct) * 1%), rgba(255,255,255,.07) 0);
+  box-shadow: 0 0 22px -6px var(--tone);
+}
+.ax-ready-ring span { font-family: var(--fmono); font-size: 20px; font-weight: 600; color: var(--text); }
+.ax-ready-l { font-size: 17px; font-weight: 700; color: var(--tone); margin-bottom: 2px; }
+
+/* Hero allenamento: l'unico punto caldo della home */
+.is-athlete .card.ax-hero {
+  position: relative; overflow: hidden;
+  background:
+    radial-gradient(90% 70% at 100% 0%, oklch(0.76 0.16 52 / .16), transparent 60%),
+    var(--sheen), var(--e1) !important;
+  border-color: oklch(0.76 0.16 52 / .20) !important;
+  box-shadow: var(--sh-float);
+}
+.ax-hero-t { font-size: 24px; font-weight: 700; letter-spacing: -.02em; color: var(--text); margin-bottom: 8px; }
+.ax-meta-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 18px; }
+.ax-meta { font-family: var(--fmono); font-size: 11px; color: var(--muted); }
+.ax-done-ic { width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--ok-wash); color: var(--ok); font-size: 18px; font-weight: 700; box-shadow: 0 0 0 1px oklch(0.74 0.11 175 / .3) inset; }
+
+/* Highlight motivazionale (PR / streak / crescita) — accento, mai ambra */
+.ax-highlight { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin-bottom: 14px; border-radius: 14px; background: var(--accent-wash); border: 1px solid oklch(0.76 0.16 52 / .22); font-size: 13px; color: var(--text2); }
+.ax-highlight strong { color: var(--accent); font-weight: 700; }
+.ax-highlight-k { flex-shrink: 0; font-family: var(--fmono); font-size: 9.5px; font-weight: 600; letter-spacing: .14em; color: var(--accent-ink); background: var(--grad-accent); padding: 4px 7px; border-radius: 6px; }
+.ax-quote { padding: 12px 14px; margin-bottom: 14px; border-radius: 14px; border: 1px dashed var(--line-hi); font-size: 13px; font-style: italic; color: var(--muted); }
+
+/* Striscia trofei */
+.ax-trophy { display: flex; align-items: center; gap: 12px; cursor: pointer; min-height: 44px; }
+.ax-trophy-ic { width: 38px; height: 38px; border-radius: 11px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 19px; background: var(--e3); border: 1px solid var(--line-hi); }
+.ax-trophy .ax-progress { height: 4px; margin-top: 7px; }
+
+/* Notifica (reply coach non letta) */
+.ax-notify { display: flex; align-items: center; gap: 12px; cursor: pointer; }
+.ax-notify-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; background: var(--accent); box-shadow: 0 0 10px var(--accent); }
+.ax-notify-t { font-size: 13.5px; font-weight: 700; color: var(--text); }
+.ax-pill-btn { flex-shrink: 0; padding: 7px 12px; border-radius: 99px; background: var(--accent-wash); border: 1px solid var(--accent-line); color: var(--accent); font-size: 11.5px; font-weight: 700; }
+.ax-count { background: var(--accent); color: var(--accent-ink); font-family: var(--fmono); font-size: 9.5px; font-weight: 700; border-radius: 99px; padding: 2px 7px; letter-spacing: 0; }
+
+/* Nota del coach: voce del coach = neutra (niente viola) */
+.ax-coachnote { padding: 0 !important; overflow: hidden; }
+.ax-coachnote-h { display: flex; align-items: center; gap: 10px; padding: 13px 16px; min-height: 48px; cursor: pointer; }
+.ax-coach-mark { width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--e3); border: 1px solid var(--line-hi); color: var(--text2); font-size: 12px; }
+.ax-coachnote-t { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 700; color: var(--text); }
+
+/* ── 5. SETTIMANA ─────────────────────────────────────────────── */
+.ax-weekbar { display: flex; gap: 5px; margin-bottom: 14px; }
+.ax-weekbar i { flex: 1; height: 5px; border-radius: 99px; background: rgba(255,255,255,.07); }
+.ax-weekbar i.is-sched { background: oklch(0.76 0.16 52 / .28); }
+.ax-weekbar i.is-done { background: var(--accent); box-shadow: 0 0 10px -2px var(--accent); }
+.ax-weekbar i.is-today { height: 9px; margin-top: -2px; box-shadow: 0 0 0 1.5px var(--accent); }
+.ax-legend { display: flex; gap: 14px; margin-top: 10px; font-size: 10.5px; color: var(--muted); }
+.ax-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+
+.ax-day { padding: 13px 14px; border-radius: 14px; background: var(--e1); border: 1px solid var(--line); transition: border-color .2s; }
+.ax-day.is-today { background: radial-gradient(80% 90% at 0% 0%, oklch(0.76 0.16 52 / .12), transparent 70%), var(--e1); border-color: var(--accent-line); box-shadow: 0 0 0 1px oklch(0.76 0.16 52 / .12), 0 12px 30px -16px oklch(0.70 0.17 48 / .55); }
+.ax-day-h { display: flex; align-items: center; justify-content: space-between; }
+.ax-day-n { font-family: var(--fmono); font-size: 10.5px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.ax-day.is-today .ax-day-n { color: var(--accent); }
+.ax-day-d { font-family: var(--fmono); font-size: 17px; font-weight: 600; color: var(--dim); }
+.ax-day.is-today .ax-day-d { color: var(--text); }
+.ax-day.is-done .ax-day-d { color: var(--accent); }
+.ax-day-tag { display: inline-block; margin-top: 4px; font-family: var(--fmono); font-size: 9px; font-weight: 600; letter-spacing: .12em; color: var(--accent); }
+.ax-day-item { margin-top: 8px; padding: 8px 10px; border-radius: 10px; background: var(--e2); border: 1px solid var(--line); }
+.ax-day-item.is-done { background: var(--accent-wash); border-color: oklch(0.76 0.16 52 / .22); }
+.ax-day-item-t { font-size: 12.5px; font-weight: 700; color: var(--text); }
+.ax-day-item.is-done .ax-day-item-t { color: var(--accent); }
+.ax-day-item-s { font-size: 11px; color: var(--muted); margin-top: 1px; }
+.ax-day-rest { margin-top: 6px; font-size: 11.5px; color: var(--dim2); }
+
+/* ── 6. WELLNESS ──────────────────────────────────────────────── */
+.is-athlete .hero-readiness {
+  background: var(--sheen), var(--e1);
+  border: 1px solid var(--line); border-radius: 22px;
+  box-shadow: var(--sh-float); isolation: isolate;
+}
+/* alone del colore di stato dietro al ring (--tone impostato da upW) */
+.is-athlete .hero-readiness::before {
+  content: ''; position: absolute; z-index: -1; left: 50%; top: 18px; width: 240px; height: 240px; transform: translateX(-50%);
+  background: radial-gradient(closest-side, color-mix(in oklch, var(--tone, var(--accent)) 26%, transparent), transparent);
+  pointer-events: none;
+}
+.is-athlete .ring-bg { stroke: rgba(255,255,255,.06); }
+.is-athlete .ring-f { filter: drop-shadow(0 0 5px currentColor); transition: stroke-dashoffset 1s var(--ease-out), stroke .3s; }
+.is-athlete #r-verd { font-family: var(--fh) !important; letter-spacing: -.01em; }
+.is-athlete .hero-readiness [id^="r-"]:not(#r-verd):not(#r-rec) { font-family: var(--fmono); font-weight: 600 !important; color: var(--text2); }
+
+.is-athlete .wc { padding: 16px !important; }
+/* Selezione = accento; il SIGNIFICATO (buono/scarso) lo porta l'etichetta a destra */
+.is-athlete .w-pill { background: var(--e2); border-color: var(--line); color: var(--muted); font-family: var(--fmono); font-weight: 600; border-radius: 12px; }
+.is-athlete .w-pill.active-t,
+.is-athlete .w-pill.active-a,
+.is-athlete .w-pill.active-c {
+  background: var(--grad-accent); border-color: transparent; color: var(--accent-ink);
+  box-shadow: 0 1px 0 rgba(255,255,255,.3) inset, 0 8px 18px -8px oklch(0.70 0.17 48 / .75);
+  transform: scale(1.04);
+}
+.is-athlete .wc-desc { font-family: var(--fmono) !important; font-size: 11.5px !important; letter-spacing: .02em; }
+
+/* Mappa corpo: hotspot tutti uguali (i colori per zona non significavano nulla) */
+.bm-hot { fill: oklch(0.76 0.16 52 / .28); stroke: oklch(0.76 0.16 52 / .75); stroke-width: .8; cursor: pointer; transition: fill .15s; }
+.bm-hot:hover, .bm-hot:active { fill: oklch(0.76 0.16 52 / .6); }
+
+/* ── 7. SESSIONE LIVE ─────────────────────────────────────────── */
+.ax-phase-h { width: 100%; margin: 20px 0 10px; padding-bottom: 8px; border-bottom: 1px solid var(--line); font-family: var(--fmono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); }
+.ax-phase-h b { color: var(--accent); font-weight: 600; margin-right: 6px; }
+.ax-tip { font-size: 11.5px; color: var(--muted); margin-bottom: 14px; padding: 9px 12px; border-radius: 10px; background: var(--e2); border: 1px solid var(--line); line-height: 1.5; }
+.ax-tip strong { color: var(--text2); }
+
+.ax-ex {
+  position: relative; width: 100%; padding: 16px;
+  background: var(--sheen), var(--e1); border: 1px solid var(--line);
+  border-left: 3px solid var(--accent) !important;
+  box-shadow: var(--sh-card);
+}
+.ax-ex-name { font-weight: 700; font-size: 16.5px; letter-spacing: -.01em; color: var(--text); flex: 1 1 auto; word-wrap: break-word; min-width: 0; padding-right: 8px; }
+.ax-ex-vol { position: absolute; top: 16px; right: 16px; font-family: var(--fmono); font-weight: 600; font-size: 14px; color: var(--accent); }
+.ax-ex-meta { margin: 0; font-family: var(--fmono); font-size: 12.5px; color: var(--muted); letter-spacing: .01em; }
+.ax-ex-meta b { color: var(--text); font-weight: 600; }
+.ax-sep { color: var(--dim3); margin: 0 5px; }
+.ax-next-l { font-size: 11.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
+html body.is-athlete input.ax-next-in:not([type="range"]):not([type="hidden"]) {
+  width: 112px !important; padding: 7px 10px !important; font-size: 13px !important;
+  border-radius: 9px !important; background: var(--e2) !important; border: 1px solid var(--line-hi) !important;
+  font-family: var(--fmono) !important;
+}
+.ax-chip-btn { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; flex-shrink: 0; padding: 5px 10px; border-radius: 8px; background: var(--e3); border: 1px solid var(--line-hi); color: var(--text2); font-size: 11px; font-weight: 700; touch-action: manipulation; }
+.ax-chip-btn span:first-child { color: var(--accent); font-size: 10px; }
+.ax-pr-badge { align-items: center; gap: 4px; padding: 3px 8px; border-radius: 6px; background: var(--grad-accent); color: var(--accent-ink); font-family: var(--fmono); font-size: 10.5px; font-weight: 700; letter-spacing: .08em; white-space: nowrap; box-shadow: var(--glow-accent); }
+.ax-cue { margin-bottom: 16px; padding: 10px 12px; border-radius: 10px; background: var(--e2); border: 1px solid var(--line); }
+.ax-cue .ax-overline { margin-bottom: 4px; }
+.ax-cue div:last-child { font-size: 12.5px; color: var(--text2); line-height: 1.5; }
+.ax-ramp { width: 100%; margin-top: 12px; padding: 8px 12px; border-radius: 9px; background: rgba(255,255,255,.02); border: 1px dashed var(--line-hi); font-family: var(--fmono); font-size: 11px; color: var(--muted); }
+.ax-ramp b { color: var(--text2); font-weight: 600; }
+.ax-norest { display: flex; align-items: center; padding: 5px 10px; border-radius: 8px; background: var(--e3); border: 1px dashed var(--line-hi); font-family: var(--fmono); font-size: 10px; font-weight: 600; letter-spacing: .08em; color: var(--text2); }
+.ax-link-badge { position: absolute; bottom: -10px; left: 16px; z-index: 10; padding: 2px 8px; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font-family: var(--fmono); font-size: 9px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; box-shadow: 0 2px 6px rgba(0,0,0,.5); }
+
+/* Timer REST: START = azione → accento (era verde menta fuori palette) */
+.is-athlete .timer-container { background: var(--e2) !important; border: 1px solid var(--line-hi) !important; border-radius: 10px !important; padding: 5px 6px 5px 11px !important; }
+.ax-timer-l { font-family: var(--fmono); font-size: 9.5px; font-weight: 600; letter-spacing: .14em; color: var(--muted); }
+.is-athlete .timer-display { font-family: var(--fmono); font-size: 13px; font-weight: 600; color: var(--text); font-variant-numeric: tabular-nums; }
+.is-athlete .timer-btn { background: var(--grad-accent); color: var(--accent-ink); border-radius: 7px; padding: 5px 11px; font-size: 11px; font-weight: 700; letter-spacing: .04em; box-shadow: 0 1px 0 rgba(255,255,255,.3) inset; }
+.is-athlete .timer-running { border-color: var(--accent) !important; }
+
+/* Pallini set */
+.is-athlete .dot { background: var(--e2); border: 1.5px solid var(--line-hi); color: var(--muted); font-family: var(--fmono); font-weight: 600; }
+.is-athlete .dot.warm { background: transparent; border: 1.5px dashed oklch(0.76 0.16 52 / .55); color: var(--accent); }
+.is-athlete .dot.done { background: var(--grad-accent); border-color: transparent; color: var(--accent-ink); box-shadow: 0 6px 16px -6px oklch(0.70 0.17 48 / .8); }
+.is-athlete .dot.warm.done { background: oklch(0.76 0.16 52 / .35); color: var(--text); box-shadow: none; }
+.is-athlete .dot.done.is-pr { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent-hi), 0 0 18px 2px oklch(0.76 0.16 52 / .7); }
+
+/* KPI live */
+.is-athlete #p-sessione .g4 .kpi-v { font-size: 24px; }
+
+/* ── 8. PROGRESSI ─────────────────────────────────────────────── */
+/* Barre volume: gradiente accento, storico attenuato, ultima barra piena */
+.is-athlete #ap-vol-bc .bc-bar { border-top: none; border-radius: 6px 6px 3px 3px; background: linear-gradient(180deg, oklch(0.76 0.16 52 / .55), oklch(0.76 0.16 52 / .12)); }
+.is-athlete #ap-vol-bc .bc-col.is-last .bc-bar { background: var(--grad-accent); box-shadow: 0 0 18px -4px oklch(0.76 0.16 52 / .9); }
+.is-athlete #ap-vol-bc .bc-val { color: var(--muted); font-size: 9.5px; }
+.is-athlete #ap-vol-bc .bc-col.is-last .bc-val { color: var(--accent); font-weight: 600; }
+.is-athlete #ap-vol-bc { height: 150px; }
+.ax-stat-l { font-size: 11px; color: var(--muted); margin-bottom: 3px; }
+.ax-stat-v { font-family: var(--fmono); font-size: 20px; font-weight: 600; letter-spacing: -.02em; color: var(--text); }
+.ax-rec { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ax-rec:last-child { border-bottom: none; padding-bottom: 2px; }
+.ax-rec-v { font-family: var(--fmono); font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+.ax-chart-note { margin-top: 8px; font-family: var(--fmono); font-size: 10px; color: var(--muted); text-align: center; }
+
+/* Bacheca trofei */
+.ax-badge { display: flex; flex-direction: column; align-items: center; text-align: center; width: 72px; padding: 10px 6px; border-radius: 12px; transition: transform .2s var(--ease-out); }
+.ax-badge.is-locked { border: 1px dashed var(--line-hi); background: transparent; }
+.ax-badge.is-locked > div:first-child { filter: grayscale(1) brightness(.6); opacity: .55; }
+.ax-badge.is-locked > div:nth-child(2) { color: var(--dim2) !important; }
+
+/* ── 9. COACH (chat) ──────────────────────────────────────────── */
+.ax-section-l { font-family: var(--fmono); font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.ax-thread { background: var(--sheen), var(--e1); border: 1px solid var(--line); border-radius: var(--r-card); box-shadow: var(--sh-card); }
+.ax-bubble { max-width: 80%; padding: 10px 14px; font-size: 13.5px; line-height: 1.5; word-break: break-word; }
+.ax-bubble.is-me { background: var(--grad-accent); color: var(--accent-ink); border-radius: 16px 16px 4px 16px; box-shadow: 0 8px 20px -12px oklch(0.70 0.17 48 / .9); }
+.ax-bubble.is-coach { background: var(--e3); color: var(--text); border: 1px solid var(--line-hi); border-radius: 16px 16px 16px 4px; }
+.ax-time { font-family: var(--fmono); font-size: 9.5px; color: var(--dim2); margin-top: 4px; padding: 0 4px; }
+.ax-coach-quote { margin-bottom: 12px; padding: 11px 13px; border-radius: 12px; background: var(--e2); border: 1px solid var(--line-hi); }
+.ax-coach-quote .ax-overline { margin-bottom: 5px; color: var(--text2); }
+.ax-coach-quote div:last-child { font-size: 13.5px; color: var(--text); line-height: 1.6; white-space: pre-wrap; }
+.ax-soft { font-size: 12px; color: var(--muted); padding: 8px 11px; margin-bottom: 8px; border-radius: 10px; background: var(--e2); }
+
+/* ── 10. Bottom bar: indicatore attivo + badge in accento ─────── */
+.is-athlete .bottom-bar { background: rgba(10,12,15,.84) !important; border-top: 1px solid var(--line) !important; box-shadow: 0 -12px 30px -10px rgba(0,0,0,.7); }
+.is-athlete .bb-item { position: relative; color: var(--dim); }
+.is-athlete .bb-item.on { color: var(--accent); transform: none; }
+.is-athlete .bb-item.on .bb-icon { filter: drop-shadow(0 0 8px oklch(0.76 0.16 52 / .7)); }
+.is-athlete .bb-item::before { content: ''; position: absolute; top: 0; left: 50%; width: 20px; height: 3px; border-radius: 0 0 3px 3px; background: var(--accent); box-shadow: 0 0 12px var(--accent); transform: translateX(-50%) scaleX(0); transition: transform .25s var(--ease-out); }
+.is-athlete .bb-item.on::before { transform: translateX(-50%) scaleX(1); }
+.is-athlete .bb-lbl { font-size: 8.5px; letter-spacing: .08em; }
+.is-athlete #bb-msg-badge, .is-athlete #bb-fb-badge { background: var(--accent) !important; color: var(--accent-ink) !important; }
+.is-athlete #bb-well-badge { background: var(--warn) !important; }
+
+/* ── 11. Micro-interazioni: ingresso a cascata dei blocchi del pannello ─ */
+@media (prefers-reduced-motion: no-preference) {
+  .is-athlete .panel.on > * { animation: ax-in .5s var(--ease-out) both; }
+  .is-athlete .panel.on > *:nth-child(2) { animation-delay: .04s; }
+  .is-athlete .panel.on > *:nth-child(3) { animation-delay: .08s; }
+  .is-athlete .panel.on > *:nth-child(4) { animation-delay: .12s; }
+  .is-athlete .panel.on > *:nth-child(5) { animation-delay: .16s; }
+  .is-athlete .panel.on > *:nth-child(6) { animation-delay: .20s; }
+  .is-athlete .panel.on > *:nth-child(n+7) { animation-delay: .24s; }
+  .is-athlete .card, .is-athlete .ax-card, .is-athlete .ax-day { transition: transform .18s var(--ease-out), border-color .2s; }
+  .is-athlete [onclick].ax-card:active, .is-athlete [onclick].card:active { transform: scale(.985); }
+}
+@keyframes ax-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }

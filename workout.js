@@ -191,7 +191,7 @@ export function loadLive() {
         const currentWeekVal = (selectWeek && selectWeek.value) ? selectWeek.value : '1';
         phaseObjEl.innerHTML = `
           <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:${sch.objective ? '4px' : '0'};">
-            ${sch.phase ? `<span style="border:1px solid var(--teal);color:var(--teal);font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;white-space:nowrap;">${escHtml(sch.phase)}</span>` : ''}
+            ${sch.phase ? `<span class="tag tn" style="white-space:nowrap;">${escHtml(sch.phase)}</span>` : ''}
             <span style="font-size:11px;color:var(--muted);">Settimana ${escHtml(currentWeekVal)} di ${totalWeeks}</span>
           </div>
           ${sch.objective ? `<div style="font-size:11px;color:var(--muted);font-style:italic;">Obiettivo: ${escHtml(sch.objective)}</div>` : ''}`;
@@ -223,7 +223,7 @@ export function loadLive() {
         let sessionBanner = '';
         if (mods.warningType !== 'none') {
             const bc = mods.warningType === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)';
-            const fc = mods.warningType === 'critical' ? '#ef4444' : '#fbbf24';
+            const fc = mods.warningType === 'critical' ? 'var(--coral)' : 'var(--amber)';
             sessionBanner = `<div style="background:${bc};border:1px solid ${fc};color:${fc};
                 padding:12px 14px;border-radius:10px;margin-bottom:12px;font-size:11px;font-weight:800;
                 letter-spacing:0.3px;">🤖 AUTOREGOLAZIONE ATTIVA
@@ -231,37 +231,29 @@ export function loadLive() {
                     ${mods.messages.join('<br>')}
                 </div></div>`;
         }
+        const _nWork = exs.filter(ex => ex.section !== 'warmup' && ex.type !== 'circuit').length;
         wrap.innerHTML = sessionBanner + `
-        <div id="live-prog-header" style="padding:10px 12px;background:var(--s1);border:1px solid var(--border);border-radius:10px;margin-bottom:12px">
-            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px">
-                <span class="prog-text" style="font-size:12px;font-weight:700;color:var(--text)">0/0 esercizi</span>
-                <span class="prog-pct" style="font-size:11px;color:var(--muted)">0%</span>
+        <div id="live-prog-header" style="padding:12px 14px;background:var(--e2);border:1px solid var(--line);border-radius:12px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+                <span class="prog-text" style="font-family:var(--fmono);font-size:12px;font-weight:600;color:var(--text)">0/${_nWork} esercizi</span>
+                <span class="prog-pct" style="font-family:var(--fmono);font-size:11px;color:var(--muted)">0%</span>
             </div>
-            <div style="height:4px;background:var(--s2);border-radius:2px;overflow:hidden">
-                <div class="prog-fill" style="width:0%;height:100%;background:var(--amber);border-radius:2px;transition:width .3s"></div>
+            <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden">
+                <div class="prog-fill" style="width:0%;height:100%;background:var(--accent);border-radius:99px;transition:width .4s cubic-bezier(.22,1,.36,1);box-shadow:0 0 10px -2px var(--accent)"></div>
             </div>
         </div>
-        <div style="font-size:11px;color:var(--muted);text-align:center;margin-bottom:15px;background:var(--s2);padding:8px;border-radius:8px;border:1px solid var(--border);">
-            💡 <strong style="color:var(--teal)">Tip:</strong>
-            Fai <strong>Tap</strong> sul pallino per completare, oppure
-            <strong>Tieni premuto</strong> per modificare Rep/Kg reali.
+        <div class="ax-tip">
+            <strong>Tip</strong> · <strong>Tap</strong> sul pallino per completare,
+            <strong>tieni premuto</strong> per modificare rep/kg reali.
         </div>`;
     }
 
     const currentWeek = document.getElementById('lv-week').value || '1';
 
     // ── Mappa colori per tipo di esercizio ───────────────────
-    const typeColors = {
-        'normal':         'var(--teal)',
-        'max effort':     'var(--coral)',
-        'dynamic effort': 'var(--blue)',
-        'repetition':     'var(--teal)',
-        'superset':       'var(--purple)',
-        'tempo':          '#fbbf24',
-        'amrap':          'var(--blue)',
-        'hiit':           '#fbbf24',
-        'jump set':       '#ff7a55'
-    };
+    // v4: un solo accento per tutti i tipi (i 7 colori non avevano legenda né significato di stato);
+    // il tipo resta leggibile nei badge SUPERSET/JUMP SET e nel badge serie.
+    const typeColors = {};
 
     // ── Mappa groupId → lettera per il badge atleta ─────────
     // Raccoglie tutti i groupId unici di superset/jump set nell'ordine
@@ -281,9 +273,9 @@ export function loadLive() {
 
     // ── Fasi della sessione (scompartimenti clinici) ─────────
     const fasiAtleta = [
-        { id: 'warmup',   label: '🔥 FASE 1: WARM-UP & ATTIVAZIONE',         color: '#A78BFA' },
-        { id: 'centrale', label: '🏋️‍♂️ FASE 2: PARTE CENTRALE / PERFORMANCE', color: '#F97316' },
-        { id: 'cooldown', label: '🧊 FASE 3: COOL-DOWN & RECUPERO',            color: '#3B82F6' }
+        { id: 'warmup',   n: '01', label: 'Warm-up & attivazione' },
+        { id: 'centrale', n: '02', label: 'Parte centrale / performance' },
+        { id: 'cooldown', n: '03', label: 'Cool-down & recupero' }
     ];
 
     fasiAtleta.forEach(fase => {
@@ -296,11 +288,8 @@ export function loadLive() {
 
         // Intestazione di fase
         const headerDiv = document.createElement('div');
-        headerDiv.style.cssText = `width:100%; padding:8px 0; margin:15px 0 10px 0;
-            border-bottom:1px solid rgba(255,255,255,0.05);
-            color:${fase.color}; font-size:11px; font-weight:800;
-            letter-spacing:0.5px; text-transform:uppercase;`;
-        headerDiv.textContent = fase.label;
+        headerDiv.className = 'ax-phase-h';
+        headerDiv.innerHTML = `<b>${fase.n}</b>Fase · ${fase.label}`;
         if (wrap) wrap.appendChild(headerDiv);
 
         // Card esercizi
@@ -332,10 +321,10 @@ export function loadLive() {
 
             // ── Tipo esercizio e colore bordo ─────────────────
             const currentType = (ex.type || 'normal').toLowerCase();
-            const borderColor = typeColors[currentType] || 'var(--teal)';
+            const borderColor = typeColors[currentType] || 'var(--accent)';
             const _stLabels = { myo_reps:'MYO', hyper_block_dup:'BLK', hyper_stretch:'STRCH', hyper_metabolic:'META', block_period:'BLOCK', double_prog:'DBL', overreach:'OVER', lin_taper:'TAPER', step_load:'STEP', wave_contrast:'WAVE', french_contrast:'FC', cluster:'CLST', wave_load:'WL', wup:'WUP', triphasic:'TRI', wendler_531:'531', linear_classic:'LIN', amrap_top:'AMRAP' };
             const seriesTypeBadge = (ex.series_type && ex.series_type !== 'manual')
-                ? `<span style="font-size:9px;background:#00E5A8;color:#000;padding:2px 6px;border-radius:6px;font-weight:800;letter-spacing:0.5px;">${_stLabels[ex.series_type] || ex.series_type.toUpperCase().slice(0,5)}</span>`
+                ? `<span class="tag tn">${_stLabels[ex.series_type] || ex.series_type.toUpperCase().slice(0,5)}</span>`
                 : '';
 
             // ── GAP 2: Istruzioni protocollo collassabili ─────
@@ -344,12 +333,12 @@ export function loadLive() {
             const seriesTypeInfoHtml = stInstr ? `
               <div style="margin-top:8px;">
                 <div onclick="(function(el){var b=el.nextElementSibling;var a=el.querySelector('.st-arr');b.style.display=b.style.display==='none'?'block':'none';a.textContent=b.style.display==='none'?'▾':'▴';})(this)"
-                     style="display:flex;align-items:center;gap:6px;cursor:pointer;min-height:44px;padding:6px 10px;background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:6px;">
-                  <span style="font-size:12px;color:#A78BFA;">ℹ</span>
+                     style="display:flex;align-items:center;gap:6px;cursor:pointer;min-height:44px;padding:6px 10px;background:var(--e2);border:1px solid var(--line);border-radius:8px;">
+                  <span style="font-size:12px;color:var(--text2);">ℹ</span>
                   <span style="font-size:11px;color:var(--muted);">Come eseguire: ${escHtml(stLabel)}</span>
                   <span class="st-arr" style="font-size:10px;color:var(--muted);margin-left:auto;">▾</span>
                 </div>
-                <div style="display:none;padding:8px 10px;background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.15);border-top:none;border-radius:0 0 6px 6px;">
+                <div style="display:none;padding:8px 10px;background:var(--e2);border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;">
                   <span style="font-size:11px;color:var(--muted);line-height:1.6;">${escHtml(stInstr)}</span>
                 </div>
               </div>` : '';
@@ -368,7 +357,7 @@ export function loadLive() {
             if (!isVBT && !isIso && numKg > 0 && mods.kgMultiplier < 1.0) {
                 actualKg = Math.round((numKg * mods.kgMultiplier) / 2.5) * 2.5;
                 const pct = Math.round((1 - mods.kgMultiplier) * 100);
-                const fc  = mods.warningType === 'critical' ? '#ef4444' : '#fbbf24';
+                const fc  = mods.warningType === 'critical' ? 'var(--coral)' : 'var(--amber)';
                 const bg  = mods.warningType === 'critical' ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)';
 
                 // ── GAP 3: Messaggio empatico contestuale ────────
@@ -393,7 +382,7 @@ export function loadLive() {
 
             if (isHighCns && mods.setModifier < 0 && targetSet > 1) {
                 actualSet = Math.max(1, targetSet + mods.setModifier);
-                autoRegBadge += `<div style="background:rgba(245,158,11,0.1);color:#fbbf24;border:1px solid #fbbf24;font-size:10px;padding:4px 8px;border-radius:6px;margin-top:4px;font-weight:700;display:inline-block;">🧠 SNC: set ridotti ${targetSet} → <strong>${actualSet}</strong></div>`;
+                autoRegBadge += `<div style="background:rgba(245,158,11,0.1);color:var(--amber);border:1px solid var(--amber);font-size:10px;padding:4px 8px;border-radius:6px;margin-top:4px;font-weight:700;display:inline-block;">🧠 SNC: set ridotti ${targetSet} → <strong>${actualSet}</strong></div>`;
             }
 
             // ── Rilevamento superset / jump set collegati ─────
@@ -414,23 +403,17 @@ export function loadLive() {
             // Stili card collegamento visivo
             let cardRadius    = '12px';
             let cardMargin    = '12px';
-            let cardBorderTop = '1px solid #1A2235';
+            let cardBorderTop = '1px solid var(--line)';
             let linkBadge     = '';
 
             const groupLabel = `${currentType.toUpperCase()}${_liveGLetter(ex.groupId)}`;
 
             if (linkedToNext && !linkedToPrev) {
                 cardRadius = '12px 12px 0 0'; cardMargin = '0';
-                linkBadge  = `<div style="position:absolute; bottom:-10px; left:16px; background:${borderColor};
-                    color:#fff; font-size:9px; font-weight:800; padding:2px 8px; border-radius:10px;
-                    z-index:10; letter-spacing:0.5px; text-transform:uppercase; box-shadow:0 2px 4px rgba(0,0,0,0.5);">
-                    🔗 ${groupLabel}</div>`;
+                linkBadge  = `<div class="ax-link-badge">↳ ${groupLabel}</div>`;
             } else if (linkedToPrev && linkedToNext) {
                 cardRadius = '0'; cardMargin = '0'; cardBorderTop = '1px dashed rgba(255,255,255,0.1)';
-                linkBadge  = `<div style="position:absolute; bottom:-10px; left:16px; background:${borderColor};
-                    color:#fff; font-size:9px; font-weight:800; padding:2px 8px; border-radius:10px;
-                    z-index:10; letter-spacing:0.5px; text-transform:uppercase; box-shadow:0 2px 4px rgba(0,0,0,0.5);">
-                    🔗 ${groupLabel}</div>`;
+                linkBadge  = `<div class="ax-link-badge">↳ ${groupLabel}</div>`;
             } else if (linkedToPrev && !linkedToNext) {
                 cardRadius = '0 0 12px 12px'; cardMargin = '12px'; cardBorderTop = '1px dashed rgba(255,255,255,0.1)';
             }
@@ -468,16 +451,14 @@ for (let l = 0; l < actualSet; l++) {
         const logged = window.realLog[logKey];
         label = logged.rep;
         const isPr = _checkSetPR(ex, logged.rep, logged.kg, appState.selAthId);
-        isMod = isPr
-            ? `class="dot done" style="background:#f59e0b; border-color:#d97706; color:#000; font-weight:800; box-shadow:0 0 8px rgba(245,158,11,0.6);"`
-            : `class="dot done" style="background:var(--purple); border-color:var(--purple); color:#fff;"`;
+        isMod = isPr ? `class="dot done is-pr"` : `class="dot done is-log"`;
     }
     dots += `<div ${isMod} id="ld-${i}-${l}">${label}</div>`;
 }
 
             // ── Label braccio dominante ───────────────────────
             const armLabel = (ex.arm && ex.arm !== 'Bi')
-                ? `<span style="color:var(--blue);font-weight:800">[${ex.arm}]</span> `
+                ? `<span style="color:var(--text);font-weight:700">[${ex.arm}]</span> `
                 : '';
 
             // ── Parsing rest → secondi ────────────────────────
@@ -493,12 +474,8 @@ for (let l = 0; l < actualSet; l++) {
 
             // ── Badge video ───────────────────────────────────
             const videoBadge = ex.ytUrl
-                ? `<button onclick="openVideoModal('${ex.ytUrl}','${ex.name.replace(/'/g,"\\'")}')"
-                    style="display:inline-flex;align-items:center;gap:4px;cursor:pointer;
-                    background:rgba(249,115,22,0.15);border:1px solid rgba(249,115,22,0.4);border-radius:6px;
-                    padding:5px 10px;flex-shrink:0;touch-action:manipulation;">
-                    <span style="font-size:12px;">▶</span>
-                    <span style="color:#f97316;font-size:11px;font-weight:700;">Video</span></button>`
+                ? `<button onclick="openVideoModal('${ex.ytUrl}','${ex.name.replace(/'/g,"\\'")}')" class="ax-chip-btn">
+                    <span>▶</span><span>Video</span></button>`
                 : '';
 
             // ── Composizione display carico (usa actualKg post-autoregolazione) ─
@@ -519,22 +496,17 @@ for (let l = 0; l < actualSet; l++) {
                     let wKg = Math.round((actualKg * perc) / 2.5) * 2.5;
                     warmUps.push(wKg + 'kg');
                 }
-                rampingHtml = `<div style="width:100%; font-size:11px; color:var(--muted); margin-top:12px;
-                    font-weight:500; background:rgba(255,255,255,0.02); padding:8px 12px; border-radius:8px;
-                    border:1px dashed rgba(255,255,255,0.05); letter-spacing:0.3px;">
-                    🔥 Ramping: <span style="color:var(--teal); font-weight:700;">
-                    ${warmUps.join(' <span style="color:#4B5563; font-weight:400; margin:0 4px;">➔</span> ')}
-                    </span></div>`;
+                rampingHtml = `<div class="ax-ramp">RAMPING <span class="ax-sep">·</span><b>
+                    ${warmUps.join(' <span class="ax-sep">→</span> ')}
+                    </b></div>`;
             }
 
             // ── Badge RIR e TUT ───────────────────────────────
             let rirLabel = (ex.rir && ex.rir !== '—' && ex.rir !== '')
-                ? `<span style="color:#6B7280; margin:0 4px;">•</span>
-                   <span style="color:#A78BFA; font-weight:800;">RIR ${ex.rir}</span>`
+                ? `<span class="ax-sep">•</span><b>RIR ${ex.rir}</b>`
                 : '';
             let tutLabel = (ex.tut && ex.tut !== '-' && ex.tut !== '')
-                ? `<span style="color:#6B7280; margin:0 4px;">•</span>
-                   <span style="color:#F59E0B; font-weight:800;">TUT ${ex.tut}</span>`
+                ? `<span class="ax-sep">•</span><b>TUT ${ex.tut}</b>`
                 : '';
 
             // ── Timer REST o etichetta NO REST ────────────────
@@ -543,30 +515,17 @@ for (let l = 0; l < actualSet; l++) {
                 restTimerHtml = `
                 <div class="timer-container" id="timer-container-${i}"
                      data-seconds="${totalSeconds}"
-                     style="display:flex; align-items:center; gap:8px; background-color:#161E2E;
-                            border:1px solid #1A2235; border-radius:8px; padding:4px 10px; margin-top:0;">
-                  <span style="font-size:10px; color:#F97316; font-weight:800; margin-right:4px;">REST</span>
-                  <span class="timer-display" id="timer-display-${i}"
-                        style="color:#E2DDD4; font-size:12px; font-weight:600; font-variant-numeric:tabular-nums;">
-                    ${formatTime(totalSeconds)}
-                  </span>
+                     style="display:flex; align-items:center; gap:8px; margin-top:0;">
+                  <span class="ax-timer-l">REST</span>
+                  <span class="timer-display" id="timer-display-${i}">${formatTime(totalSeconds)}</span>
                   <button class="timer-btn" id="timer-btn-${i}"
-                          onClick="startTimer(${i}, ${totalSeconds})"
-                          style="background-color:#00E5A8; color:#090D13; border:none; border-radius:6px;
-                                 padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer;">
+                          onClick="startTimer(${i}, ${totalSeconds})">
                     START
                   </button>
                 </div>`;
             } else {
                 restTimerHtml = `
-                <div style="display:flex; align-items:center; gap:6px;
-                            background-color:rgba(139,92,246,0.15);
-                            border:1px solid rgba(139,92,246,0.4);
-                            border-radius:8px; padding:4px 10px; margin-top:0;">
-                  <span style="font-size:10px; color:#A78BFA; font-weight:800; letter-spacing:0.5px;">
-                    ⏭ NO REST (VAI AL PROSSIMO)
-                  </span>
-                </div>`;
+                <div class="ax-norest">NO REST · VAI AL PROSSIMO</div>`;
             }
 
             // ── Badge infortuni zona anatomica ────────────────
@@ -580,8 +539,8 @@ for (let l = 0; l < actualSet; l++) {
                     inj.zone    === ex.anatomicalZone
                 );
                 if (activeInj) {
-                    injBadgeHtml = `<div style="background:rgba(239,68,68,0.15);border:1px solid #ef4444;
-                        color:#f87171;padding:8px 12px;border-radius:8px;margin-top:8px;
+                    injBadgeHtml = `<div style="background:var(--bad-wash);border:1px solid oklch(0.66 0.20 22 / .5);
+                        color:var(--coral);padding:8px 12px;border-radius:8px;margin-top:8px;
                         font-size:12px;font-weight:700;letter-spacing:0.2px;">
                         ⚠️ ATTENZIONE: Zona infortunata (VAS ${activeInj.vas}) — Tessuto: ${escHtml(activeInj.tissue || activeInj.type)}. Modula il carico.
                     </div>`;
@@ -592,42 +551,33 @@ for (let l = 0; l < actualSet; l++) {
             let hintHtml = '';
             if (showHint && !hintShown) {
                 hintShown = true;
-                hintHtml = `<div id="hint-lp-first" style="margin-top:8px; font-size:10px; color:var(--purple); text-align:right; font-weight:700; letter-spacing:0.3px; opacity:0.85;">✎ tieni premuto per registrare rep/kg reali</div>`;
+                hintHtml = `<div id="hint-lp-first" style="margin-top:10px; font-size:10.5px; color:var(--muted); text-align:right; font-weight:600;"><span style="color:var(--accent)">✎</span> tieni premuto per registrare rep/kg reali</div>`;
             }
 
             // ── Assemblaggio card esercizio ───────────────────
             const div = document.createElement('div');
             div.style.cssText = 'width:100%; position:relative;';
             div.innerHTML = `
-              <div style="position:relative; background-color:#0F1520; border:1px solid #1A2235;
-                          border-top:${cardBorderTop}; border-left:4px solid ${borderColor} !important;
-                          border-radius:${cardRadius}; padding:16px; margin-bottom:${cardMargin};
-                          width:100%; box-shadow:0 4px 12px rgba(0,0,0,0.15);">
+              <div class="ax-ex" style="border-top:${cardBorderTop}; border-left-color:${borderColor};
+                          border-radius:${cardRadius}; margin-bottom:${cardMargin};">
                 ${linkBadge}
 
                 <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
                   <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span style="font-weight:700; font-size:16px; color:#E2DDD4; flex:1 1 auto;
-                                 word-wrap:break-word; min-width:0; padding-right:8px;">${escHtml(ex.name)}</span>
+                    <span class="ax-ex-name">${escHtml(ex.name)}</span>
                     ${seriesTypeBadge}
                     ${videoBadge}
-                    <span id="pr-badge-${i}" style="display:none;align-items:center;gap:4px;
-                          background:rgba(251,191,36,0.15);border:1px solid #f59e0b;border-radius:6px;
-                          padding:3px 8px;font-size:11px;font-weight:800;color:#f59e0b;letter-spacing:0.3px;
-                          white-space:nowrap;">🏆 PR</span>
+                    <span id="pr-badge-${i}" class="ax-pr-badge" style="display:none;">PR</span>
                   </div>
-                  <span style="position:absolute; top:16px; right:16px; color:#00E5A8;
-                               font-weight:700; font-size:15px;" id="lvol-${i}">0 kg</span>
+                  <span class="ax-ex-vol" id="lvol-${i}">0 kg</span>
                 </div>
 
                 ${seriesTypeInfoHtml}
 
-                <p style="color:#9CA3AF; font-size:13px; font-weight:500; margin:0; letter-spacing:0.3px;">
-                  ${armLabel}${actualSet}x${targetRep}
-                  <span style="color:#6B7280; margin:0 4px;">•</span>
-                  <span style="color:${autoRegBadge ? 'var(--amber)' : '#E2DDD4'}; font-weight:700;">
-                    ${renderTargetLoad}
-                  </span>
+                <p class="ax-ex-meta">
+                  ${armLabel}${actualSet}×${targetRep}
+                  <span class="ax-sep">•</span>
+                  <b style="color:${autoRegBadge ? 'var(--amber)' : 'var(--text)'};">${renderTargetLoad}</b>
                   ${rirLabel}${tutLabel}
                 </p>
                 ${autoRegBadge}
@@ -638,16 +588,13 @@ for (let l = 0; l < actualSet; l++) {
                 <div style="display:flex; justify-content:space-between; align-items:center;
                             gap:12px; margin-bottom:16px; flex-wrap:wrap;">
                   <div style="display:flex; align-items:center; gap:8px;">
-                    <span style="color:#FFB800; font-size:12px; font-weight:500; white-space:nowrap;">
-                      Prossimo Carico:
-                    </span>
+                    <span class="ax-next-l">Prossimo carico</span>
                     <input type="text" id="next-load-${i}"
                            value="${escHtml(valoreNotaPrecedente)}"
                            oninput="window.carichiFuturi['${notaChiave}'] = this.value"
                            onchange="saveLiveNextLoad(${i}, this.value)"
-                           style="background-color:#1E2840; border:1px solid #1A2235; border-radius:6px;
-                                  padding:4px 8px; width:110px; color:#E2DDD4; font-size:12px; outline:none;"
-                           placeholder="Es: +2.5kg o 65k">
+                           class="ax-next-in"
+                           placeholder="+2.5 kg">
                   </div>
                   <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
                     ${restTimerHtml}
@@ -655,10 +602,7 @@ for (let l = 0; l < actualSet; l++) {
                 </div>
 
                 ${ex.note
-                    ? `<div style="margin-bottom:16px;">
-                         <p style="color:#A78BFA; font-size:13px; font-weight:700; margin:0 0 6px 0;">💡 CUE:</p>
-                         <div style="color:#A78BFA; font-size:12px; padding:7px 10px; background:rgba(167,139,250,.08); border-left:2px solid #A78BFA; border-radius:0 6px 6px 0; line-height:1.5;">${escHtml(ex.note)}</div>
-                       </div>`
+                    ? `<div class="ax-cue"><div class="ax-overline">◇ Cue del coach</div><div>${escHtml(ex.note)}</div></div>`
                     : ''}
 
                 <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; width:100%;">${dots}</div>
@@ -703,7 +647,7 @@ for (let l = 0; l < actualSet; l++) {
                     + 'transition:all 0.15s; white-space:nowrap;';
                 if (idx === 0) {
                     btn.style.background   = 'var(--teal)';
-                    btn.style.color        = '#000';
+                    btn.style.color        = 'var(--accent-ink)';
                     btn.style.borderColor  = 'var(--teal)';
                 }
                 btn.addEventListener('click', function () {
@@ -713,7 +657,7 @@ for (let l = 0; l < actualSet; l++) {
                         b.style.borderColor = 'var(--border)';
                     });
                     this.style.background  = 'var(--teal)';
-                    this.style.color       = '#000';
+                    this.style.color       = 'var(--accent-ink)';
                     this.style.borderColor = 'var(--teal)';
                     window.renderE1rmChart(this.dataset.sessName, this.dataset.exName);
                 });
@@ -970,7 +914,7 @@ let sKg  = parseFloat(targetKg)  || 0;
         const fillEl  = progHeader.querySelector('.prog-fill');
         const textEl  = progHeader.querySelector('.prog-text');
         const pctEl   = progHeader.querySelector('.prog-pct');
-        if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = pct === 100 ? 'var(--teal)' : 'var(--amber)'; }
+        if (fillEl) { fillEl.style.width = pct + '%'; fillEl.style.background = pct === 100 ? 'var(--green)' : 'var(--accent)'; }
         if (textEl) textEl.textContent = `${completedEx}/${total} esercizi`;
         if (pctEl)  pctEl.textContent  = pct + '%';
     }
@@ -1056,6 +1000,7 @@ export function toggleDot(dot) {
         dot.style.background   = '';
         dot.style.borderColor  = '';
         dot.style.color        = '';
+        dot.classList.remove('is-log', 'is-pr');
 
         // Cancella il log reale per questo set
         if (dot.id.startsWith('ld-')) {
@@ -1261,10 +1206,7 @@ export function saveTimerSet() {
 
     const dot = document.getElementById(`ld-${exI}-${setL}`);
     if (dot) {
-        dot.classList.add('done');
-        dot.style.background  = 'var(--purple)';
-        dot.style.borderColor = 'var(--purple)';
-        dot.style.color       = '#fff';
+        dot.classList.add('done', 'is-log');
         dot.textContent       = '✓';
     }
 
@@ -1307,17 +1249,8 @@ export function saveRealLog() {
 
     if (dot) {
         dot.classList.add('done');
-        if (prE1rm) {
-            dot.style.background  = '#f59e0b';
-            dot.style.borderColor = '#d97706';
-            dot.style.color       = '#000';
-            dot.style.fontWeight  = '800';
-            dot.style.boxShadow   = '0 0 8px rgba(245,158,11,0.6)';
-        } else {
-            dot.style.background  = 'var(--purple)';
-            dot.style.borderColor = 'var(--purple)';
-            dot.style.color       = '#fff';
-        }
+        dot.classList.remove('is-log', 'is-pr');
+        dot.classList.add(prE1rm ? 'is-pr' : 'is-log');
         dot.textContent = rep;
     }
 
