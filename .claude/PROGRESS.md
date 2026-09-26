@@ -157,6 +157,12 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: `node --check` OK (app/workout/main); smoke Playwright (atleta 390px, codice reale) → persistenza+scoping, ripresa dopo crash simulato (realLog rehydrated + banner visibile), caso stale (data di ieri → pulito), "Ricomincia da capo" (tutto pulito), **0 errori console**.
 - **DEPLOYATO**: SW **v6.84**, commit + push su `main`, `vercel --prod`. Client-only.
 
+**Nascosti i tile wearable "Coming Soon" (2026-09-26)**
+- Contesto: con tutte le piattaforme (`whoop/polar/apple_health/garmin`) in `comingSoon:true`, la card "Dati Fisiologici" mostrava 4 chip "Coming Soon" = effetto vaporware.
+- Fix (`wearable.js`, `renderWearableStatus`): i tile `comingSoon` (e i `nativeOnly` su web) non vengono più renderizzati se non già connessi; il contenitore `#wearable-platform-list` va in `display:none` quando non resta alcun tile azionabile. `index.html`: contenitore `display:none` di default (niente gap se il render non gira). Restano i **campi manuali HRV/RHR** nella card. Riattivare una piattaforma = rimuovere `comingSoon:true` → il tile ricompare da solo.
+- Verifica: `node --check` OK; smoke Playwright (atleta 390px) → 0 chip, 0 "Coming Soon" nel DOM, `display:none`, campo HRV manuale intatto, 0 errori console.
+- **DEPLOYATO**: SW **v6.85**, commit + push + `vercel --prod`. Client-only.
+
 ---
 
 ## Prossimo passo — roadmap

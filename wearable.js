@@ -245,26 +245,16 @@ export function renderWearableStatus() {
     const el = document.getElementById('wearable-platform-list');
     if (!el) return;
 
-    el.innerHTML = Object.entries(PLATFORMS).map(([key, cfg]) => {
+    const isNative = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform?.();
+
+    const chips = Object.entries(PLATFORMS).map(([key, cfg]) => {
         const conn = _connections[key];
         const isConnected = !!conn;
 
-        if (cfg.comingSoon) {
-            return `<div class="wr-chip" style="opacity:.5;cursor:default;">
-                <span style="font-size:11px;font-weight:600;">${cfg.name}</span>
-                <span style="font-size:9px;color:var(--muted);font-weight:700;letter-spacing:.3px;">Coming Soon</span>
-            </div>`;
-        }
-        if (cfg.nativeOnly) {
-            const isNative = typeof Capacitor !== 'undefined' && Capacitor.isNativePlatform?.();
-            if (!isNative) {
-                return `<div class="wr-chip" style="opacity:.45;cursor:default;">
-                    <span>${cfg.icon}</span>
-                    <span style="font-size:11px;">${cfg.name}</span>
-                    <span style="font-size:9px;color:var(--muted)">App nativa</span>
-                </div>`;
-            }
-        }
+        // Non mostrare tile per piattaforme non ancora disponibili (evita l'effetto "vaporware"),
+        // a meno che non risulti già connessa. I "nativeOnly" restano nascosti su web.
+        if (!isConnected && cfg.comingSoon) return '';
+        if (!isConnected && cfg.nativeOnly && !isNative) return '';
 
         if (isConnected) {
             const lastSync = conn.last_sync
@@ -283,7 +273,12 @@ export function renderWearableStatus() {
             <span style="font-size:11px;">${cfg.name}</span>
             <span style="font-size:9px;color:var(--teal)">+ Connetti</span>
         </button>`;
-    }).join('');
+    }).filter(Boolean);
+
+    // Nessuna piattaforma disponibile/connessa → nascondi del tutto il blocco tile
+    // (restano i campi manuali HRV/RHR nella card "Dati Fisiologici").
+    el.innerHTML = chips.join('');
+    el.style.display = chips.length ? 'flex' : 'none';
 }
 
 // ─────────────────────────────────────────────────────────────
