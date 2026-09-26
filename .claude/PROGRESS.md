@@ -170,8 +170,12 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - **#3 Gate per-binario**: min 6 sessioni **e** ~21 giorni di calendario per quel binario (prima: 7 sessioni totali, contate non nel tempo).
 - **Decisione utente**: Elena campo 1.62 (baseline 1.22, +1.5σ) → da rosso "DANGER" a giallo "Sopra il suo standard" (individualizzato). Il rischio complessivo **resta 160/CRITICO** (guidato da infortunio+readiness+LSI; il `>1.5` aggiunge comunque +40 al risk score).
 - Verifica: `node --check` OK (analytics/app); confronto etichette sul **codice reale** (4 atleti demo, vecchio→nuovo mostrato all'utente); coerenza rischio/insight (Niccolò/Marco good rischio 0, Elena bad rischio 160, Giulia bad); smoke Playwright coach 1360px → 0 "DANGER" nel DOM, KPI con nuove etichette, nota metodologia, 0 errori console.
-- **Nota**: il **toggle** per disattivare l'ACWR e il decadimento su calendario (#4) NON sono inclusi (fuori dallo scope 1+2+3) — follow-up rapido se desiderato.
+- **Nota**: il **toggle** per disattivare l'ACWR NON è incluso (fuori dallo scope 1+2+3) — follow-up rapido se desiderato.
 - **DEPLOYATO**: SW **v6.86**, commit + push + `vercel --prod`. Client-only.
+
+**#4 decadimento su calendario — VALUTATO E SCARTATO (2026-09-26)**
+- Implementata e testata l'EWMA giornaliera (Williams et al.: scorre il calendario, i giorni di stop entrano come carico 0). Esito sul **codice reale** (seed): **peggiora** i risultati per questo dominio. Con l'allenamento di forza sparso (2-4 sedute/sett.) i giorni di riposo fanno decadere l'acuto e nel giorno-seduta "schizza" sopra il cronico → il ratio diventa dominato da "oggi è giorno di allenamento sì/no", non dal trend. Falso allarme reale: **Niccolò (atleta sano) → field 1.52 [high] "Molto sopra il suo standard", rischio 40**. Ancorando a oggi, il decadimento fino a oggi schiacciava l'acuto di tutti ("tutti in calo") e faceva perdere a Elena il +40 (160→120).
+- **Decisione**: mantenere l'EWMA **per-sessione** (media ~3 sedute, robusta ai dati sparsi). Il caso "non si allena da giorni" è già coperto dal motore di adozione. Aggiunto solo un **commento** in `analytics.js` che documenta la scelta (per non ri-tentarla). Nessun cambiamento di comportamento → **non deployato** (prod v6.86 già identica).
 
 ---
 
@@ -188,7 +192,7 @@ Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA).
 **Nice-to-have (retention/percezione):**
 - Semplificare il default (modalità base PT vs toggle "Performance/Avanzato" per analytics S&C).
 - Nascondere tile wearable "Coming Soon" + de-enfatizzare nutrizione senza DB alimenti.
-- ~~ACWR come supporto alla decisione con metodologia visibile~~ → ✅ individualizzato + framing onesto + gate (2026-09-26). Resta opzionale: toggle di disattivazione + decadimento su calendario.
+- ~~ACWR come supporto alla decisione con metodologia visibile~~ → ✅ individualizzato + framing onesto + gate (2026-09-26). Decadimento su calendario (#4) valutato e scartato (peggiora coi dati sparsi). Resta opzionale: toggle di disattivazione.
 - Card-ificazione tabella Storico su mobile.
 
 **Rimandati (P.IVA / costi):**

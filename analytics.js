@@ -131,9 +131,13 @@ export function calculateACWR(athId) {
   .filter(x => x.athlete === athId)
   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
+  // EWMA PER-SESSIONE (non giornaliera). Nota tecnica: una decadenza su
+  // calendario giorno-per-giorno (Williams et al.) è stata valutata e scartata
+  // per questo dominio — con l'allenamento di forza sparso (2-4 sedute/sett.)
+  // i giorni di riposo fanno "schizzare" l'acuto nel giorno-seduta e generano
+  // falsi picchi. L'EWMA per-sessione media più sedute ed è più robusta qui.
+  // Il "non si allena da giorni" è coperto dal motore di adozione.
   const alphaAcute = 0.33, alphaChronic = 0.05;
-
-  // Cammina un binario raccogliendo la serie storica dei ratio (per lo z-score personale)
   const walkTrack = (rows, loadFn) => {
     let a = 0, c = 0, seeded = false;
     const ratios = [];
