@@ -177,6 +177,13 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Implementata e testata l'EWMA giornaliera (Williams et al.: scorre il calendario, i giorni di stop entrano come carico 0). Esito sul **codice reale** (seed): **peggiora** i risultati per questo dominio. Con l'allenamento di forza sparso (2-4 sedute/sett.) i giorni di riposo fanno decadere l'acuto e nel giorno-seduta "schizza" sopra il cronico → il ratio diventa dominato da "oggi è giorno di allenamento sì/no", non dal trend. Falso allarme reale: **Niccolò (atleta sano) → field 1.52 [high] "Molto sopra il suo standard", rischio 40**. Ancorando a oggi, il decadimento fino a oggi schiacciava l'acuto di tutti ("tutti in calo") e faceva perdere a Elena il +40 (160→120).
 - **Decisione**: mantenere l'EWMA **per-sessione** (media ~3 sedute, robusta ai dati sparsi). Il caso "non si allena da giorni" è già coperto dal motore di adozione. Aggiunto solo un **commento** in `analytics.js` che documenta la scelta (per non ri-tentarla). Nessun cambiamento di comportamento → **non deployato** (prod v6.86 già identica).
 
+**Nutrizione de-enfatizzata (posizionamento forza/atletica) (2026-09-26)**
+- Contesto: la nutrizione è solo inserimento manuale dei totali (kcal/P/C/G), **senza database alimenti** → attrito alto, compete male con MyFitnessPal/Cronometer, diluisce il core S&C. La vista coach (`renderNutritionCoach`) non è nemmeno collegata. Scelta utente: mercato forza/atletica → de-enfatizzare (non cancellare).
+- **Gate opt-in** (`renderNutritionCard`, `nutrition.js`): la card nel tab Progressi atleta si mostra SOLO se il coach ha impostato dei target **o** ci sono già log; altrimenti è nascosta (`el.innerHTML=''`). L'atleta di forza di default non trova più un "diario alimentare"; chi ha dati (e il demo) la mantiene.
+- **Riformulazione onesta**: card "Nutrizione" → **"Aderenza nutrizionale"**, bottone "+ Log oggi" → "+ Aggiorna", empty-state e modal rimandano al *proprio* tracker ("inserisci i totali dal tuo tracker, es. MyFitnessPal") invece di fingere di essere il tracker.
+- Verifica: `node --check` OK; smoke Playwright (atleta 390px) → demo a2 con dati mostra card riformulata; atleta senza target/log → card nascosta; 0 errori console.
+- **DEPLOYATO**: SW **v6.87**, commit + push + `vercel --prod`. Client-only.
+
 ---
 
 ## Prossimo passo — roadmap
@@ -191,7 +198,7 @@ Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA).
 
 **Nice-to-have (retention/percezione):**
 - Semplificare il default (modalità base PT vs toggle "Performance/Avanzato" per analytics S&C).
-- Nascondere tile wearable "Coming Soon" + de-enfatizzare nutrizione senza DB alimenti.
+- ~~Nascondere tile wearable "Coming Soon" + de-enfatizzare nutrizione~~ → ✅ entrambi fatti (2026-09-26).
 - ~~ACWR come supporto alla decisione con metodologia visibile~~ → ✅ individualizzato + framing onesto + gate (2026-09-26). Decadimento su calendario (#4) valutato e scartato (peggiora coi dati sparsi). Resta opzionale: toggle di disattivazione.
 - Card-ificazione tabella Storico su mobile.
 

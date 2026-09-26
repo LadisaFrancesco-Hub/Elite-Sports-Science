@@ -94,8 +94,16 @@ export function renderNutritionCard(athId) {
     const el = document.getElementById('ap-nutrition');
     if (!el) return;
 
-    const logs    = (DB.nutrition[athId] || []).slice(0, 7);
+    const allLogs = DB.nutrition[athId] || [];
     const targets = DB.nutritionTargets?.[athId] || {};
+    // De-enfatizzata (posizionamento forza/atletica): la nutrizione è opt-in.
+    // Mostrala SOLO se il coach ha impostato dei target o se ci sono già log —
+    // così l'atleta di default non trova un "diario alimentare" che non useremmo
+    // meglio di un tracker dedicato. Chi ha già dati la mantiene.
+    const hasTargets = Object.values(targets).some(v => v != null && v !== '' && v !== 0);
+    if (!hasTargets && allLogs.length === 0) { el.innerHTML = ''; return; }
+
+    const logs    = allLogs.slice(0, 7);
     const today   = new Date().toISOString().slice(0, 10);
     const todayLog = logs.find(r => r.date === today);
     // Grafico 14gg solo se c'è almeno un dato: prima comparivano assi vuoti "0–1 kcal"
@@ -129,9 +137,9 @@ export function renderNutritionCard(athId) {
     el.innerHTML = `
     <div class="card">
         <div class="card-t" style="display:flex;justify-content:space-between;align-items:center">
-            <span>Nutrizione</span>
+            <span>Aderenza nutrizionale</span>
             <button onclick="openNutritionModal('${athId}')" class="ax-pill-btn" style="cursor:pointer;letter-spacing:0;font-family:var(--fm)">
-                + Log oggi
+                + Aggiorna
             </button>
         </div>
         ${todayLog ? `
@@ -143,7 +151,7 @@ export function renderNutritionCard(athId) {
             ${macroBar(todayLog.grassi,      targets.grassi,      null, 'Grassi')}
         </div>` : `
         <div style="text-align:center;padding:14px;color:var(--muted);font-size:12.5px;margin-bottom:${hasSeries ? '12px' : '0'};border:1px dashed var(--line-hi);border-radius:12px">
-            Nessun log per oggi — registra i tuoi macro
+            Nessun dato oggi — inserisci i totali dal tuo tracker (es. MyFitnessPal)
         </div>`}
         ${histHtml ? `<div class="ax-overline" style="margin:4px 0 4px">Ultimi 5 giorni</div>${histHtml}` : ''}
         ${hasSeries ? `<div style="position:relative;height:180px;margin-top:16px;">
