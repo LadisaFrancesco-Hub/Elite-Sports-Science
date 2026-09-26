@@ -250,6 +250,10 @@
   <div class="fg"><label class="fl">BF iniziale (%)</label><input type="number" id="ma-bf" placeholder="12"></div>
   </div>
   <div class="fg"><label class="fl">Note Antropometriche / Infortuni</label><textarea id="ma-notes" placeholder="Storico infortuni, note d'interesse..."></textarea></div>
+  <label style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--text);cursor:pointer;margin:4px 0 4px">
+  <input type="checkbox" id="ma-reminder" checked style="accent-color:var(--teal);margin-top:2px;width:15px;height:15px">
+  <span>Promemoria allenamento <span style="color:var(--dim)">— l'atleta riceve una notifica push nei giorni di allenamento programmati. Puoi disattivarlo per chi non lo gradisce.</span></span>
+  </label>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
   <button class="btn btn-g" onclick="closeMo('mo-ath')">Annulla</button>
   <button class="btn btn-p" id="ma-save-btn" onclick="addAthlete()">Aggiungi</button>
@@ -609,6 +613,7 @@
   <button class="btn btn-p btn-sm" onclick="openTemplatesModal()"> Parti da un template</button>
   <button class="btn btn-g btn-sm" onclick="openDuplicateModal()"> Duplica da un altro atleta</button>
   <button class="btn btn-g btn-sm" onclick="openCopyToModal()"> Copia scheda su altri atleti</button>
+  <button class="btn btn-g btn-sm" onclick="openImportModal()"> Importa da Excel/Sheets</button>
   </div>
   <div class="card" style="margin-bottom:12px">
   <div class="card-t">Atleta e contesto</div>
@@ -1599,6 +1604,25 @@
   <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px">
   <button class="btn btn-g" onclick="closeMo('mo-copyto')">Annulla</button>
   <button class="btn btn-p" id="copyto-btn" onclick="copyScheduleToTargets()">Incolla</button>
+  </div>
+</div>
+</div>
+
+<!-- ── Modale Import da Excel / Google Sheets ────────── -->
+<div class="mo" id="mo-import">
+<div class="mo-box" style="max-width:600px">
+  <div class="mo-t">Importa da Excel/Sheets <button class="mo-x" onclick="closeMo('mo-import')">✕</button></div>
+  <div style="font-size:12px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+    Seleziona le righe nel tuo foglio (Excel o Google Sheets), copiale (Ctrl/Cmd+C) e incollale qui sotto.
+    Colonne riconosciute: <span style="font-family:var(--fmono);color:var(--text2)">Seduta · Esercizio · Serie · Reps · Carico · RIR/RPE · Recupero · Note</span>.
+    Se non c'è intestazione, si assume quest'ordine. Gli esercizi noti agganciano il video automaticamente.
+  </div>
+  <textarea id="imp-text" oninput="renderImportPreview()" placeholder="Push&#9;Bench Press Bilanciere&#9;4&#9;6&#9;80&#9;2&#9;120&#10;Push&#9;Shoulder Press&#9;3&#9;10&#9;40&#9;1&#9;90" style="width:100%;min-height:120px;font-family:var(--fmono);font-size:12px;resize:vertical"></textarea>
+  <div style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin:14px 0 8px;font-family:var(--fmono)">Anteprima</div>
+  <div id="imp-preview" style="max-height:40vh;overflow-y:auto"></div>
+  <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+  <button class="btn btn-g" onclick="closeMo('mo-import')">Annulla</button>
+  <button class="btn btn-p" id="imp-confirm-btn" onclick="confirmImport()" disabled>Importa</button>
   </div>
 </div>
 </div>

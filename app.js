@@ -1733,7 +1733,8 @@ export async function addAthlete() {
   weight: w, bf,
   codice_accesso: codiceGenerato,
   anthropoHistory: [{ date: new Date().toISOString().slice(0, 10), weight: w, bf }],
-  notes: document.getElementById('ma-notes').value
+  notes: document.getElementById('ma-notes').value,
+  training_reminder: !document.getElementById('ma-reminder') || document.getElementById('ma-reminder').checked
   };
 
   try {
@@ -1743,7 +1744,8 @@ export async function addAthlete() {
   codice_accesso: codiceGenerato,
   level: a.level, goal: a.goal, freq: a.freq,
   height: a.height, weight: a.weight, bf: a.bf,
-  notes: a.notes, anthropo_history: a.anthropoHistory
+  notes: a.notes, anthropo_history: a.anthropoHistory,
+  training_reminder: a.training_reminder
   }]);
   if (error) { toast('Errore: ' + error.message); btn.textContent = 'Aggiungi'; btn.disabled = false; return; }
   }
@@ -1766,7 +1768,7 @@ export async function addAthlete() {
   await window.mySupabase.from('schedules').insert([{
   id: defaultSessId, athlete_id: a.id, session_name: 'Seduta A',
   meso: 'Meso 1', duration: 4, phase: 'Accumulo',
-  coach_note: '', objective: '', exercises: []
+  coach_note: '', objective: '', exercises: [], scheduled_days: []
   }]);
   }
   } catch (e) { console.warn('Schedule default non salvata su cloud:', e); }
@@ -1788,6 +1790,7 @@ export async function addAthlete() {
 
 export function openNewAthleteModal() {
   ['ma-name','ma-email','ma-h','ma-w','ma-bf','ma-notes'].forEach(id => { document.getElementById(id).value = ''; });
+  const rem = document.getElementById('ma-reminder'); if (rem) rem.checked = true;   // default acceso
   const btn = document.getElementById('ma-save-btn');
   btn.textContent = 'Aggiungi'; btn.onclick = addAthlete;
   openMo('mo-ath');
@@ -1804,6 +1807,8 @@ export function openEditAthleteModal() {
   document.getElementById('ma-w').value = a.weight || '';
   document.getElementById('ma-bf').value = a.bf || '';
   document.getElementById('ma-notes').value = a.notes || '';
+  const rem = document.getElementById('ma-reminder');
+  if (rem) rem.checked = (a.training_reminder ?? a.trainingReminder ?? true) !== false;
   const btn = document.getElementById('ma-save-btn');
   btn.textContent = 'Salva Modifiche'; btn.onclick = saveAthleteEdits;
   openMo('mo-ath');
@@ -1823,11 +1828,14 @@ async function saveAthleteEdits() {
   a.weight = parseFloat(document.getElementById('ma-w').value) || 0;
   a.bf = parseFloat(document.getElementById('ma-bf').value) || 0;
   a.notes = document.getElementById('ma-notes').value;
+  const _rem = document.getElementById('ma-reminder');
+  a.training_reminder = !_rem || _rem.checked;
 
   try {
   if (window.mySupabase) await window.mySupabase.from('atleti').update({
   name: a.name, level: a.level, goal: a.goal, freq: a.freq,
-  height: a.height, weight: a.weight, bf: a.bf, notes: a.notes, anthropo_history: a.anthropoHistory
+  height: a.height, weight: a.weight, bf: a.bf, notes: a.notes, anthropo_history: a.anthropoHistory,
+  training_reminder: a.training_reminder
   }).eq('id', a.id);
   } catch (e) { console.error('Errore sync Supabase:', e); }
 
@@ -3526,7 +3534,8 @@ export async function saveSchedule() {
   return {
   id: s.id, athlete_id: athId, session_name: s.name,
   meso: sch.meso, duration: sch.duration, phase: sch.phase,
-  coach_note: sch.coachNote, objective: sch.objective, exercises
+  coach_note: sch.coachNote, objective: sch.objective, exercises,
+  scheduled_days: sch.scheduledDays || []
   };
   });
 
@@ -3616,6 +3625,263 @@ function _scheduleFromTemplate(tpl) {
       exercises: (s.exercises || []).map(_expandTemplateEx),
     })),
   };
+}
+
+// ─────────────────────────────────────────────────────────────
+// IMPORT DA EXCEL / GOOGLE SHEETS (incolla-e-mappa)
+// Il coach copia le righe dal foglio e le incolla: l'app rileva
+// il delimitatore, mappa le colonne, raggruppa per seduta e prova
+// ad agganciare ogni esercizio alla EXERCISE_LIBRARY (video + e1RM).
+// Zero dipendenze: parsing puro. Nome libero come fallback.
+// ─────────────────────────────────────────────────────────────
+
+// Normalizza una stringa per il match nome esercizio (accenti/punteggiatura via).
+function _normEx(s) {
+  return String(s || '')
+    .toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '')   // toglie accenti
+    .replace(/[().,/\\+°"']/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// Indice normalizzato della libreria, costruito una volta sola.
+let _libIndex = null;
+function _getLibIndex() {
+  if (_libIndex) return _libIndex;
+  _libIndex = EXERCISE_LIBRARY.map(e => {
+    const norm = _normEx(e.name);
+    return { entry: e, norm, tokens: new Set(norm.split(' ').filter(t => t.length > 1)) };
+  });
+  return _libIndex;
+}
+
+// Prova a mappare un nome libero a un esercizio della libreria.
+// Ritorna l'entry oppure null. Match esatto → overlap di token.
+function _matchLibExercise(rawName) {
+  const q = _normEx(rawName);
+  if (!q) return null;
+  const idx = _getLibIndex();
+  // 1. match esatto sul normalizzato
+  const exact = idx.find(i => i.norm === q);
+  if (exact) return exact.entry;
+  const qTokens = q.split(' ').filter(t => t.length > 1);
+  if (!qTokens.length) return null;
+  const qSet = new Set(qTokens);
+  // 2. best overlap di token (Jaccard-ish sul numero di token query coperti)
+  let best = null, bestScore = 0;
+  for (const i of idx) {
+    let shared = 0;
+    for (const t of qTokens) if (i.tokens.has(t)) shared++;
+    if (!shared) continue;
+    // punteggio: quota di token della query coperti, penalizzando nomi lib molto più lunghi
+    const cover = shared / qSet.size;
+    const lenPenalty = i.tokens.size > qSet.size ? qSet.size / i.tokens.size : 1;
+    const score = cover * (0.7 + 0.3 * lenPenalty);
+    if (score > bestScore) { bestScore = score; best = i.entry; }
+  }
+  return bestScore >= 0.6 ? best : null;
+}
+
+// Mappa parola-chiave di intestazione → campo interno.
+const _IMPORT_COL_KEYS = [
+  ['session', ['seduta','giorno','day','session','workout','scheda','allenamento','split']],
+  ['name',    ['esercizio','exercise','movimento','name','nome','esercizi']],
+  ['set',     ['serie','set','sets']],
+  ['rep',     ['rip','ripetizioni','reps','rep','ripetute']],
+  ['kg',      ['carico','kg','peso','load','weight']],
+  ['rir',     ['rir','rpe','buffer','sforzo']],
+  ['rest',    ['rest','recupero','recup','pausa','riposo','recovery']],
+  ['note',    ['note','nota','notes','cue','tecnica','commento']],
+];
+
+// Rileva il delimitatore più probabile (tab da Excel/Sheets, poi ; poi ,).
+function _detectDelimiter(text) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim());
+  const count = ch => lines.reduce((a, l) => a + (l.split(ch).length - 1), 0);
+  if (count('\t') > 0) return '\t';
+  if (count(';') >= lines.length) return ';';
+  if (count(',') >= lines.length) return ',';
+  // Nessun delimitatore chiaro → colonna singola (solo nomi)
+  return null;
+}
+
+// Riconosce l'intestazione: ≥2 celle che matchano parole-chiave note.
+function _detectHeader(cells) {
+  const map = {}; let hits = 0;
+  cells.forEach((c, i) => {
+    const n = _normEx(c);
+    for (const [field, keys] of _IMPORT_COL_KEYS) {
+      if (map[field] != null) continue;
+      if (keys.some(k => n === k || n.startsWith(k + ' ') || n === k + '.')) { map[field] = i; hits++; break; }
+    }
+  });
+  return hits >= 2 ? map : null;
+}
+
+// Converte le celle di una riga esercizio in oggetto editor completo.
+function _exFromImportRow(vals) {
+  const lib = _matchLibExercise(vals.name);
+  const _s = v => (v == null ? '' : String(v).trim());
+  // set → intero
+  const setN = parseInt(_s(vals.set), 10);
+  // rir/rpe → {0,1,2,3,—}; se pare RPE (4-10) converte a RIR ≈ 10-RPE
+  let rir = '—';
+  const rirRaw = _s(vals.rir).replace(/[^\d]/g, '');
+  if (rirRaw !== '') {
+    let n = parseInt(rirRaw, 10);
+    if (n >= 4 && n <= 10) n = Math.max(0, Math.min(3, 10 - n)); // RPE→RIR
+    if (n >= 0 && n <= 3) rir = String(n);
+  }
+  // rest → se numerico puro aggiunge secondi
+  let rest = _s(vals.rest);
+  if (rest && /^\d+$/.test(rest)) rest = rest + "''";
+  return {
+    name: lib ? lib.name : (_s(vals.name) || 'Esercizio'),
+    type: 'repetition', arm: 'Bi', wset: 0,
+    set: Number.isFinite(setN) && setN > 0 ? setN : 3,
+    rep: _s(vals.rep) || '8',
+    kg: _s(vals.kg) || '0',
+    rir,
+    rest: rest || "90''",
+    tut: '-', note: _s(vals.note),
+    ytUrl: lib?.ytUrl || '', rpe: '',
+    trackE1rm: lib?.trackE1rm ?? false,
+    anatomicalZone: lib?.anatomicalZone || '',
+    section: 'centrale', progression: {},
+    _matched: !!lib,   // solo per l'anteprima; rimosso al salvataggio
+  };
+}
+
+// Parser principale: testo incollato → { sessions:[{name,exercises}], stats }.
+export function parseImportedSchedule(text, defaultSessName = 'Seduta importata') {
+  const stats = { rows: 0, matched: 0, sessions: 0 };
+  const rawLines = String(text || '').split(/\r?\n/).map(l => l.replace(/\s+$/,'')).filter(l => l.trim());
+  if (!rawLines.length) return { sessions: [], stats };
+
+  const delim = _detectDelimiter(text);
+  const splitLine = l => delim ? l.split(delim).map(c => c.trim()) : [l.trim()];
+  const rows = rawLines.map(splitLine);
+  const maxCols = rows.reduce((m, r) => Math.max(m, r.filter(c => c !== '').length), 0);
+
+  // Intestazione?
+  let colMap = _detectHeader(rows[0]);
+  let startIdx = 0;
+  if (colMap) startIdx = 1;
+  else colMap = { name: 0, set: 1, rep: 2, kg: 3, rir: 4, rest: 5, note: 6 };  // ordine default
+
+  const sessions = [];
+  let current = null;
+  const pushSession = name => { current = { name: name || `Seduta ${String.fromCharCode(65 + sessions.length)}`, exercises: [] }; sessions.push(current); };
+  const cleanName = s => String(s || '').replace(/^\s*\d+[.)]\s*/, '').replace(/[:•\-–]\s*$/, '').trim();
+
+  for (let i = startIdx; i < rows.length; i++) {
+    const r = rows[i];
+    const nonEmpty = r.filter(c => c !== '');
+    if (!nonEmpty.length) continue;
+
+    // Riga-titolo di seduta: una sola cella piena in un foglio multi-colonna
+    if (maxCols > 1 && nonEmpty.length === 1 && colMap.session == null) {
+      pushSession(cleanName(nonEmpty[0]));
+      continue;
+    }
+
+    // Valori per colonna
+    const vals = {};
+    for (const [field, ci] of Object.entries(colMap)) vals[field] = r[ci] || '';
+    vals.name = cleanName(vals.name);
+    if (!vals.name) continue;   // riga senza nome esercizio → salta
+
+    // Raggruppamento per colonna "seduta" esplicita (forward-fill dei vuoti)
+    if (colMap.session != null) {
+      const sName = cleanName(r[colMap.session]) || (current ? current.name : '');
+      if (!current || (sName && sName !== current.name)) pushSession(sName || defaultSessName);
+    } else if (!current) {
+      pushSession(defaultSessName);
+    }
+
+    current.exercises.push(_exFromImportRow(vals));
+    stats.rows++;
+  }
+
+  stats.sessions = sessions.length;
+  stats.matched = sessions.reduce((a, s) => a + s.exercises.filter(e => e._matched).length, 0);
+  return { sessions, stats };
+}
+
+// Apre il modal import (svuota lo stato precedente).
+export function openImportModal() {
+  if (!appState.selAthId) { toast('Seleziona prima un atleta'); return; }
+  const ta = document.getElementById('imp-text');
+  if (ta) ta.value = '';
+  const prev = document.getElementById('imp-preview');
+  if (prev) prev.innerHTML = '<div style="color:var(--dim);font-size:12px;padding:14px 0">L\'anteprima comparirà qui dopo aver incollato la tabella.</div>';
+  const btn = document.getElementById('imp-confirm-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'Importa'; }
+  window._importParsed = null;
+  openMo('mo-import');
+}
+
+// Ricostruisce l'anteprima dal testo incollato.
+export function renderImportPreview() {
+  const text = (document.getElementById('imp-text') || {}).value || '';
+  const prev = document.getElementById('imp-preview');
+  const btn = document.getElementById('imp-confirm-btn');
+  if (!prev) return;
+  const parsed = parseImportedSchedule(text);
+  window._importParsed = parsed;
+  if (!parsed.sessions.length || !parsed.stats.rows) {
+    prev.innerHTML = '<div style="color:var(--coral);font-size:12px;padding:14px 0">Nessun esercizio riconosciuto. Controlla di aver incollato almeno nome + serie/ripetizioni.</div>';
+    if (btn) btn.disabled = true;
+    return;
+  }
+  const s = parsed.stats;
+  const head = `<div style="font-size:11px;font-family:var(--fmono);color:var(--muted);margin-bottom:10px">${s.rows} esercizi · ${s.sessions} sedute · <span style="color:var(--teal)">${s.matched} con video riconosciuto</span></div>`;
+  const body = parsed.sessions.map(sess => `
+    <div style="border:1px solid var(--border);border-radius:9px;margin-bottom:10px;overflow:hidden">
+      <div style="background:var(--s2);padding:8px 12px;font-size:12px;font-weight:800;color:var(--text)">${escHtml(sess.name)} <span style="color:var(--dim);font-weight:500">· ${sess.exercises.length} es.</span></div>
+      <div style="padding:6px 12px">
+        ${sess.exercises.map(e => `<div style="display:flex;align-items:center;gap:8px;padding:4px 0;font-size:12px;border-bottom:1px solid var(--border)">
+          <span style="flex:1;color:var(--text)">${e._matched ? '🎬 ' : ''}${escHtml(e.name)}</span>
+          <span style="font-family:var(--fmono);color:var(--dim);font-size:11px">${e.set}×${escHtml(e.rep)}${e.kg && e.kg !== '0' ? ' · ' + escHtml(e.kg) + 'kg' : ''}${e.rir !== '—' ? ' · RIR ' + e.rir : ''}</span>
+        </div>`).join('')}
+      </div>
+    </div>`).join('');
+  prev.innerHTML = head + body;
+  if (btn) btn.disabled = false;
+}
+
+// Scrive la scheda importata sull'atleta selezionato (sostituisce se piena).
+export async function confirmImport() {
+  const athId = appState.selAthId;
+  const parsed = window._importParsed;
+  if (!athId || !parsed || !parsed.sessions.length) { toast('Niente da importare'); return; }
+
+  const apply = async () => {
+    const cur = DB.schedules[athId] || {};
+    DB.schedules[athId] = {
+      meso: cur.meso || 'Meso 1', phase: cur.phase || 'Accumulo',
+      duration: cur.duration || 4, coachNote: cur.coachNote || '', objective: cur.objective || '',
+      scheduledDays: [...(cur.scheduledDays || [])],
+      sessions: parsed.sessions.map(s => ({
+        id: uid(), name: s.name, sessType: 'Palestra',
+        exercises: s.exercises.map(({ _matched, ...ex }) => ex),   // toglie il flag d'anteprima
+      })),
+    };
+    appState.edSessId = DB.schedules[athId].sessions[0]?.id;
+    closeMo('mo-import');
+    renderEditor();
+    await saveSchedule();
+    toast(`Importati ${parsed.stats.rows} esercizi in ${parsed.stats.sessions} sedute ✓`);
+  };
+
+  const cur = DB.schedules[athId];
+  const hasContent = cur && (cur.sessions || []).some(s => (s.exercises || []).length > 0);
+  if (hasContent) {
+    showConfirm(`Sostituire la scheda attuale con i ${parsed.stats.rows} esercizi importati?`, apply, 'Sostituisci');
+  } else {
+    await apply();
+  }
 }
 
 // Apre il modal "Parti da un template".
@@ -3788,7 +4054,8 @@ async function _pushScheduleToCloud(athId) {
     return {
       id: s.id, athlete_id: athId, session_name: s.name,
       meso: sch.meso, duration: sch.duration, phase: sch.phase,
-      coach_note: sch.coachNote, objective: sch.objective, exercises
+      coach_note: sch.coachNote, objective: sch.objective, exercises,
+      scheduled_days: sch.scheduledDays || []
     };
   });
 

@@ -137,6 +137,17 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Smoke Playwright: atleta 390px (6 tab, 0 errori), coach 1360px (tutti pannelli intatti, 0 errori)
 - Conclusione: redesign promosso, già live in produzione
 
+**Import da Excel/Sheets + reminder allenamento (2026-09-26)**
+- **A · Import da Excel/Sheets** (client, zero dipendenze): bottone "Importa da Excel/Sheets" in toolbar editor → modal `mo-import` con textarea + anteprima live + conferma. Parser `parseImportedSchedule()` in `app.js`: rileva delimitatore (tab/`;`/`,` — tab = copia da Excel/Sheets), header o ordine default (Seduta·Esercizio·Serie·Reps·Carico·RIR/RPE·Recupero·Note), raggruppa per colonna "seduta" o righe-titolo, converte RPE→RIR, rimuove numerazione "1.". Match nome→`EXERCISE_LIBRARY` (`_matchLibExercise`, overlap di token, soglia 0.6) per agganciare video+e1RM; fallback a testo libero. `confirmImport` sostituisce la scheda (showConfirm se piena). Bridge in `main.js`.
+- **B · Reminder allenamento** (server-side, controllo coach per-atleta, default ON):
+  - Migration `reminders_migration.sql`: `atleti.training_reminder bool default true` + `schedules.scheduled_days int[]` (fixa il bug: prima `scheduledDays` viveva solo nel browser, non persistito né riletto dal cloud) + job `pg_cron` orario che invoca l'edge function.
+  - Client: toggle "Promemoria allenamento" per-atleta nel modal `mo-ath` (default acceso); persiste/rilegge `scheduled_days` in `saveSchedule`/`_pushScheduleToCloud`/load `auth.js`; `training_reminder` in add/edit atleta.
+  - Edge function `supabase/functions/send-reminders/index.ts`: gira ogni ora, invia solo alle 08:00 Europe/Rome (DST gestita via `Intl`), agli atleti con reminder ON + seduta programmata oggi + non ancora loggata. Riusa VAPID di send-push, pulisce subscription stantie. Auth via header `x-cron-secret`.
+- Verifica: `node --check` OK (app/auth/main); parser testato sul **codice reale** (17/17: delimitatori, header, righe-titolo, RPE→RIR, match/fallback, numerazione); `romeNow` testato (dow+DST corretti); smoke Playwright coach 1360px (import sostituisce 3 sedute demo con Push/Pull, anteprima video+fallback, toggle reminder presente+acceso, **0 errori console**).
+- **Auth cron autosufficiente** (niente secret CLI): tabella `reminder_config` (RLS on, nessuna policy → solo service role) con segreto generato; il cron legge il segreto dal DB e lo passa in header `x-cron-secret`; la funzione lo rilegge dal DB e confronta.
+- **Backend DEPLOYATO in produzione** (via Supabase MCP): migration colonne+config+estensioni applicata; `pg_cron`/`pg_net` attivi; edge function `send-reminders` ACTIVE (`verify_jwt=false`); cron `training-reminders-hourly` (`0 * * * *`) attivo. Testato live: chiamata autorizzata → 200 (`dow=6 hour=16`, 8 atleti reminder ON, 0 programmati oggi = corretto); secret errato → 401.
+- **Client**: SW bumpato a **v6.83**. Deploy Vercel + commit (vedi sotto).
+
 ---
 
 ## Prossimo passo — roadmap
@@ -145,8 +156,8 @@ Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA).
 
 **Blocker (impediscono uso/vendita):**
 1. **Distribuzione + prova sociale** (non-codice): reclutare 1 coach reale come caso zero + video demo 60–90s.
-2. **Time-to-value coach** → ✅ template + duplica + copia su più atleti. Resta: import grezzo da Excel/Sheets.
-3. **Adozione atleta** → ✅ gamification + PWA install. Resta: sessione persistente + push reminder di default.
+2. **Time-to-value coach** → ✅ template + duplica + copia su più atleti + ✅ import da Excel/Sheets (2026-09-26).
+3. **Adozione atleta** → ✅ gamification + PWA install + ✅ push reminder allenamento (2026-09-26, da deployare). Resta: sessione persistente.
 4. ~~**Fiducia minima (GDPR)**~~ → ✅ privacy in-app, export dati, wording onesto.
 
 **Nice-to-have (retention/percezione):**

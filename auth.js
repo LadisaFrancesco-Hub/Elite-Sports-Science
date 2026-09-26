@@ -631,6 +631,7 @@ export async function loadDB() {
                     phase:     scelto.meta.phase,
                     coachNote: scelto.meta.coach_note,
                     objective: scelto.meta.objective,
+                    scheduledDays: scelto.meta.scheduled_days || [],
                     sessions:  scelto.sessions
                 };
             });
