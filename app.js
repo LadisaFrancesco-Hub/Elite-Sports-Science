@@ -1918,8 +1918,8 @@ export function renderCoachReply() {
   }).join('');
 }
 
-export function renderAthWeek() {
-  const el = document.getElementById('ath-week-content');
+export function renderAthWeek(targetId = 'ath-week-content', embedded = false) {
+  const el = document.getElementById(targetId);
   if (!el) return;
 
   const athId = window.mioIdLoggato || appState.selAthId;
@@ -2036,9 +2036,11 @@ export function renderAthWeek() {
   </div>` : '';
 
   el.innerHTML = `
-  <div style="padding-bottom:100px">
-  <div style="margin-bottom:18px">
-  <div class="ax-h1">La mia settimana</div>
+  <div style="${embedded ? '' : 'padding-bottom:100px'}">
+  <div style="margin-bottom:${embedded ? '12px' : '18px'}">
+  ${embedded
+    ? `<div style="font-size:15px;font-weight:800;color:var(--text)">Questa settimana</div>`
+    : `<div class="ax-h1">La mia settimana</div>`}
   <div class="ax-overline" style="margin-top:6px">
   ${mon.toLocaleDateString('it-IT',{day:'numeric',month:'long'})} — ${days[6].toLocaleDateString('it-IT',{day:'numeric',month:'long'})}
   </div>
@@ -2214,8 +2216,7 @@ export function renderAthHome() {
   </div>
   <div class="card" style="margin-bottom:20px;border:1px solid var(--border)">
   <div style="display:flex;flex-direction:column;gap:14px">
-  ${[['⊙','Oggi','Dashboard: sessione del giorno, wellness e progressi'],
-  ['','Settimana','Vista settimanale — cosa hai fatto e cosa ti aspetta'],
+  ${[['⊙','Oggi','La tua home: sessione del giorno, panoramica settimanale, wellness e progressi'],
   ['▶','Sessione','Allenati — traccia set, rep e kg in tempo reale'],
   ['','Progressi','Grafici, record e trend mensili del tuo miglioramento'],
   ['','Wellness','Check-in giornaliero — sonno, stress, soreness'],
@@ -2447,6 +2448,9 @@ export function renderAthHome() {
   `}
   </div>
 
+  <!-- Settimana (assorbita dalla vecchia tab 'Settimana', striscia sempre aperta) -->
+  <div id="ah-week" style="margin-bottom:14px"></div>
+
   <!-- SEZIONE C: Momento motivazionale -->
   ${motivHtml}
 
@@ -2519,6 +2523,9 @@ export function renderAthHome() {
   </div>
 
   </div>`;
+
+  // Striscia settimanale sempre aperta dentro "Oggi" (fusione tab Settimana)
+  renderAthWeek('ah-week', true);
 }
 
 export function dismissOnboarding() {

@@ -184,6 +184,13 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: `node --check` OK; smoke Playwright (atleta 390px) → demo a2 con dati mostra card riformulata; atleta senza target/log → card nascosta; 0 errori console.
 - **DEPLOYATO**: SW **v6.87**, commit + push + `vercel --prod`. Client-only.
 
+**Bottom bar atleta 6→5: "Settimana" assorbita in "Oggi" (2026-09-26)**
+- UX: 6 voci nella bottom bar mobile erano oltre il limite comodo (iOS/Material: 3-5). "Settimana" era l'unica tab passiva (sola panoramica) e condivide il modello mentale di "Oggi" (il piano, a due zoom) → candidata ideale da fondere.
+- `renderAthWeek(targetId='ath-week-content', embedded=false)` parametrizzata: in modalità `embedded` niente `padding-bottom:100px` e titolo compatto "Questa settimana" invece di "La mia settimana". `renderAthHome` inserisce `<div id="ah-week">` dopo la sessione (prima del motivazionale) e la popola con `renderAthWeek('ah-week', true)` → striscia settimanale **sempre aperta** (compliance + griglia 7 giorni). Nessuna riscrittura di logica.
+- Rimossa la voce `bb-week` dalla bottom bar (→ 5 voci: Oggi·Wellness·Sessione·Progressi·Coach). Rotta `ath-week` lasciata come orfano innocuo (fallback, `go()` gestisce il bb mancante con optional chaining). Aggiornata la guida onboarding (Oggi ora descrive anche la panoramica settimanale).
+- Verifica: `node --check` OK; smoke Playwright (atleta 390px) → 5 voci senza "Settimana", sezione "Questa settimana" dentro Oggi con compliance/giorni, rotta orfana non rompe, 0 errori console.
+- **DEPLOYATO**: SW **v6.88**, commit + push + `vercel --prod`. Client-only, solo lato atleta mobile.
+
 ---
 
 ## Prossimo passo — roadmap
