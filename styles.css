@@ -508,11 +508,11 @@ input[type=range]::-webkit-slider-thumb {
    TABELLE
    ══════════════════════════════════════════════════════════════ */
 .tw { overflow-x: auto; border-radius: var(--radius); border: 1px solid var(--border); overflow: hidden; }
-/* Storico: su mobile mostra solo Data, Sessione, Atleta, RPE, Azioni */
+/* Storico: su mobile la tabella densa lascia il posto a card leggibili */
+.sto-cards { display: none; }
 @media (max-width: 768px) {
-  #p-storico .tw table th:nth-child(n+4):not(:nth-child(9)):not(:nth-child(15)),
-  #p-storico .tw table td:nth-child(n+4):not(:nth-child(9)):not(:nth-child(15)) { display: none; }
-  #sto-table td:nth-child(3) { max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #p-storico .tw { display: none; }
+  #p-storico .sto-cards { display: flex; flex-direction: column; gap: 10px; }
 }
 table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
 th {

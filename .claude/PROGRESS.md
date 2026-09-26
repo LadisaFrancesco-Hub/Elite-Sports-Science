@@ -191,6 +191,12 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: `node --check` OK; smoke Playwright (atleta 390px) → 5 voci senza "Settimana", sezione "Questa settimana" dentro Oggi con compliance/giorni, rotta orfana non rompe, 0 errori console.
 - **DEPLOYATO**: SW **v6.88**, commit + push + `vercel --prod`. Client-only, solo lato atleta mobile.
 
+**Card-ificazione Storico coach su mobile (2026-09-26)**
+- Prima: su mobile lo Storico coach (tabella densa 15 colonne) nascondeva colonne via CSS `nth-child` → compromesso povero. Ora card leggibili.
+- `index.html`: aggiunto `<div id="sto-cards">` accanto a `.tw`. `styles.css`: `.sto-cards{display:none}` di default; `@media(max-width:768px)` nasconde `#p-storico .tw` e mostra le card (flex column). `app.js` `renderStorico`: nello stesso loop costruisce righe tabella (desktop) **e** card curate (mobile) — header atleta + chip sessione/fase/data/flag, griglia 4 metriche (Read/Vol/sRPE/e1RM), riga RPE P→A + stato risposta + azioni Rispondi/✕, DOMS se presente. Empty-state gestito per entrambi. Nessun listener di resize (doppio render nello stesso passaggio, CSS decide cosa mostrare).
+- Verifica: `node --check` OK; smoke Playwright → mobile 390px (tabella nascosta, 122 card, esempio Elena con flag+metriche), desktop 1360px (tabella visibile, card nascoste), 0 errori console.
+- **DEPLOYATO**: SW **v6.89**, commit + push + `vercel --prod`. Client-only.
+
 ---
 
 ## Prossimo passo — roadmap
@@ -207,7 +213,7 @@ Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA).
 - Semplificare il default (modalità base PT vs toggle "Performance/Avanzato" per analytics S&C).
 - ~~Nascondere tile wearable "Coming Soon" + de-enfatizzare nutrizione~~ → ✅ entrambi fatti (2026-09-26).
 - ~~ACWR come supporto alla decisione con metodologia visibile~~ → ✅ individualizzato + framing onesto + gate (2026-09-26). Decadimento su calendario (#4) valutato e scartato (peggiora coi dati sparsi). Resta opzionale: toggle di disattivazione.
-- Card-ificazione tabella Storico su mobile.
+- ~~Card-ificazione tabella Storico su mobile~~ → ✅ fatto (2026-09-26).
 
 **Rimandati (P.IVA / costi):**
 - Billing reale (codice + checklist Stripe pronti).

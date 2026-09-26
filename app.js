@@ -2692,17 +2692,25 @@ export function renderStorico() {
   });
 
   const tb = document.getElementById('sto-body'); tb.innerHTML = '';
+  const cardsEl = document.getElementById('sto-cards'); if (cardsEl) cardsEl.innerHTML = '';
   if (!rows.length) {
   const hasAth = DB.athletes.length > 0;
+  const emptyMsg = hasAth ? 'Le sessioni compaiono qui quando i tuoi atleti si allenano — o aggiungile a mano con “+ Sessione”.' : 'Aggiungi il tuo primo atleta per iniziare a raccogliere le sessioni.';
   tb.innerHTML = `<tr><td colspan="15" style="padding:44px 20px;text-align:center;color:var(--muted)">
   <div style="font-size:26px;opacity:.45;margin-bottom:8px">▤</div>
   <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px">Nessuna sessione registrata</div>
-  <div style="font-size:12.5px;line-height:1.5;max-width:340px;margin:0 auto">${hasAth ? 'Le sessioni compaiono qui quando i tuoi atleti si allenano — o aggiungile a mano con “+ Sessione”.' : 'Aggiungi il tuo primo atleta per iniziare a raccogliere le sessioni.'}</div>
+  <div style="font-size:12.5px;line-height:1.5;max-width:340px;margin:0 auto">${emptyMsg}</div>
   </td></tr>`;
+  if (cardsEl) cardsEl.innerHTML = `<div style="padding:44px 20px;text-align:center;color:var(--muted);border:1px dashed var(--border);border-radius:12px">
+  <div style="font-size:26px;opacity:.45;margin-bottom:8px">▤</div>
+  <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px">Nessuna sessione registrata</div>
+  <div style="font-size:12.5px;line-height:1.5">${emptyMsg}</div>
+  </div>`;
   document.getElementById('sto-count').textContent = '0 sessioni';
   updateReplyBadge();
   return;
   }
+  const cards = [];
   rows.forEach(sess => {
   const tr = document.createElement('tr');
   tr.innerHTML = `
@@ -2725,7 +2733,43 @@ export function renderStorico() {
   <button class="btn btn-d btn-xs" onclick="delSess('${sess.id}')">✕</button>
   </td>`;
   tb.appendChild(tr);
+
+  // ── Variante a card per mobile (info curata, non 15 colonne) ──
+  const metric = (label, val, color) => `<div style="display:flex;flex-direction:column;gap:1px">
+  <span style="font-size:9px;font-family:var(--fmono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em">${label}</span>
+  <span style="font-size:13px;font-weight:700;color:${color || 'var(--text)'}">${val}</span></div>`;
+  cards.push(`<div style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+  <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:10px">
+  <div style="min-width:0">
+  <div style="font-weight:800;color:var(--text);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(athName(sess.athlete))}</div>
+  <div style="display:flex;gap:6px;align-items:center;margin-top:3px;flex-wrap:wrap">
+  <span class="tag tn" style="font-size:10px">${escHtml(sess.session)}</span>
+  <span class="tag tn" style="font-size:10px">${escHtml(sess.phase || '—')}</span>
+  <span style="font-size:11px;color:var(--muted)">${sess.date} · W${sess.week || '—'}</span>
+  </div>
+  </div>
+  ${sess.flag ? `<span class="tag tc" style="flex-shrink:0">${escHtml(sess.flag)}</span>` : ''}
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:10px">
+  ${metric('Read.', sess.readiness || '—', 'var(--teal)')}
+  ${metric('Vol', (sess.vol || 0).toLocaleString('it-IT'), null)}
+  ${metric('sRPE', (sess.sRPE || '—') + '', 'var(--purple)')}
+  ${metric('e1RM', (sess.maxE1rm || '—') + '', 'var(--blue)')}
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+  <div style="display:flex;gap:10px;align-items:center;font-size:11px;color:var(--muted)">
+  <span>RPE ${rpeCompareBadge(sess.plannedRpe ?? null, sess.rpe || null)}</span>
+  <span>${sess.reply ? '✓ risposto' : 'da rispondere'}</span>
+  </div>
+  <div style="display:flex;gap:6px;flex-shrink:0">
+  <button class="btn btn-g btn-xs" onclick="editReply('${sess.id}')">Rispondi</button>
+  <button class="btn btn-d btn-xs" onclick="delSess('${sess.id}')">✕</button>
+  </div>
+  </div>
+  ${sess.doms && sess.doms !== '—' ? `<div style="margin-top:8px;font-size:11px;color:var(--muted)">DOMS: ${escHtml(sess.doms)}</div>` : ''}
+  </div>`);
   });
+  if (cardsEl) cardsEl.innerHTML = cards.join('');
   document.getElementById('sto-count').textContent = `${rows.length} sessioni`;
   updateReplyBadge();
 }
