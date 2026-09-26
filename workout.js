@@ -51,6 +51,90 @@ window.liveMaxE1rm  = 0;
 window.liveE1rmDom  = 0;
 window.liveE1rmNDom = 0;
 
+// ─────────────────────────────────────────────────────────────
+// Persistenza sessione live (ripresa dopo chiusura/crash)
+// Scoping: la ripresa vale SOLO per lo stesso atleta e lo stesso
+// giorno; i pallini si riapplicano solo alla stessa sessione+settimana.
+// ─────────────────────────────────────────────────────────────
+const LK_DOTS = 'coachOS_live_dots';
+const LK_LOG  = 'coachOS_real_log';
+const LK_CTX  = 'coachOS_live_ctx';
+const _todayISO = () => new Date().toISOString().slice(0, 10);
+
+function _readLiveCtx() {
+    try { return JSON.parse(localStorage.getItem(LK_CTX) || 'null'); } catch { return null; }
+}
+
+/** Salva il contesto della ripresa insieme a pallini + realLog. */
+export function saveLiveCtx(sessId, week) {
+    try {
+        localStorage.setItem(LK_CTX, JSON.stringify({
+            athId: appState.selAthId, sessId: String(sessId || ''),
+            week: String(week || '1'), date: _todayISO(),
+        }));
+    } catch { /* storage pieno/negato: ignora */ }
+}
+
+/** Cancella ogni traccia della sessione in corso (a fine allenamento o su richiesta). */
+export function clearLiveRecovery() {
+    localStorage.removeItem(LK_DOTS);
+    localStorage.removeItem(LK_LOG);
+    localStorage.removeItem(LK_CTX);
+    window.realLog = {};
+}
+
+/**
+ * Ripristina window.realLog se la ripresa è dello stesso atleta e di oggi.
+ * Se è di un altro atleta o di un giorno passato, pulisce i residui.
+ * Ritorna il ctx valido (o null).
+ */
+function _rehydrateLiveRecovery() {
+    const ctx = _readLiveCtx();
+    if (!ctx || ctx.athId !== appState.selAthId || ctx.date !== _todayISO()) {
+        if (ctx) clearLiveRecovery();   // stantio o di un altro atleta
+        return null;
+    }
+    try {
+        const saved = JSON.parse(localStorage.getItem(LK_LOG) || '{}');
+        if (saved && typeof saved === 'object') window.realLog = saved;
+    } catch { /* ignora */ }
+    return ctx;
+}
+
+/** Pulisce il recovery via UI ("Ricomincia da capo") e ricarica la sessione. */
+export function restartLiveSession() {
+    clearLiveRecovery();
+    loadLive();
+}
+
+/** Banner "Riprendi la sessione di oggi" quando ci sono set già registrati. */
+function _renderResumeBanner(sessId, week, sessionName, ctxMatches) {
+    const box = document.getElementById('lv-resume');
+    if (!box) return;
+    const prefix = `${sessId}-w${week}-`;
+    const logged = ctxMatches
+        ? Object.keys(window.realLog || {}).filter(k => k.startsWith(prefix)).length
+        : 0;
+    if (!logged) { box.style.display = 'none'; box.innerHTML = ''; return; }
+    box.style.display = 'block';
+    box.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+                  background:var(--accent-wash,rgba(249,115,22,.12));
+                  border:1px solid var(--accent,#f97316);border-radius:12px;
+                  padding:11px 13px;margin-bottom:10px">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:13px;font-weight:800;color:var(--text)">Sessione in corso — ripresa</div>
+          <div style="font-size:11.5px;color:var(--muted);margin-top:2px">
+            ${logged} set già registrati oggi in "${escHtml(sessionName)}". Continua da dove avevi lasciato.
+          </div>
+        </div>
+        <button onclick="restartLiveSession()"
+                style="flex-shrink:0;background:transparent;border:1px solid var(--border);
+                       color:var(--muted);border-radius:8px;padding:6px 10px;font-size:11px;
+                       font-weight:700;cursor:pointer">Ricomincia da capo</button>
+      </div>`;
+}
+
 
 // Istruzioni contestuali per ogni protocollo series_type
 const SERIES_TYPE_INSTRUCTIONS = {
@@ -92,6 +176,10 @@ export function loadLive() {
     const select     = document.getElementById('lv-sess');
     const selectWeek = document.getElementById('lv-week');
     if (!select) return;
+
+    // Ripristina i valori reali (kg/reps) di una sessione in corso PRIMA del render,
+    // così i set completati mostrano i dati veri e non i target programmati.
+    const _recoveryCtx = _rehydrateLiveRecovery();
 
     const wrap = document.getElementById('lv-exs');
 
@@ -614,17 +702,24 @@ for (let l = 0; l < actualSet; l++) {
         });
     });
 
-    // ── Crash recovery: ripristina i pallini dal localStorage ──
-    try {
-        const cachePallini = JSON.parse(localStorage.getItem('coachOS_live_dots'));
-        if (cachePallini && Array.isArray(cachePallini)) {
-            cachePallini.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.classList.add('done');
-            });
-            setTimeout(() => updateLiveTotals(window.getEdExercises()), 100);
-        }
-    } catch (e) { /* Silenzioso: primo avvio senza cache */ }
+    // ── Ripresa sessione: ripristina i pallini SOLO se la sessione+settimana
+    //    corrisponde alla ripresa in corso (stesso atleta+giorno già validato). ──
+    const _curWeek = (selectWeek && selectWeek.value) ? String(selectWeek.value) : '1';
+    const _ctxMatches = _recoveryCtx && _recoveryCtx.sessId === String(sessId) && _recoveryCtx.week === _curWeek;
+    if (_ctxMatches) {
+        try {
+            const cachePallini = JSON.parse(localStorage.getItem(LK_DOTS));
+            if (cachePallini && Array.isArray(cachePallini)) {
+                cachePallini.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.classList.add('done');
+                });
+                setTimeout(() => updateLiveTotals(window.getEdExercises()), 100);
+            }
+        } catch (e) { /* Silenzioso: primo avvio senza cache */ }
+    }
+    // Banner "Riprendi": mostrato quando ci sono set già registrati per questa sessione+settimana.
+    _renderResumeBanner(sessId, _curWeek, sessionName, _ctxMatches);
 
     // ── Popola filtro esercizi per il grafico e1RM ───────────
     const filterDiv = document.getElementById('e1rm-ex-filter');
@@ -800,6 +895,10 @@ let sKg  = parseFloat(targetKg)  || 0;
     document.querySelectorAll('.dot.done').forEach(d => palliniSalvati.push(d.id));
     localStorage.setItem('coachOS_live_dots', JSON.stringify(palliniSalvati));
     localStorage.setItem('coachOS_real_log',  JSON.stringify(window.realLog || {}));
+    // Stampa il contesto della ripresa (atleta+sessione+settimana+giorno) solo se c'è progresso.
+    if (palliniSalvati.length > 0 || Object.keys(window.realLog || {}).length > 0) {
+        saveLiveCtx(selectLiveSess ? selectLiveSess.value : '', weekVal);
+    }
 
     // ── Aggiornamento KPI nella UI ───────────────────────────
     document.getElementById('lv-vol').textContent  = Math.round(vol).toLocaleString('it-IT') + ' kg';

@@ -149,6 +149,14 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - **Client DEPLOYATO**: SW **v6.83**, commit `7f3573c` + push su `main`, `vercel --prod` (dpl_Ai8arLe11dHzaWyg1YGUACGKQEEv). Verificato live su `coach-os-lime.vercel.app`: SW v6.83 + bottone "Importa da Excel/Sheets" + toggle `ma-reminder` serviti. ✅ Entrambe le feature live end-to-end.
 - Da valutare in futuro: qualità del match nome→libreria per termini 100% italiani (es. "Panca piana" → ok via "Panca"; nomi molto diversi restano testo libero, corretto); primo vero invio push del cron osservabile in `cron.job_run_details`.
 
+**Sessione persistente lato atleta — ripresa dopo crash/chiusura (2026-09-26)**
+- Ultimo blocker di adozione. Prima: solo i pallini sopravvivevano; i **valori reali** (kg/reps in `window.realLog`) erano salvati in `coachOS_real_log` ma **mai ri-caricati** → dopo un crash i set sembravano fatti ma i dati erano persi (a fine allenamento si salvavano i target); nessuno scoping per atleta/giorno; `coachOS_real_log` orfano a fine sessione; nessun segnale di ripresa.
+- **Fix (workout.js)**: helper recovery scoped — `saveLiveCtx` (stampa `{athId,sessId,week,date}` in `coachOS_live_ctx` insieme a dots+realLog, solo se c'è progresso), `_rehydrateLiveRecovery` (ripristina `window.realLog` all'inizio di `loadLive` **prima del render** solo se stesso atleta+giorno; altrimenti pulisce i residui), `clearLiveRecovery`, `restartLiveSession`. Restore pallini gated a `sessId+week` corrispondenti. Auto-save (`updateLiveTotals`) ora scrive anche il contesto.
+- **Banner "Riprendi"** (`#lv-resume` in index.html, `_renderResumeBanner`): compare sopra il set tracker quando ci sono set già registrati oggi per quella sessione+settimana ("N set già registrati") con azione "Ricomincia da capo".
+- **Cleanup a fine allenamento (app.js)**: `clearLiveRecovery()` sostituisce il vecchio `removeItem('coachOS_live_dots')` (pulisce dots+realLog+ctx); il conteggio set per la schermata di riepilogo è calcolato **prima** della pulizia e passato a `showAthSummary(sessObj, loggedSets)` (fallback al vecchio path localStorage preservato).
+- Verifica: `node --check` OK (app/workout/main); smoke Playwright (atleta 390px, codice reale) → persistenza+scoping, ripresa dopo crash simulato (realLog rehydrated + banner visibile), caso stale (data di ieri → pulito), "Ricomincia da capo" (tutto pulito), **0 errori console**.
+- **DEPLOYATO**: SW **v6.84**, commit + push su `main`, `vercel --prod`. Client-only.
+
 ---
 
 ## Prossimo passo — roadmap
@@ -158,7 +166,7 @@ Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA).
 **Blocker (impediscono uso/vendita):**
 1. **Distribuzione + prova sociale** (non-codice): reclutare 1 coach reale come caso zero + video demo 60–90s.
 2. **Time-to-value coach** → ✅ template + duplica + copia su più atleti + ✅ import da Excel/Sheets (2026-09-26).
-3. **Adozione atleta** → ✅ gamification + PWA install + ✅ push reminder allenamento (2026-09-26, da deployare). Resta: sessione persistente.
+3. **Adozione atleta** → ✅ gamification + PWA install + ✅ push reminder allenamento + ✅ sessione persistente (2026-09-26). Blocker chiuso.
 4. ~~**Fiducia minima (GDPR)**~~ → ✅ privacy in-app, export dati, wording onesto.
 
 **Nice-to-have (retention/percezione):**

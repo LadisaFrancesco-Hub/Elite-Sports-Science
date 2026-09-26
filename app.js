@@ -18,7 +18,7 @@ import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStat
 // Importazioni circolari risolte: questi moduli importano da state+utils,
 // e app.js li chiama solo dentro funzioni (mai al top-level).
 import { upW, renderInjuries, renderQuickWellness } from './wellness.js';
-import { loadLive, updateLiveTotals } from './workout.js';
+import { loadLive, updateLiveTotals, clearLiveRecovery } from './workout.js';
 import { renderAnalytics, calculateACWR, renderE1rmChart, renderAthProgressi, renderBodyComp } from './analytics.js';
 import { subscribePush } from './auth.js';
 import { canAddAthlete, showUpgradeModal } from './billing.js';
@@ -2059,7 +2059,7 @@ export function renderAthWeek() {
   </div>`;
 }
 
-export function showAthSummary(sessObj) {
+export function showAthSummary(sessObj, loggedSetsArg) {
   const el = document.getElementById('ath-summary-content');
   if (!el) return;
 
@@ -2099,11 +2099,15 @@ export function showAthSummary(sessObj) {
   heroTitle = 'Sessione completata!';
   }
 
-  // Set loggati dal realLog
-  const rl = JSON.parse(localStorage.getItem('coachOS_real_log') || '{}');
-  const sessId = document.getElementById('lv-sess')?.value || '';
-  const weekVal = document.getElementById('lv-week')?.value || '1';
-  const loggedSets = sessId ? Object.keys(rl).filter(k => k.startsWith(`${sessId}-w${weekVal}`)).length : 0;
+  // Set loggati: usa il conteggio passato da endWorkout (il recovery è già stato pulito);
+  // fallback al realLog residuo per eventuali altri chiamanti.
+  let loggedSets = (typeof loggedSetsArg === 'number') ? loggedSetsArg : 0;
+  if (typeof loggedSetsArg !== 'number') {
+    const rl = JSON.parse(localStorage.getItem('coachOS_real_log') || '{}');
+    const sessId = document.getElementById('lv-sess')?.value || '';
+    const weekVal = document.getElementById('lv-week')?.value || '1';
+    loggedSets = sessId ? Object.keys(rl).filter(k => k.startsWith(`${sessId}-w${weekVal}`)).length : 0;
+  }
 
   // Prossima sessione suggerita
   const curIdx = schSessions.findIndex(s => s.name === sessObj.session);
@@ -4883,7 +4887,10 @@ export async function submitFB() {
   }
 
   window.carichiFuturi = {};
-  localStorage.removeItem('coachOS_live_dots');
+  // Conteggio dei set realmente loggati (per la schermata di riepilogo) PRIMA di pulire.
+  const _loggedSets = Object.keys(window.realLog || {}).filter(k => k.startsWith(`${activeSessId}-w${currentWeekNum}-`)).length;
+  // Ripresa conclusa → cancella ogni traccia (pallini, realLog, contesto).
+  clearLiveRecovery();
 
   const today = new Date().toISOString().slice(0,10);
   const cleanDOMS = [...document.querySelectorAll('#pw-musc .on-t')].map(x => x.textContent).join(' · ');
@@ -4934,7 +4941,7 @@ export async function submitFB() {
   initFB(); loadLive(); renderDashboard();
   window._updateFeedbackBadge(appState.selAthId);
   checkAndAwardBadges(appState.selAthId);
-  if (window.userRole === 'ATLETA') showAthSummary(sessObj);
+  if (window.userRole === 'ATLETA') showAthSummary(sessObj, _loggedSets);
   window.liveE1rmDom = 0; window.liveE1rmNDom = 0; window.liveMaxE1rm = 0;
   appState.pwRpe = 0; appState.pwStars = 0;
   ['pw-notes','pw-vars'].forEach(id => { const el=document.getElementById(id); if(el) el.value=''; });
