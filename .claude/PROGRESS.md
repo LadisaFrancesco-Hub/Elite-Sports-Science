@@ -146,7 +146,8 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: `node --check` OK (app/auth/main); parser testato sul **codice reale** (17/17: delimitatori, header, righe-titolo, RPE→RIR, match/fallback, numerazione); `romeNow` testato (dow+DST corretti); smoke Playwright coach 1360px (import sostituisce 3 sedute demo con Push/Pull, anteprima video+fallback, toggle reminder presente+acceso, **0 errori console**).
 - **Auth cron autosufficiente** (niente secret CLI): tabella `reminder_config` (RLS on, nessuna policy → solo service role) con segreto generato; il cron legge il segreto dal DB e lo passa in header `x-cron-secret`; la funzione lo rilegge dal DB e confronta.
 - **Backend DEPLOYATO in produzione** (via Supabase MCP): migration colonne+config+estensioni applicata; `pg_cron`/`pg_net` attivi; edge function `send-reminders` ACTIVE (`verify_jwt=false`); cron `training-reminders-hourly` (`0 * * * *`) attivo. Testato live: chiamata autorizzata → 200 (`dow=6 hour=16`, 8 atleti reminder ON, 0 programmati oggi = corretto); secret errato → 401.
-- **Client**: SW bumpato a **v6.83**. Deploy Vercel + commit (vedi sotto).
+- **Client DEPLOYATO**: SW **v6.83**, commit `7f3573c` + push su `main`, `vercel --prod` (dpl_Ai8arLe11dHzaWyg1YGUACGKQEEv). Verificato live su `coach-os-lime.vercel.app`: SW v6.83 + bottone "Importa da Excel/Sheets" + toggle `ma-reminder` serviti. ✅ Entrambe le feature live end-to-end.
+- Da valutare in futuro: qualità del match nome→libreria per termini 100% italiani (es. "Panca piana" → ok via "Panca"; nomi molto diversi restano testo libero, corretto); primo vero invio push del cron osservabile in `cron.job_run_details`.
 
 ---
 
