@@ -41,84 +41,121 @@ let testChartInstance = null;
 
 // ─────────────────────────────────────────────────────────────
 // 1. calculateACWR(athId)
-// Calcola l'Acute:Chronic Workload Ratio su due binari
-// paralleli e indipendenti tramite EWMA (Exponentially
-// Weighted Moving Average):
+// Acute:Chronic Workload Ratio su due binari indipendenti (EWMA):
+//   Binario GYM   → tonnellaggio meccanico (kg)
+//   Binario CAMPO → carico specifico sRPE (UA)
+//   αAcute ≈ 0.33 (~1 sett.), αChronic ≈ 0.05 (~4 sett.)
 //
-// Binario GYM → tonnellaggio meccanico (kg)
-// αAcute ≈ 0.33 (~1 settimana di memoria)
-// αChronic ≈ 0.05 (~4 settimane di memoria)
+// L'ACWR è un DESCRITTORE DI TREND del carico, non una predizione di
+// infortunio (la letteratura sulle soglie universali 0.8–1.3/1.5 è
+// contestata: Lolli, Impellizzeri, Coutts). Perciò:
+//   1. INDIVIDUALIZZATO — quando c'è abbastanza storico, il valore è
+//      classificato via z-score rispetto allo standard personale
+//      dell'atleta, non a soglie universali. Fallback alle soglie
+//      generiche solo con poco storico. Un "floor" assoluto evita che
+//      un baseline rumoroso nasconda un picco reale (>1.5 / >2.0).
+//   3. GATE PER-BINARIO su tempo di calendario + numero sessioni.
 //
-// Binario CAMPO → carico specifico sRPE (UA)
-// stessi coefficienti
-//
-// Classificazione del ratio:
-// [0.8 – 1.3] → Ottimale (verde)
-// (1.3 – 1.5] → Aumentato (ambra)
-// > 1.5 → DANGER (rosso)
-// < 0.8 / N/A → muted
-//
-// Requisito minimo: 7 sessioni totali.
-// Restituisce: { gym: {value, text, color}, field: {value, text, color} }
+// Restituisce per binario: { value, text, color, level, z, baseline, note }
+//   level ∈ 'insufficient' | 'low' | 'optimal' | 'elevated' | 'high'
+//   (i consumatori usano `level`, non il match sulla stringa `text`).
 // ─────────────────────────────────────────────────────────────
+const _ACWR_MIN_SESSIONS = 6;   // sessioni minime nel binario
+const _ACWR_MIN_SPAN_DAYS = 21; // arco di calendario minimo (~3 sett.)
+const _ACWR_MIN_BASELINE = 8;   // campioni di ratio per fidarsi dello standard personale
+
+const _ACWR_COLOR = {
+  insufficient: 'var(--muted)',
+  low:          'var(--muted)',
+  optimal:      'var(--green)',
+  elevated:     'var(--amber)',
+  high:         'var(--coral)',
+};
+
+function _acwrClassifyTrack(t) {
+  // Gate dati per-binario (tempo reale + numerosità)
+  if (t.count < _ACWR_MIN_SESSIONS || t.spanDays < _ACWR_MIN_SPAN_DAYS) {
+    return {
+      value: t.count ? t.current.toFixed(2) : null,
+      level: 'insufficient', text: 'Dati insufficienti',
+      color: _ACWR_COLOR.insufficient,
+      z: null, baseline: null,
+      note: 'Servono ~3 settimane di storico per un riferimento affidabile.',
+    };
+  }
+
+  const cur = t.current;
+  // Baseline personale: distribuzione dei ratio storici, saltando il warm-up iniziale
+  const samples = t.ratios.slice(Math.min(3, Math.max(0, t.ratios.length - 1)));
+  const mean = samples.reduce((a, b) => a + b, 0) / samples.length;
+  const variance = samples.reduce((a, b) => a + (b - mean) ** 2, 0) / samples.length;
+  const sd = Math.sqrt(variance);
+  const reliable = samples.length >= _ACWR_MIN_BASELINE && sd > 0.02;
+  const z = reliable ? (cur - mean) / sd : null;
+
+  let level, text, note;
+
+  // Filosofia: l'individualizzazione RIDUCE i falsi allarmi, non ne crea.
+  // La fascia sicura (0.8–1.3) è sempre "nella norma"; lo z-score interviene
+  // solo SOPRA 1.3 per decidere se il carico alto è tollerato dall'atleta o no.
+  if (cur < 0.8) {
+    // Sotto la fascia: informativo, non un warning (detraining/scarico)
+    level = 'low';
+    text  = 'Carico in calo';
+    note  = 'Sotto la fascia abituale — possibile scarico o detraining.';
+  } else if (cur <= 1.3) {
+    level = 'optimal';
+    text  = reliable ? 'In linea col suo standard' : 'Nella norma';
+    note  = 'Nella fascia di carico sicura (0.8–1.3).';
+  } else if (reliable) {
+    // Sopra 1.3: individualizzato sul baseline personale
+    if (z >= 2 || cur > 2.0)      { level = 'high';     text = 'Molto sopra il suo standard — verifica'; }
+    else if (z >= 1 || cur > 1.5) { level = 'elevated'; text = 'Sopra il suo standard'; }
+    else                          { level = 'optimal';  text = 'Alto ma nella sua norma'; }
+    note = level === 'optimal'
+      ? `Alto in assoluto ma in linea col suo standard (~${mean.toFixed(2)}).`
+      : `Standard personale ~${mean.toFixed(2)} · ${z >= 0 ? '+' : ''}${z.toFixed(1)}σ sopra la sua media.`;
+  } else {
+    // Poco storico: soglie generiche, etichette oneste (niente "DANGER")
+    if (cur > 1.5)  { level = 'high';     text = 'Carico in forte aumento — verifica'; }
+    else            { level = 'elevated'; text = 'Carico in aumento'; }
+    note = 'Soglie generiche (storico personale ancora breve).';
+  }
+
+  return { value: cur.toFixed(2), level, text, color: _ACWR_COLOR[level], z: z != null ? +z.toFixed(2) : null, baseline: reliable ? +mean.toFixed(2) : null, note };
+}
+
 export function calculateACWR(athId) {
   // Copia difensiva — non muta mai l'array globale durante l'iterazione
   const s = [...DB.sessions]
   .filter(x => x.athlete === athId)
   .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-  // Soglia minima per uno storico affidabile
-  if (s.length < 7) {
-  return {
-  gym: { value: null, text: 'Dati insufficienti', color: 'var(--muted)' },
-  field: { value: null, text: 'Dati insufficienti', color: 'var(--muted)' }
-  };
-  }
+  const alphaAcute = 0.33, alphaChronic = 0.05;
 
-  // Coefficienti di decadimento esponenziale
-  const alphaAcute = 0.33; // ~1 settimana
-  const alphaChronic = 0.05; // ~4 settimane
-
-  let ewmaAcuteVol = 0, ewmaChronicVol = 0;
-  let ewmaAcuteRpe = 0, ewmaChronicRpe = 0;
-  let hasGym = false, hasField = false;
-
-  // Iterazione cronologica — i due binari si aggiornano indipendentemente
-  s.forEach(session => {
-  const isGym = session.sessionType === 'Palestra';
-
-  if (isGym) {
-  // ── Binario GYM: tonnellaggio meccanico ──────────
-  const vol = session.vol || 0;
-  if (!hasGym) {
-  ewmaAcuteVol = vol; ewmaChronicVol = vol; hasGym = true;
-  } else {
-  ewmaAcuteVol = (alphaAcute * vol) + ((1 - alphaAcute) * ewmaAcuteVol);
-  ewmaChronicVol = (alphaChronic * vol) + ((1 - alphaChronic) * ewmaChronicVol);
-  }
-  } else {
-  // ── Binario CAMPO: Campo, Corsa, Sprint, Condizionamento → sRPE ─
-  const srpe = session.sRPE || 0;
-  if (!hasField) {
-  ewmaAcuteRpe = srpe; ewmaChronicRpe = srpe; hasField = true;
-  } else {
-  ewmaAcuteRpe = (alphaAcute * srpe) + ((1 - alphaAcute) * ewmaAcuteRpe);
-  ewmaChronicRpe = (alphaChronic * srpe) + ((1 - alphaChronic) * ewmaChronicRpe);
-  }
-  }
-  });
-
-  const ratioVol = (hasGym && ewmaChronicVol > 0) ? (ewmaAcuteVol / ewmaChronicVol) : 0;
-  const ratioRpe = (hasField && ewmaChronicRpe > 0) ? (ewmaAcuteRpe / ewmaChronicRpe) : 0;
-
-  const classify = r => {
-  if (r === 0) return { value: 'N/A', text: 'Nessun dato', color: 'var(--muted)' };
-  if (r >= 0.8 && r <= 1.3) return { value: r.toFixed(2), text: 'Ottimale', color: 'var(--teal)' };
-  if (r > 1.3 && r <= 1.5) return { value: r.toFixed(2), text: 'Aumentato', color: 'var(--amber)' };
-  return { value: r.toFixed(2), text: 'DANGER', color: 'var(--coral)' };
+  // Cammina un binario raccogliendo la serie storica dei ratio (per lo z-score personale)
+  const walkTrack = (rows, loadFn) => {
+    let a = 0, c = 0, seeded = false;
+    const ratios = [];
+    rows.forEach(row => {
+      const x = loadFn(row) || 0;
+      if (!seeded) { a = x; c = x; seeded = true; }
+      else {
+        a = (alphaAcute * x) + ((1 - alphaAcute) * a);
+        c = (alphaChronic * x) + ((1 - alphaChronic) * c);
+      }
+      if (c > 0) ratios.push(a / c);
+    });
+    const spanDays = rows.length
+      ? (new Date(rows[rows.length - 1].date).getTime() - new Date(rows[0].date).getTime()) / 86400000
+      : 0;
+    return { count: rows.length, spanDays, ratios, current: ratios.length ? ratios[ratios.length - 1] : 0 };
   };
 
-  return { gym: classify(ratioVol), field: classify(ratioRpe) };
+  const gym   = walkTrack(s.filter(x => x.sessionType === 'Palestra'), r => r.vol);
+  const field = walkTrack(s.filter(x => x.sessionType !== 'Palestra'), r => r.sRPE);
+
+  return { gym: _acwrClassifyTrack(gym), field: _acwrClassifyTrack(field) };
 }
 
 
@@ -399,18 +436,22 @@ export function renderAnalytics() {
   const acwrRes = calculateACWR(appState.selAthId);
   let acwrHtml = '';
 
-  if (acwrRes && acwrRes.field.value !== null) {
-  acwrHtml = `
-  <div class="ins" style="border-color:${acwrRes.field.color}; color:${acwrRes.field.color}">
-  <strong>ACWR Campo (sRPE):</strong> ${acwrRes.field.value} — ${acwrRes.field.text}
-  </div>
-  <div class="ins" style="border-color:${acwrRes.gym.color}; color:${acwrRes.gym.color}">
-  <strong>ACWR Gym (Tonnellaggio):</strong> ${acwrRes.gym.value} — ${acwrRes.gym.text}
+  // Riga per binario: valore + etichetta individualizzata + metodologia (note)
+  const acwrRow = (label, t) => `
+  <div class="ins" style="border-color:${t.color}; color:${t.color}">
+  <strong>${label}:</strong> ${t.value ?? '—'} — ${t.text}
+  <div style="font-size:10px; color:var(--muted); font-weight:500; margin-top:3px;">${t.note}</div>
   </div>`;
+
+  if (acwrRes) {
+  acwrHtml = acwrRow('ACWR Campo (sRPE)', acwrRes.field) + acwrRow('ACWR Gym (Tonnellaggio)', acwrRes.gym)
+    + `<div style="font-size:10px; color:var(--muted); margin-top:4px; font-style:italic;">
+       L'ACWR è un supporto alla decisione (descrittore del trend di carico), non una predizione di infortunio.
+       </div>`;
   } else {
   acwrHtml = `
   <div class="ins" style="border-color:var(--muted); color:var(--muted)">
-  Dati insufficienti per il calcolo ACWR (minimo 7 sessioni).
+  Dati insufficienti per il calcolo ACWR.
   </div>`;
   }
 

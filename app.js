@@ -1037,14 +1037,17 @@ export function renderDashboard() {
   document.getElementById('dh-sub').textContent = [ath.level, ath.goal].filter(Boolean).join(' · ');
 
   let alertCaricoHTML = '';
-  if (acwrData && acwrData.field && acwrData.field.value !== null && acwrData.field.value !== 'N/A') {
-  const v = parseFloat(acwrData.field.value);
-  if (v > 1.5) {
-  alertCaricoHTML = `<div style="background:oklch(0.18 0.04 22);border:1px solid oklch(0.30 0.09 22);color:oklch(0.74 0.15 22);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Allerta Picco di Carico Specifico (ACWR Campo: ${v}):</strong> L'atleta è nella "Danger Zone". Scaricare il lavoro tecnico/tattico in campo!</div>`;
-  } else if (v >= 0.8) {
-  alertCaricoHTML = `<div style="background:oklch(0.24 0.04 175);border:1px solid oklch(0.36 0.05 175);color:oklch(0.80 0.10 175);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Carico Specifico Ottimale (ACWR Campo: ${v}):</strong> "Sweet Spot" sicuro.</div>`;
+  if (acwrData && acwrData.field && acwrData.field.value !== null && acwrData.field.level !== 'insufficient') {
+  const v = acwrData.field.value;
+  const lvl = acwrData.field.level;
+  if (lvl === 'high') {
+  alertCaricoHTML = `<div style="background:oklch(0.18 0.04 22);border:1px solid oklch(0.30 0.09 22);color:oklch(0.74 0.15 22);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Carico specifico molto sopra il suo standard (ACWR Campo: ${v}):</strong> valuta di scaricare il lavoro tecnico/tattico in campo.</div>`;
+  } else if (lvl === 'elevated') {
+  alertCaricoHTML = `<div style="background:oklch(0.26 0.06 88);border:1px solid oklch(0.40 0.08 88);color:oklch(0.82 0.13 88);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Carico specifico sopra lo standard abituale (ACWR Campo: ${v}):</strong> monitora il recupero.</div>`;
+  } else if (lvl === 'optimal') {
+  alertCaricoHTML = `<div style="background:oklch(0.24 0.04 175);border:1px solid oklch(0.36 0.05 175);color:oklch(0.80 0.10 175);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Carico specifico in linea (ACWR Campo: ${v}):</strong> nella norma.</div>`;
   } else {
-  alertCaricoHTML = `<div style="background:oklch(0.26 0.06 88);border:1px solid oklch(0.40 0.08 88);color:oklch(0.82 0.13 88);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Sotto-allenamento / Deallenamento in campo (ACWR Campo: ${v}).</strong></div>`;
+  alertCaricoHTML = `<div style="background:oklch(0.26 0.06 88);border:1px solid oklch(0.40 0.08 88);color:oklch(0.82 0.13 88);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Carico specifico in calo (ACWR Campo: ${v}).</strong></div>`;
   }
   }
 
@@ -1335,13 +1338,15 @@ export function generateWeeklyInsight(athId) {
   // — Carico (ACWR duale) — solo se l'atleta si è allenato (altrimenti è stale) —
   if (nWeek > 0) {
   const acwr = calculateACWR(athId);
-  const fV = acwr.field.value !== 'N/A' && acwr.field.value !== null ? parseFloat(acwr.field.value) : null;
-  const gV = acwr.gym.value !== 'N/A' && acwr.gym.value !== null ? parseFloat(acwr.gym.value) : null;
-  if (fV !== null && fV > 1.5) push('bad', `Carico specifico in DANGER (ACWR campo ${fV.toFixed(2)}): picco acuto, rischio infortunio elevato.`);
-  else if (gV !== null && gV > 1.5) push('bad', `Carico meccanico in DANGER (ACWR gym ${gV.toFixed(2)}): riduci il tonnellaggio.`);
-  else if ((fV !== null && fV > 1.3) || (gV !== null && gV > 1.3)) push('warn', `Carico in aumento (ACWR ${Math.max(fV || 0, gV || 0).toFixed(2)}): monitora il recupero.`);
-  else if (gV !== null && gV >= 0.8 && gV <= 1.3) push('good', `Carico nel sweet spot (ACWR gym ${gV.toFixed(2)}).`);
-  else if (gV !== null && gV > 0 && gV < 0.8) push('warn', `Carico in calo (ACWR gym ${gV.toFixed(2)}): rischio deallenamento se prolungato.`);
+  // Individualizzato: si ragiona sul `level` (rispetto allo standard personale),
+  // non sulle soglie universali. ACWR = supporto alla decisione, non predizione.
+  const fL = acwr.field.level, gL = acwr.gym.level;
+  const fVal = acwr.field.value, gVal = acwr.gym.value;
+  if (fL === 'high')      push('bad',  `Carico specifico molto sopra il suo standard (ACWR campo ${fVal}): valuta di ridurre.`);
+  else if (gL === 'high') push('bad',  `Carico meccanico molto sopra il suo standard (ACWR gym ${gVal}): valuta di ridurre il tonnellaggio.`);
+  else if (fL === 'elevated' || gL === 'elevated') push('warn', `Carico sopra lo standard abituale (ACWR ${fL === 'elevated' ? 'campo ' + fVal : 'gym ' + gVal}): monitora il recupero.`);
+  else if (gL === 'optimal') push('good', `Carico in linea col suo standard (ACWR gym ${gVal}).`);
+  else if (gL === 'low')     push('warn', `Carico in calo (ACWR gym ${gVal}): rischio deallenamento se prolungato.`);
   }
 
   // — Monotonia di Foster (finestra 7 giorni, giorni di riposo inclusi) —
@@ -3486,12 +3491,12 @@ export function updatePredictiveACWR() {
   ewmaC = αC * projectedVol + (1-αC) * ewmaC;
   const ratio = ewmaA / ewmaC;
 
-  let color='var(--teal)', text='Ottimale', bg='rgba(249,115,22,.15)';
-  if (ratio > 1.5) { color='var(--coral)'; text='DANGER ZONE: Riduci Carico'; bg='rgba(239,68,68,.15)'; }
-  else if (ratio > 1.3) { color='var(--amber)'; text='Rischio Moderato'; bg='rgba(245,158,11,.15)'; }
-  else if (ratio < 0.8) { color='var(--amber)'; text='Scarico / Sotto-allenamento'; bg='rgba(245,158,11,.15)'; }
+  let color='var(--green)', text='Nella norma', bg='rgba(16,185,129,.12)';
+  if (ratio > 1.5) { color='var(--coral)'; text='Carico molto sopra la norma — verifica'; bg='rgba(239,68,68,.15)'; }
+  else if (ratio > 1.3) { color='var(--amber)'; text='Carico in aumento'; bg='rgba(245,158,11,.15)'; }
+  else if (ratio < 0.8) { color='var(--amber)'; text='Carico basso / scarico'; bg='rgba(245,158,11,.15)'; }
 
-  badge.innerHTML = `<div style="background:${bg};color:${color};border:1px solid ${color};padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800;display:inline-block;">ACWR Stimato: ${ratio.toFixed(2)} (${text})</div>`;
+  badge.innerHTML = `<div style="background:${bg};color:${color};border:1px solid ${color};padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800;display:inline-block;" title="Proiezione del carico se applichi questi valori. Descrittore di trend, non predizione di infortunio.">ACWR proiettato: ${ratio.toFixed(2)} (${text})</div>`;
 }
 
 export async function saveSchedule() {

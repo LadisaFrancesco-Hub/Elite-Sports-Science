@@ -163,6 +163,16 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: `node --check` OK; smoke Playwright (atleta 390px) → 0 chip, 0 "Coming Soon" nel DOM, `display:none`, campo HRV manuale intatto, 0 errori console.
 - **DEPLOYATO**: SW **v6.85**, commit + push + `vercel --prod`. Client-only.
 
+**ACWR individualizzato + framing onesto + gate dati (2026-09-26)**
+- Contesto: l'ACWR con soglie universali (0.8–1.3 / >1.5 "DANGER") è scientificamente contestato (Lolli, Impellizzeri, Coutts) → rischio di credibilità coi coach S&C. Scelta utente: perfezionarlo (1+2+3), non disattivarlo.
+- **#1 Individualizzazione** (`calculateACWR` in `analytics.js` riscritto): oltre al valore finale, cammina la serie storica dei ratio per binario e calcola lo **standard personale** (media/σ). Sopra 1.3 classifica via z-score rispetto al baseline dell'atleta; la fascia sicura 0.8–1.3 resta sempre "nella norma" (l'individualizzazione **riduce** i falsi allarmi, non ne crea). Fallback a soglie generiche con poco storico.
+- **#2 Framing onesto**: niente più "DANGER". Etichette descrittive ("In linea col suo standard", "Sopra il suo standard", "Carico in forte aumento — verifica") + `note` con metodologia. Nuovo campo `level` (`insufficient|low|optimal|elevated|high`) che i consumatori usano al posto del match su stringa. Aggiornati: `generateWeeklyInsight`, alert carico dashboard, `updatePredictiveACWR` (editor), card Analytics (con nota "supporto alla decisione, non predizione"). Colore "ottimale" corretto da arancione a verde.
+- **#3 Gate per-binario**: min 6 sessioni **e** ~21 giorni di calendario per quel binario (prima: 7 sessioni totali, contate non nel tempo).
+- **Decisione utente**: Elena campo 1.62 (baseline 1.22, +1.5σ) → da rosso "DANGER" a giallo "Sopra il suo standard" (individualizzato). Il rischio complessivo **resta 160/CRITICO** (guidato da infortunio+readiness+LSI; il `>1.5` aggiunge comunque +40 al risk score).
+- Verifica: `node --check` OK (analytics/app); confronto etichette sul **codice reale** (4 atleti demo, vecchio→nuovo mostrato all'utente); coerenza rischio/insight (Niccolò/Marco good rischio 0, Elena bad rischio 160, Giulia bad); smoke Playwright coach 1360px → 0 "DANGER" nel DOM, KPI con nuove etichette, nota metodologia, 0 errori console.
+- **Nota**: il **toggle** per disattivare l'ACWR e il decadimento su calendario (#4) NON sono inclusi (fuori dallo scope 1+2+3) — follow-up rapido se desiderato.
+- **DEPLOYATO**: SW **v6.86**, commit + push + `vercel --prod`. Client-only.
+
 ---
 
 ## Prossimo passo — roadmap
@@ -178,7 +188,7 @@ Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA).
 **Nice-to-have (retention/percezione):**
 - Semplificare il default (modalità base PT vs toggle "Performance/Avanzato" per analytics S&C).
 - Nascondere tile wearable "Coming Soon" + de-enfatizzare nutrizione senza DB alimenti.
-- ACWR come supporto alla decisione con metodologia visibile e disattivabile.
+- ~~ACWR come supporto alla decisione con metodologia visibile~~ → ✅ individualizzato + framing onesto + gate (2026-09-26). Resta opzionale: toggle di disattivazione + decadimento su calendario.
 - Card-ificazione tabella Storico su mobile.
 
 **Rimandati (P.IVA / costi):**
