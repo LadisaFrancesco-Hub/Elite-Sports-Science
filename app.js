@@ -3517,15 +3517,20 @@ export async function saveProgressionData() {
   const athId = document.getElementById('ed-ath').value || appState.selAthId;
   const { start, end } = _edBlockRange(DB.schedules[athId]);
   const ex = getEdExercises()[appState.currentProgExIndex];
+  const _prevProg = ex.progression || {};   // preserva rir/tut per-settimana se presenti
   ex.progression = {};
   for (let w = start; w <= end; w++) {
   const setEl = document.getElementById(`p-set-${w}`);
   if (!setEl) continue;
-  ex.progression[`w${w}`] = {
+  const _pw = {
   set: parseInt(setEl.value) || ex.set,
   rep: document.getElementById(`p-rep-${w}`).value || ex.rep,
   kg: parseFloat(document.getElementById(`p-kg-${w}`).value)|| ex.kg
   };
+  const _old = _prevProg[`w${w}`];
+  if (_old && _old.rir != null) _pw.rir = _old.rir;
+  if (_old && _old.tut != null) _pw.tut = _old.tut;
+  ex.progression[`w${w}`] = _pw;
   }
   const selType = document.getElementById('smart-prog-select')?.value;
   if (selType && selType !== 'manual') {
@@ -3657,11 +3662,14 @@ export function applySmartMicrocycle(type) {
   const ri = document.getElementById(`p-rep-${absW}`); if (ri) ri.value = tRep;
   const ki = document.getElementById(`p-kg-${absW}`); if (ki && tKg > 0) ki.value = tKg;
   if (!ex.progression) ex.progression = {};
+  const _oldPw = ex.progression[`w${absW}`];
   ex.progression[`w${absW}`] = {
   set: parseInt(tSet) || ex.set,
   rep: String(tRep) || ex.rep,
   kg: (typeof tKg === 'number' && tKg > 0) ? tKg : (parseFloat(ex.kg) || 0)
   };
+  if (_oldPw && _oldPw.rir != null) ex.progression[`w${absW}`].rir = _oldPw.rir;
+  if (_oldPw && _oldPw.tut != null) ex.progression[`w${absW}`].tut = _oldPw.tut;
   }
   ex.series_type = type;
   appState.currentSmartProgType = type;

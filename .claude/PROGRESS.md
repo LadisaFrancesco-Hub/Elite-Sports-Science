@@ -217,6 +217,14 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Verifica: `node --check` OK (app/utils). Confermato via Supabase MCP: `link_athlete_auth` deployata linka per codice + sovrascrive email; `atleti.email` nullable + UNIQUE. Smoke Playwright (chromium, app reale + Supabase stubbato) → 3 casi: senza email (insert con `email:null`, modal codice aperto, nessun "null"/separatore penzolante nel display), email malformata (insert bloccato), email valida (scritta + mostrata); **0 errori console**.
 - **DEPLOYATO**: SW **v6.91**, commit `fb80909` + push su `main` + `vercel --prod` (dpl_BYGFZ9YrpKimVGfLULAgsLqqMMcz). Verificato live su `coach-os-lime.vercel.app`: sw v6.91 + label "opzionale" + `emailRaw || null` serviti.
 
+**RIR/TUT per settimana nella progressione (2026-09-27)**
+- Contesto: prima la progressione settimanale portava solo `set/rep/kg`; RIR e TUT erano un valore unico per esercizio (non variavano con la settimana). Nei protocolli di riabilitazione/forza cambiano spesso di settimana.
+- **Fix vista atleta (`workout.js`)**: nel render live, oltre a `set/rep/kg`, si leggono `rir` e `tut` dalla settimana attiva della `progression` (`pW.rir`/`pW.tut`), con **fallback** ai valori fissi `ex.rir`/`ex.tut` per le schede senza dato per-settimana. Chip `RIR`/`TUT` ora week-aware (guidati automaticamente da `mesoStartDate`).
+- **Difese editor (`app.js`)**: `saveProgressionData` e lo smart-microcycle preservano i `rir`/`tut` per-settimana esistenti quando ricostruiscono la progressione (prima li avrebbero persi). `saveLiveNextLoad` già modificava solo `.kg` → ok. Nessuna migration (la progressione vive dentro la colonna `exercises` JSONB).
+- Verifica: `node --check` OK (workout/app); smoke Playwright (atleta 390px, app reale + `replaceDB`) → S3 mostra RIR 2/TUT 3-1-1-0, S5 mostra RIR 1/TUT 3-0-X-0 (cambiano), fallback ai valori fissi quando la progressione non ha rir/tut, **0 errori console**.
+- Uso reale: scheda riabilitativa Agoge ricaricata con nomi corti + note minime + riscaldamenti espansi (sezione `warmup`) + RIR/TUT per settimana (13 sedute, 103 esercizi, round-trip verificato su Supabase).
+- **Da deployare**: SW bump v6.92 + commit + push + `vercel --prod` (client-only, tocca la vista atleta).
+
 ---
 
 ## Prossimo passo — roadmap

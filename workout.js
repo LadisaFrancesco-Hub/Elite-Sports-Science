@@ -413,11 +413,16 @@ export function loadLive() {
             let targetSet = ex.set;
             let targetRep = ex.rep;
             let targetKg  = ex.kg;
+            let targetRir = ex.rir;
+            let targetTut = ex.tut;
             if (ex.progression && ex.progression[`w${currentWeek}`]) {
                 const pW  = ex.progression[`w${currentWeek}`];
                 targetSet = pW.set;
                 targetRep = pW.rep;
                 targetKg  = pW.kg;
+                // RIR/TUT per-settimana (fallback al valore fisso dell'esercizio)
+                if (pW.rir != null && pW.rir !== '') targetRir = pW.rir;
+                if (pW.tut != null && pW.tut !== '') targetTut = pW.tut;
             }
 
             // ── Tipo esercizio e colore bordo ─────────────────
@@ -602,12 +607,12 @@ for (let l = 0; l < actualSet; l++) {
                     </b></div>`;
             }
 
-            // ── Badge RIR e TUT ───────────────────────────────
-            let rirLabel = (ex.rir && ex.rir !== '—' && ex.rir !== '')
-                ? `<span class="ax-sep">•</span><b>RIR ${ex.rir}</b>`
+            // ── Badge RIR e TUT (valori della settimana corrente) ──
+            let rirLabel = (targetRir && targetRir !== '—' && targetRir !== '')
+                ? `<span class="ax-sep">•</span><b>RIR ${escHtml(String(targetRir))}</b>`
                 : '';
-            let tutLabel = (ex.tut && ex.tut !== '-' && ex.tut !== '')
-                ? `<span class="ax-sep">•</span><b>TUT ${ex.tut}</b>`
+            let tutLabel = (targetTut && targetTut !== '-' && targetTut !== '')
+                ? `<span class="ax-sep">•</span><b>TUT ${escHtml(String(targetTut))}</b>`
                 : '';
 
             // ── Timer REST o etichetta NO REST ────────────────
