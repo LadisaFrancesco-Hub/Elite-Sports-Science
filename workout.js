@@ -20,7 +20,8 @@
    ══════════════════════════════════════════════════════════════ */
 
 import { DB, appState, EXERCISE_LIBRARY, KEY } from './state.js';
-import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus } from './utils.js';
+import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus,
+         mesoWeekFromDate, sessionsForWeek } from './utils.js';
 
 
 // ─────────────────────────────────────────────────────────────
@@ -215,23 +216,32 @@ export function loadLive() {
         return;
     }
 
+    // ── Settimana corrente + blocco attivo ───────────────────
+    // Con data d'inizio impostata la settimana è guidata dal calendario
+    // (mesoWk); il blocco/fase attivo è scelto di conseguenza. Senza data,
+    // si resta al comportamento manuale (selettore settimana).
+    const mesoWk = mesoWeekFromDate(sch);
+    const uiWeekRaw = parseInt(selectWeek && selectWeek.value);
+    const effWeek = mesoWk || (Number.isFinite(uiWeekRaw) ? uiWeekRaw : 1);
+    const visSessions = sessionsForWeek(sch, effWeek);
+
     // ── Rigenerazione dinamica del menu sessioni ─────────────
-    // Mostra SOLO le sessioni del mesociclo attivo (sch.sessions
-    // corrisponde sempre allo stato corrente di DB.schedules).
-    sch.sessions.forEach(s => {
+    // Mostra SOLO le sessioni del blocco attivo per la settimana corrente.
+    visSessions.forEach(s => {
         select.innerHTML += `<option value="${escHtml(s.id)}" data-sesstype="${escHtml(s.sessType||'Palestra')}">${escHtml(s.name)}</option>`;
     });
 
+    const fallbackSessions = visSessions.length ? visSessions : sch.sessions;
     if (ultimaSessioneSelezionata && [...select.options].some(o => o.value === ultimaSessioneSelezionata)) {
         select.value = ultimaSessioneSelezionata;
-    } else if (sch.sessions.length > 0) {
-        select.value = sch.sessions[0].id;
+    } else if (fallbackSessions.length > 0) {
+        select.value = fallbackSessions[0].id;
     }
 
     let sessId = select.value;
-    if (!sessId && sch.sessions.length > 0) { sessId = sch.sessions[0].id; select.value = sessId; }
+    if (!sessId && fallbackSessions.length > 0) { sessId = fallbackSessions[0].id; select.value = sessId; }
 
-    const curSess     = sch.sessions.find(x => x.id === sessId) || sch.sessions[0];
+    const curSess     = fallbackSessions.find(x => x.id === sessId) || fallbackSessions[0];
     const sessionName = curSess ? curSess.name : '';
     const exs         = curSess ? curSess.exercises : [];
 
@@ -243,7 +253,10 @@ export function loadLive() {
 
         let targetWeekToSet = selectWeek.value || '1';
 
-        if (isSessionChanged) {
+        if (mesoWk) {
+            // Data d'inizio impostata → la settimana segue il calendario.
+            targetWeekToSet = String(mesoWk);
+        } else if (isSessionChanged) {
             // Trova l'ultima settimana completata per QUESTA sessione
             const pastPerformances = DB.sessions.filter(
                 s => s.athlete === appState.selAthId && s.session === sessionName

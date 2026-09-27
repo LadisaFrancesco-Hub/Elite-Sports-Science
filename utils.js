@@ -186,3 +186,72 @@ export function playEntrance(panel) {
         requestAnimationFrame(() => { ring.style.strokeDashoffset = final; });
     }
 }
+
+// ─────────────────────────────────────────────────────────────
+// MESOCICLO A BLOCCHI (fasi) — helper puri, condivisi coach/atleta
+//
+// Un mesociclo = sequenza di blocchi. Ogni blocco copre un intervallo
+// di settimane [weekStart..weekEnd] e ha il PROPRIO split (sedute) +
+// esercizi. La progressione per-settimana esistente gestisce il carico
+// DENTRO il blocco. Il blocco attivo è determinato dalla data d'inizio
+// mesociclo (mesoStartDate): settimana = giorni_trascorsi / 7.
+//
+// Retro-compatibilità: una scheda senza `blocks`/`blockId` = un blocco
+// unico implicito che copre 1..duration → comportamento identico al
+// vecchio (tutte le sedute sempre visibili).
+// ─────────────────────────────────────────────────────────────
+
+/** Normalizza la scheda: garantisce almeno un blocco e blockId su ogni seduta. Muta e ritorna sch. */
+export function ensureBlocks(sch) {
+    if (!sch) return sch;
+    if (!Array.isArray(sch.sessions)) sch.sessions = [];
+    const dur = sch.duration || 4;
+    if (!Array.isArray(sch.blocks) || sch.blocks.length === 0) {
+        const blockId = 'blk_default';
+        sch.blocks = [{
+            id: blockId, name: 'Blocco 1', weekStart: 1, weekEnd: dur,
+            scheduledDays: [...(sch.scheduledDays || [])]
+        }];
+        sch.sessions.forEach(s => { if (!s.blockId) s.blockId = blockId; });
+    }
+    // Ogni seduta deve puntare a un blocco esistente (riassegna gli orfani al primo).
+    const validIds = new Set(sch.blocks.map(b => b.id));
+    sch.sessions.forEach(s => { if (!validIds.has(s.blockId)) s.blockId = sch.blocks[0].id; });
+    return sch;
+}
+
+/** Settimana corrente del mesociclo dalla data d'inizio, o null se non impostata. Clampata a [1, duration]. */
+export function mesoWeekFromDate(sch) {
+    if (!sch || !sch.mesoStartDate) return null;
+    const start = new Date(sch.mesoStartDate + 'T00:00:00');
+    if (isNaN(start.getTime())) return null;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const diffDays = Math.floor((today - start) / 86400000);
+    const dur = sch.duration || 4;
+    if (diffDays < 0) return 1;
+    return Math.min(dur, Math.floor(diffDays / 7) + 1);
+}
+
+/** Blocco attivo per una data settimana. null quando 0/1 blocco (→ tutte le sedute visibili, legacy). */
+export function activeBlock(sch, week) {
+    if (!sch || !Array.isArray(sch.blocks) || sch.blocks.length <= 1) return null;
+    const w = week || 1;
+    return sch.blocks.find(b => w >= (b.weekStart || 1) && w <= (b.weekEnd || 9999))
+        || sch.blocks[sch.blocks.length - 1];   // oltre l'ultimo blocco → resta sull'ultimo
+}
+
+/** Sedute visibili nella settimana indicata (filtrate sul blocco attivo). */
+export function sessionsForWeek(sch, week) {
+    if (!sch || !Array.isArray(sch.sessions)) return [];
+    const blk = activeBlock(sch, week);
+    if (!blk) return sch.sessions;
+    const f = sch.sessions.filter(s => s.blockId === blk.id);
+    return f.length ? f : sch.sessions;   // safety: blocco senza sedute → non nascondere tutto
+}
+
+/** Giorni programmati effettivi per la settimana (del blocco attivo, con fallback a livello scheda). */
+export function activeScheduledDays(sch, week) {
+    const blk = activeBlock(sch, week);
+    if (blk && Array.isArray(blk.scheduledDays) && blk.scheduledDays.length) return blk.scheduledDays;
+    return (sch && sch.scheduledDays && sch.scheduledDays.length) ? sch.scheduledDays : null;
+}

@@ -9,7 +9,7 @@
    ══════════════════════════════════════════════════════════════ */
 
 import { DB, KEY, replaceDB, appState } from './state.js';
-import { toast, escHtml }     from './utils.js';
+import { toast, escHtml, ensureBlocks } from './utils.js';
 import { loadCoachPlan, checkUpgradeSuccess } from './billing.js';
 import { loadBranding } from './branding.js';
 import { checkAndAcceptInvite } from './team.js';
@@ -612,7 +612,17 @@ export async function loadDB() {
                 perAtleta[aId][meso].sessions.push({
                     id:        row.id,
                     name:      row.session_name,
-                    exercises: row.exercises || []
+                    sessType:  row.session_type || 'Palestra',
+                    blockId:   row.block_id || null,
+                    exercises: row.exercises || [],
+                    // metadati blocco trasportati sulla riga (denormalizzati come meso/duration)
+                    _blk: {
+                        id:            row.block_id || null,
+                        name:          row.block_name || null,
+                        weekStart:     row.block_week_start || null,
+                        weekEnd:       row.block_week_end || null,
+                        scheduledDays: row.scheduled_days || []
+                    }
                 });
             });
 
@@ -625,15 +635,38 @@ export async function loadDB() {
                     const corrisponde = mesoLocale ? voci.find(v => v.meta.meso === mesoLocale) : null;
                     scelto = corrisponde || voci.sort((a, b) => b.sessions.length - a.sessions.length)[0];
                 }
+
+                // Ricostruisce i blocchi (fasi) sotto-raggruppando le sedute per block_id.
+                const blocksMap = new Map();
+                scelto.sessions.forEach(s => {
+                    const bid = s._blk.id;
+                    if (bid && !blocksMap.has(bid)) {
+                        blocksMap.set(bid, {
+                            id:            bid,
+                            name:          s._blk.name || 'Blocco',
+                            weekStart:     s._blk.weekStart || 1,
+                            weekEnd:       s._blk.weekEnd || (scelto.meta.duration || 4),
+                            scheduledDays: s._blk.scheduledDays || []
+                        });
+                    }
+                });
+                const blocks = [...blocksMap.values()].sort((a, b) => a.weekStart - b.weekStart);
+                // pulisce i campi di trasporto e normalizza le sedute
+                scelto.sessions.forEach(s => { delete s._blk; });
+
                 DB.schedules[aId] = {
-                    meso:      scelto.meta.meso,
-                    duration:  scelto.meta.duration || 4,
-                    phase:     scelto.meta.phase,
-                    coachNote: scelto.meta.coach_note,
-                    objective: scelto.meta.objective,
+                    meso:          scelto.meta.meso,
+                    duration:      scelto.meta.duration || 4,
+                    phase:         scelto.meta.phase,
+                    coachNote:     scelto.meta.coach_note,
+                    objective:     scelto.meta.objective,
                     scheduledDays: scelto.meta.scheduled_days || [],
-                    sessions:  scelto.sessions
+                    mesoStartDate: scelto.meta.meso_start_date || null,
+                    blocks:        blocks,
+                    sessions:      scelto.sessions
                 };
+                // Garantisce un blocco unico implicito per le schede legacy (nessun block_id).
+                ensureBlocks(DB.schedules[aId]);
             });
         }
 

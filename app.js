@@ -13,7 +13,8 @@
   ══════════════════════════════════════════════════════════════ */
 
 import { DB, appState, KEY, EXERCISE_LIBRARY, PROGRAM_TEMPLATES, rpeDescs, starDescs } from './state.js';
-import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus, playEntrance } from './utils.js';
+import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus, playEntrance,
+         ensureBlocks, mesoWeekFromDate, activeBlock, sessionsForWeek, activeScheduledDays } from './utils.js';
 
 // Importazioni circolari risolte: questi moduli importano da state+utils,
 // e app.js li chiama solo dentro funzioni (mai al top-level).
@@ -453,6 +454,8 @@ async function archiveMesocycle(athId) {
   duration: sch.duration || 4,
   coachNote: sch.coachNote || '',
   objective: sch.objective || '',
+  blocks: JSON.parse(JSON.stringify(sch.blocks || [])),
+  mesoStartDate: sch.mesoStartDate || null,
   archivedAt: now,
   sessions: JSON.parse(JSON.stringify(sch.sessions))
   };
@@ -522,13 +525,19 @@ export async function confirmMesoArchive() {
   if (!snap) return;
 
   sch.meso = newName; sch.phase = 'Accumulo'; sch.duration = 4; sch.coachNote = ''; sch.objective = '';
+  // Nuovo mesociclo → data d'inizio azzerata (il coach la reimposta).
+  sch.mesoStartDate = null;
 
   if (!keepTemplate) {
-  sch.sessions = [{ id: uid(), name: 'Seduta A', exercises: [] }];
+  // Reset completo: un blocco unico con una seduta vuota.
+  sch.blocks = [{ id: 'blk_default', name: 'Blocco 1', weekStart: 1, weekEnd: 4, scheduledDays: [...(sch.scheduledDays || [])] }];
+  sch.sessions = [{ id: uid(), name: 'Seduta A', sessType: 'Palestra', exercises: [], blockId: 'blk_default' }];
   } else {
+  // Mantiene struttura a blocchi e split, azzera progressioni e rigenera gli id seduta.
   sch.sessions.forEach(s => { s.id = uid(); s.exercises.forEach(ex => { ex.progression = {}; }); });
   }
-
+  ensureBlocks(sch);
+  appState.edBlockId = sch.blocks[0].id;
   appState.edSessId = sch.sessions[0].id;
   document.getElementById('ed-meso').value = sch.meso;
   document.getElementById('ed-phase').value = 'Accumulo';
@@ -1935,8 +1944,10 @@ export function renderAthWeek(targetId = 'ath-week-content', embedded = false) {
   });
 
   const sch = DB.schedules[athId];
-  const sessions = sch?.sessions || [];
-  const scheduledDays = sch?.scheduledDays || null;
+  // Blocco/fase attivo per la settimana corrente del mesociclo (data d'inizio).
+  const _mesoWk = sch ? (mesoWeekFromDate(sch) || 1) : 1;
+  const sessions = sch ? sessionsForWeek(sch, _mesoWk) : [];
+  const scheduledDays = sch ? activeScheduledDays(sch, _mesoWk) : null;
 
   // sessioni registrate questa settimana
   const weekSessions = DB.sessions.filter(s => {
@@ -2072,7 +2083,7 @@ export function showAthSummary(sessObj, loggedSetsArg) {
 
   const athId = window.mioIdLoggato || appState.selAthId;
   const sch = DB.schedules[athId];
-  const schSessions = sch?.sessions || [];
+  const schSessions = sch ? sessionsForWeek(sch, mesoWeekFromDate(sch) || 1) : [];
 
   // Sessione precedente dello stesso tipo
   const prevSess = [...DB.sessions]
@@ -2261,7 +2272,7 @@ export function renderAthHome() {
   const mon = new Date(today); mon.setDate(today.getDate() - ((today.getDay()+6)%7)); mon.setHours(0,0,0,0);
   const weekSess = DB.sessions.filter(s => { const d = new Date(s.date); d.setHours(0,0,0,0); return d >= mon; });
   const sch = DB.schedules[athId];
-  const sessions = sch?.sessions || [];
+  const sessions = sch ? sessionsForWeek(sch, mesoWeekFromDate(sch) || 1) : [];
   const nextSess = sessions[0];
   const sessHoje = nextSess ? DB.sessions.find(s => s.date === todayKey && s.session === nextSess.name) : null;
 
@@ -2912,21 +2923,38 @@ export function renderEditor() {
   appState.edSessId = DB.schedules[athId].sessions[0].id;
   }
   const sch = DB.schedules[athId];
+  ensureBlocks(sch);
 
   document.getElementById('ed-meso').value = sch.meso || 'Meso 1';
   document.getElementById('ed-duration').value = sch.duration || 4;
   document.getElementById('ed-phase').value = sch.phase || 'Accumulo';
   document.getElementById('ed-coachnote').value = sch.coachNote || '';
   document.getElementById('ed-obj').value = sch.objective || '';
+  const startEl = document.getElementById('ed-meso-start');
+  if (startEl) startEl.value = sch.mesoStartDate || '';
+
+  // ── Blocco attivo nell'editor ────────────────────────────
+  if (!appState.edBlockId || !sch.blocks.find(b => b.id === appState.edBlockId)) {
+  const wk = mesoWeekFromDate(sch);
+  const blk = (wk != null ? activeBlock(sch, wk) : null) || sch.blocks[0];
+  appState.edBlockId = blk.id;
+  }
+  renderBlockBar(sch);
 
   const tabsWrap = document.getElementById('ed-tabs');
   tabsWrap.innerHTML = '';
-  if (!sch.sessions || sch.sessions.length === 0) sch.sessions = [{ id: uid(), name: 'Seduta A', exercises: [] }];
-  if (!appState.edSessId || !sch.sessions.find(x => x.id === appState.edSessId)) {
-  appState.edSessId = sch.sessions[0].id;
+  // Sedute del solo blocco attivo (lo split cambia per fase).
+  let blockSessions = sch.sessions.filter(s => s.blockId === appState.edBlockId);
+  if (blockSessions.length === 0) {
+  const ns = { id: uid(), name: 'Seduta A', sessType: 'Palestra', exercises: [], blockId: appState.edBlockId };
+  sch.sessions.push(ns);
+  blockSessions = [ns];
+  }
+  if (!appState.edSessId || !blockSessions.find(x => x.id === appState.edSessId)) {
+  appState.edSessId = blockSessions[0].id;
   }
 
-  sch.sessions.forEach(s => {
+  blockSessions.forEach(s => {
   const b = document.createElement('button');
   b.className = 'sess-tab' + (s.id === appState.edSessId ? ' on' : '');
   b.textContent = s.name;
@@ -2934,7 +2962,7 @@ export function renderEditor() {
   tabsWrap.appendChild(b);
   });
 
-  const curSess = sch.sessions.find(x => x.id === appState.edSessId) || sch.sessions[0];
+  const curSess = blockSessions.find(x => x.id === appState.edSessId) || blockSessions[0];
   if (curSess) {
   appState.edSessId = curSess.id;
   document.getElementById('ed-session-details-card').style.display = 'block';
@@ -2944,16 +2972,122 @@ export function renderEditor() {
   if (stEl) stEl.value = curSess.sessType || 'Palestra';
   }
 
-  // Popola checkboxes scheduledDays
+  // Popola checkboxes scheduledDays (del blocco attivo)
   const sdContainer = document.getElementById('ed-scheduled-days');
   if (sdContainer) {
-  const savedDays = sch.scheduledDays || [];
+  const curBlk = sch.blocks.find(b => b.id === appState.edBlockId) || sch.blocks[0];
+  const savedDays = (curBlk.scheduledDays && curBlk.scheduledDays.length) ? curBlk.scheduledDays : (sch.scheduledDays || []);
   sdContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => {
   cb.checked = savedDays.includes(parseInt(cb.value));
   });
   }
 
   renderEdExercises();
+}
+
+// Barra dei blocchi (fasi) nell'editor: chip per blocco + dettaglio del blocco attivo.
+function renderBlockBar(sch) {
+  const tabs = document.getElementById('ed-block-tabs');
+  if (tabs) {
+  tabs.innerHTML = '';
+  const single = sch.blocks.length <= 1;
+  sch.blocks.forEach(b => {
+  const btn = document.createElement('button');
+  btn.className = 'sess-tab' + (b.id === appState.edBlockId ? ' on' : '');
+  const nSess = sch.sessions.filter(s => s.blockId === b.id).length;
+  btn.textContent = single ? b.name : `${b.name} · S${b.weekStart}-${b.weekEnd} · ${nSess} sed.`;
+  btn.onclick = () => { appState.edBlockId = b.id; appState.edSessId = null; renderEditor(); };
+  tabs.appendChild(btn);
+  });
+  }
+  const curBlk = sch.blocks.find(b => b.id === appState.edBlockId) || sch.blocks[0];
+  const nameEl = document.getElementById('ed-block-name');
+  const wsEl = document.getElementById('ed-block-wstart');
+  const weEl = document.getElementById('ed-block-wend');
+  if (nameEl) nameEl.value = curBlk.name || '';
+  if (wsEl) wsEl.value = curBlk.weekStart || 1;
+  if (weEl) weEl.value = curBlk.weekEnd || (sch.duration || 4);
+  // Il bottone "elimina blocco" ha senso solo con più di un blocco.
+  const delBtn = document.getElementById('ed-block-del');
+  if (delBtn) delBtn.style.display = sch.blocks.length > 1 ? '' : 'none';
+}
+
+function _edSch() {
+  const athId = document.getElementById('ed-ath').value || appState.selAthId;
+  return DB.schedules[athId];
+}
+
+// Intervallo di settimane [start..end] coperto dal blocco attivo nell'editor.
+// La progressione di un esercizio è definita solo sulle settimane del suo blocco.
+function _edBlockRange(sch) {
+  const blk = sch && sch.blocks && sch.blocks.find(b => b.id === appState.edBlockId);
+  if (blk) return { start: blk.weekStart || 1, end: blk.weekEnd || (sch.duration || 4) };
+  return { start: 1, end: (sch && sch.duration) || 4 };
+}
+
+export function syncMesoStart(val) {
+  const sch = _edSch();
+  if (!sch) return;
+  sch.mesoStartDate = val || null;
+  saveDB();
+}
+
+export async function addBlock() {
+  const sch = _edSch();
+  if (!sch) return;
+  ensureBlocks(sch);
+  const last = sch.blocks[sch.blocks.length - 1];
+  const dur = sch.duration || 4;
+  const start = Math.min(dur, (last.weekEnd || dur) + 1);
+  const id = 'blk_' + uid();
+  sch.blocks.push({
+  id, name: `Blocco ${sch.blocks.length + 1}`,
+  weekStart: start, weekEnd: dur,
+  scheduledDays: [...(last.scheduledDays || sch.scheduledDays || [])]
+  });
+  // Ogni nuovo blocco nasce con una seduta vuota.
+  sch.sessions.push({ id: uid(), name: 'Seduta A', sessType: 'Palestra', exercises: [], blockId: id });
+  appState.edBlockId = id;
+  appState.edSessId = null;
+  await saveDB();
+  renderEditor();
+}
+
+export function renameBlock(val) {
+  const sch = _edSch();
+  const blk = sch && sch.blocks.find(b => b.id === appState.edBlockId);
+  if (!blk) return;
+  blk.name = val || 'Blocco';
+  saveDB();
+  const tab = document.querySelector('#ed-block-tabs .sess-tab.on');
+  if (tab && sch.blocks.length <= 1) tab.textContent = blk.name;
+}
+
+export function syncBlockWeeks() {
+  const sch = _edSch();
+  const blk = sch && sch.blocks.find(b => b.id === appState.edBlockId);
+  if (!blk) return;
+  const ws = parseInt(document.getElementById('ed-block-wstart').value) || 1;
+  const we = parseInt(document.getElementById('ed-block-wend').value) || ws;
+  blk.weekStart = Math.max(1, ws);
+  blk.weekEnd = Math.max(blk.weekStart, we);
+  saveDB();
+  renderBlockBar(sch);
+}
+
+export function deleteBlock() {
+  const sch = _edSch();
+  if (!sch || sch.blocks.length <= 1) { toast('Serve almeno un blocco.'); return; }
+  const blk = sch.blocks.find(b => b.id === appState.edBlockId);
+  if (!blk) return;
+  showConfirm(`Eliminare il blocco "${blk.name}" e le sue sedute?`, async () => {
+  sch.sessions = sch.sessions.filter(s => s.blockId !== blk.id);
+  sch.blocks = sch.blocks.filter(b => b.id !== blk.id);
+  appState.edBlockId = sch.blocks[0].id;
+  appState.edSessId = null;
+  await saveSchedule();
+  renderEditor();
+  }, 'Elimina');
 }
 
 export function loadEditorForAthlete() {
@@ -2981,7 +3115,10 @@ export async function addNewSessionToSchedule() {
   const athId = document.getElementById('ed-ath').value || appState.selAthId;
   const sch = DB.schedules[athId];
   if (!sch) return;
-  const newSess = { id: uid(), name: `Nuova Seduta ${sch.sessions.length + 1}`, sessType: 'Palestra', exercises: [] };
+  ensureBlocks(sch);
+  const blockId = appState.edBlockId || sch.blocks[0].id;
+  const nInBlock = sch.sessions.filter(s => s.blockId === blockId).length;
+  const newSess = { id: uid(), name: `Nuova Seduta ${nInBlock + 1}`, sessType: 'Palestra', exercises: [], blockId };
   sch.sessions.push(newSess);
   appState.edSessId = newSess.id;
   await saveDB(); renderEditor();
@@ -2993,7 +3130,8 @@ export function renameCurrentSession(newName) {
   if (curSess) {
   curSess.name = newName || 'Senza nome';
   document.getElementById('ed-sess-label').textContent = `Esercizi — ${curSess.name}`;
-  const tab = document.querySelector('.sess-tab.on');
+  // Scopato a #ed-tabs: i tab-blocco condividono la classe .sess-tab.
+  const tab = document.querySelector('#ed-tabs .sess-tab.on');
   if (tab) tab.textContent = curSess.name;
   }
 }
@@ -3007,10 +3145,13 @@ export function updateSessionType(val) {
 export function deleteCurrentSession() {
   const athId = document.getElementById('ed-ath').value || appState.selAthId;
   const sch = DB.schedules[athId];
+  const blockId = appState.edBlockId;
   if (sch.sessions.length <= 1) { toast('Devi mantenere almeno una sessione.'); return; }
   showConfirm('Eliminare la sessione?', async () => {
   sch.sessions = sch.sessions.filter(x => x.id !== appState.edSessId);
-  appState.edSessId = sch.sessions[0].id;
+  // Resta nel blocco corrente se ha ancora sedute, altrimenti renderEditor ne ricrea una.
+  const stillInBlock = sch.sessions.filter(s => s.blockId === blockId);
+  appState.edSessId = stillInBlock[0] ? stillInBlock[0].id : null;
   await saveDB(); renderEditor();
   });
 }
@@ -3339,16 +3480,16 @@ export function openProgressionModal(index) {
   appState.currentProgExIndex = index;
   const athId = document.getElementById('ed-ath').value || appState.selAthId;
   const sch = DB.schedules[athId];
-  const maxWeeks = sch ? (sch.duration || 4) : 4;
+  const { start, end } = _edBlockRange(sch);
   const ex = getEdExercises()[index];
   if (!ex.progression) ex.progression = {};
-  for (let w = 1; w <= maxWeeks; w++) {
+  for (let w = start; w <= end; w++) {
   if (!ex.progression[`w${w}`]) ex.progression[`w${w}`] = { set: ex.set || 3, rep: ex.rep || 8, kg: ex.kg || 0 };
   }
   document.getElementById('prog-title').textContent = `Progressione: ${ex.name}`;
   const container = document.getElementById('prog-inputs-container');
   container.innerHTML = '';
-  for (let w = 1; w <= maxWeeks; w++) {
+  for (let w = start; w <= end; w++) {
   const p = ex.progression[`w${w}`];
   container.innerHTML += `
   <div style="background:var(--s2);border:1px solid var(--border);padding:10px;border-radius:8px;margin-bottom:6px;">
@@ -3369,12 +3510,14 @@ export function openProgressionModal(index) {
 export async function saveProgressionData() {
   if (appState.currentProgExIndex === null) return;
   const athId = document.getElementById('ed-ath').value || appState.selAthId;
-  const maxWeeks = DB.schedules[athId] ? (DB.schedules[athId].duration || 4) : 4;
+  const { start, end } = _edBlockRange(DB.schedules[athId]);
   const ex = getEdExercises()[appState.currentProgExIndex];
   ex.progression = {};
-  for (let w = 1; w <= maxWeeks; w++) {
+  for (let w = start; w <= end; w++) {
+  const setEl = document.getElementById(`p-set-${w}`);
+  if (!setEl) continue;
   ex.progression[`w${w}`] = {
-  set: parseInt(document.getElementById(`p-set-${w}`).value) || ex.set,
+  set: parseInt(setEl.value) || ex.set,
   rep: document.getElementById(`p-rep-${w}`).value || ex.rep,
   kg: parseFloat(document.getElementById(`p-kg-${w}`).value)|| ex.kg
   };
@@ -3394,7 +3537,11 @@ export function applySmartMicrocycle(type) {
   if (type === 'manual' || appState.currentProgExIndex === null) return;
   const athId = document.getElementById('ed-ath').value || appState.selAthId;
   const sch = DB.schedules[athId];
-  const maxWeeks = sch ? (sch.duration || 4) : 4;
+  // Il blocco È il microciclo: le formule usano la settimana relativa (1..L),
+  // ma il risultato viene scritto sulle settimane assolute del blocco.
+  const _range = _edBlockRange(sch);
+  const _absOffset = _range.start - 1;
+  const maxWeeks = _range.end - _range.start + 1;
   const ex = getEdExercises()[appState.currentProgExIndex];
 
   const baseSet = parseInt(ex.set) || 3;
@@ -3500,11 +3647,12 @@ export function applySmartMicrocycle(type) {
   }
 
   if (typeof tKg === 'number' && tKg > 0) tKg = Math.round(tKg / 2.5) * 2.5;
-  const si = document.getElementById(`p-set-${w}`); if (si) si.value = tSet;
-  const ri = document.getElementById(`p-rep-${w}`); if (ri) ri.value = tRep;
-  const ki = document.getElementById(`p-kg-${w}`); if (ki && tKg > 0) ki.value = tKg;
+  const absW = w + _absOffset;
+  const si = document.getElementById(`p-set-${absW}`); if (si) si.value = tSet;
+  const ri = document.getElementById(`p-rep-${absW}`); if (ri) ri.value = tRep;
+  const ki = document.getElementById(`p-kg-${absW}`); if (ki && tKg > 0) ki.value = tKg;
   if (!ex.progression) ex.progression = {};
-  ex.progression[`w${w}`] = {
+  ex.progression[`w${absW}`] = {
   set: parseInt(tSet) || ex.set,
   rep: String(tRep) || ex.rep,
   kg: (typeof tKg === 'number' && tKg > 0) ? tKg : (parseFloat(ex.kg) || 0)
@@ -3560,8 +3708,17 @@ export async function saveSchedule() {
   sch.phase = document.getElementById('ed-phase').value;
   sch.coachNote = document.getElementById('ed-coachnote').value;
   sch.objective = document.getElementById('ed-obj').value;
+  const startEl = document.getElementById('ed-meso-start');
+  if (startEl) sch.mesoStartDate = startEl.value || null;
+  // I giorni programmati sono per-blocco: scrive quelli del blocco attivo nell'editor.
   const sdCont = document.getElementById('ed-scheduled-days');
-  if (sdCont) sch.scheduledDays = [...sdCont.querySelectorAll('input:checked')].map(cb => parseInt(cb.value));
+  if (sdCont) {
+  const days = [...sdCont.querySelectorAll('input:checked')].map(cb => parseInt(cb.value));
+  sch.scheduledDays = days;
+  const curBlk = (sch.blocks || []).find(b => b.id === appState.edBlockId);
+  if (curBlk) curBlk.scheduledDays = days;
+  }
+  ensureBlocks(sch);
 
   try {
   if (window.mySupabase && sch.sessions) {
@@ -3591,12 +3748,7 @@ export async function saveSchedule() {
   }
   return ex;
   });
-  return {
-  id: s.id, athlete_id: athId, session_name: s.name,
-  meso: sch.meso, duration: sch.duration, phase: sch.phase,
-  coach_note: sch.coachNote, objective: sch.objective, exercises,
-  scheduled_days: sch.scheduledDays || []
-  };
+  return _scheduleRow(sch, athId, s, exercises);
   });
 
   // UPSERT atomico: inserisce le nuove sessioni, aggiorna quelle esistenti.
@@ -4022,6 +4174,34 @@ function _scheduleMeta(src) {
     meso: src.meso, phase: src.phase, duration: src.duration || 4,
     coachNote: src.coachNote || '', objective: src.objective || '',
     scheduledDays: [...(src.scheduledDays || [])],
+    mesoStartDate: src.mesoStartDate || null,
+    blocks: (src.blocks || []).map(b => ({ ...b, scheduledDays: [...(b.scheduledDays || [])] })),
+  };
+}
+
+// Il blocco a cui appartiene una seduta (null se scheda mono-blocco / legacy).
+function _blockOf(sch, session) {
+  const blocks = (sch.blocks && sch.blocks.length) ? sch.blocks : null;
+  if (!blocks) return null;
+  return blocks.find(b => b.id === session.blockId) || blocks[0];
+}
+
+// Costruisce la riga cloud per una singola seduta (metadati scheda + blocco).
+function _scheduleRow(sch, athId, s, exercises) {
+  const blk = _blockOf(sch, s);
+  const days = (blk && blk.scheduledDays && blk.scheduledDays.length)
+    ? blk.scheduledDays : (sch.scheduledDays || []);
+  return {
+    id: s.id, athlete_id: athId, session_name: s.name,
+    session_type: s.sessType || 'Palestra',
+    meso: sch.meso, duration: sch.duration, phase: sch.phase,
+    coach_note: sch.coachNote, objective: sch.objective, exercises,
+    scheduled_days: days,
+    meso_start_date: sch.mesoStartDate || null,
+    block_id: blk ? blk.id : null,
+    block_name: blk ? blk.name : null,
+    block_week_start: blk ? blk.weekStart : null,
+    block_week_end: blk ? blk.weekEnd : null,
   };
 }
 
@@ -4091,6 +4271,7 @@ export async function duplicateCurrentSession() {
 async function _pushScheduleToCloud(athId) {
   const sch = DB.schedules[athId];
   if (!sch || !sch.sessions || !window.mySupabase) return;
+  ensureBlocks(sch);
 
   const { data: currentRows } = await window.mySupabase
     .from('schedules').select('id, exercises').eq('athlete_id', athId);
@@ -4111,12 +4292,7 @@ async function _pushScheduleToCloud(athId) {
       if (!ex.progression && ex.name && sessionProgs[ex.name]) return { ...ex, progression: sessionProgs[ex.name] };
       return ex;
     });
-    return {
-      id: s.id, athlete_id: athId, session_name: s.name,
-      meso: sch.meso, duration: sch.duration, phase: sch.phase,
-      coach_note: sch.coachNote, objective: sch.objective, exercises,
-      scheduled_days: sch.scheduledDays || []
-    };
+    return _scheduleRow(sch, athId, s, exercises);
   });
 
   const { error: upsertErr } = await window.mySupabase

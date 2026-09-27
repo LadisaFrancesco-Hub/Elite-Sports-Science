@@ -623,6 +623,7 @@
   <div class="fg"><label class="fl">Atleta</label><select id="ed-ath" onchange="loadEditorForAthlete()"></select></div>
   <div class="fg"><label class="fl">Mesociclo</label><input type="text" id="ed-meso" placeholder="Es: Prep. Challenger"></div>
   <div class="fg"><label class="fl">Durata (Settimane)</label><input type="number" id="ed-duration" min="1" value="4" oninput="syncEdDuration(+this.value); updatePredictiveACWR()"></div>
+  <div class="fg"><label class="fl">Data inizio mesociclo</label><input type="date" id="ed-meso-start" onchange="syncMesoStart(this.value)"><span style="font-size:10px;color:var(--muted);display:block;margin-top:3px">Determina la settimana e il blocco attivo per l'atleta</span></div>
   <div class="fg">
   <label class="fl">Fase Microciclo (Target)</label>
   <select id="ed-phase" onchange="updatePhaseStyle(this.value)" style="background:var(--s2); border:1px solid var(--border); padding:8px; border-radius:8px; width:100%; color:var(--text); font-family:var(--fm); font-size:12px;">
@@ -637,9 +638,23 @@
   <div class="fg"><label class="fl">Note coach (visibili all'atleta)</label><textarea id="ed-coachnote" rows="2" placeholder="Focus tecnico, variazioni autorizzate..." oninput="syncEdCoachNote(this.value)"></textarea></div>
   <div class="fg"><label class="fl">Obiettivo seduta</label><textarea id="ed-obj" rows="2" placeholder="Es: focus accelerazione, riabilitazione spalla..."></textarea></div>
   </div>
-  <div class="fr">
-  <div class="fg" style="flex-basis:100%">
-  <label class="fl">Giorni allenamento atleta (per vista settimanale)</label>
+  </div>
+  <div class="card" style="margin-bottom:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+  <div class="card-t" style="margin-bottom:0">Blocchi / Fasi del mesociclo</div>
+  <button class="btn btn-p btn-sm" onclick="addBlock()">+ Nuovo blocco</button>
+  </div>
+  <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:10px">Ogni blocco ha le proprie sedute, esercizi, giorni e progressione. Il blocco attivo per l'atleta è scelto in automatico dalla settimana corrente (in base alla data d'inizio). Con un solo blocco il mesociclo si comporta come una scheda classica.</div>
+  <div class="sess-tabs" id="ed-block-tabs" style="margin-bottom:10px"></div>
+  <div class="fr" style="align-items:end">
+  <div class="fg" style="margin-bottom:0"><label class="fl">Nome blocco</label><input type="text" id="ed-block-name" oninput="renameBlock(this.value)" placeholder="Es: Test / Casa base / Carico"></div>
+  <div class="fg" style="margin-bottom:0;max-width:110px"><label class="fl">Settimana da</label><input type="number" id="ed-block-wstart" min="1" oninput="syncBlockWeeks()"></div>
+  <div class="fg" style="margin-bottom:0;max-width:110px"><label class="fl">a</label><input type="number" id="ed-block-wend" min="1" oninput="syncBlockWeeks()"></div>
+  <button class="btn btn-d btn-sm" id="ed-block-del" onclick="deleteBlock()">✕ Elimina blocco</button>
+  </div>
+  <div class="fr" style="margin-top:8px">
+  <div class="fg" style="flex-basis:100%;margin-bottom:0">
+  <label class="fl">Giorni allenamento in questo blocco (vista settimanale + reminder)</label>
   <div id="ed-scheduled-days" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
   <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="1" style="accent-color:var(--teal);width:14px;height:14px"> Lun</label>
   <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="2" style="accent-color:var(--teal);width:14px;height:14px"> Mar</label>
