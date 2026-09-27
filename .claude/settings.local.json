@@ -72,7 +72,10 @@
       "Bash(sudo chmod -R 755 /Users/ladisa/.npm/_cacache)",
       "Bash(sudo rm -rf /Users/ladisa/.npm/_cacache)",
       "mcp__claude_ai_Vercel__import-claude-design-from-url",
-      "WebFetch(domain:www.youtube.com)"
+      "WebFetch(domain:www.youtube.com)",
+      "Bash(grep -rln \"link_athlete_auth\\\\|lookup_athlete_by_code\" . --include=\"*.sql\")",
+      "Bash(ls -la supabase/migrations/)",
+      "Bash(ls *.sql)"
     ]
   }
 }

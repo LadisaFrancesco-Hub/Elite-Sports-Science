@@ -209,6 +209,14 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Bug trovato dallo smoke e corretto: `renameCurrentSession` usava `.sess-tab.on` non scopato → collideva coi tab-blocco (stessa classe) sovrascrivendo l'etichetta del blocco col nome della seduta; ora scopato a `#ed-tabs`.
 - **DEPLOYATO**: SW **v6.90**, migration in prod, commit `f71db02` + push su `main` + `vercel --prod`. Verificato live su `coach-os-lime.vercel.app` (sw v6.90 + `ed-meso-start`/`ed-block-tabs` serviti).
 
+**Email atleta facoltativa alla creazione (2026-09-27)**
+- Contesto (attrito coach): creare un atleta richiedeva l'email → scomodo. Verificato sul **codice reale + funzione deployata**: l'email inserita dal coach NON serve. Il collegamento login↔atleta avviene per **codice** (`link_athlete_auth(p_athlete_id, p_code)`); la funzione legge l'email vera dall'account auth dell'atleta (`auth.users` via `auth.uid()`) e **sovrascrive** `atleti.email` al primo accesso. L'email del coach serviva solo a pre-compilare il campo setup (comodità), poi viene buttata.
+- **Fix (`app.js` `addAthlete`)**: email ora facoltativa. Se vuota → `null` (colonna `atleti.email` è `UNIQUE` ma nullable → Postgres ammette più `NULL`, niente conflitto tra atleti senza email). Se il coach la inserisce, dev'essere valida (`includes('@')`). Oggetto locale + insert Supabase ereditano `email || null`. Display codice invito: mostra "· email" solo se presente (niente separatore penzolante).
+- **`index.html`**: label campo → "opzionale, la imposta l'atleta al primo accesso", placeholder "Facoltativa".
+- Nessuna migration necessaria (colonna già nullable). `saveAthleteEdits` non tocca l'email → nessun cambiamento lato modifica.
+- Verifica: `node --check` OK (app/utils). Confermato via Supabase MCP: `link_athlete_auth` deployata linka per codice + sovrascrive email; `atleti.email` nullable + UNIQUE.
+- **Da deployare**: bump SW + commit + push + `vercel --prod` (client-only).
+
 ---
 
 ## Prossimo passo — roadmap

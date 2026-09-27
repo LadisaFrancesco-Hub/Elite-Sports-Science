@@ -1724,9 +1724,14 @@ export async function addAthlete() {
   }
 
   const name = document.getElementById('ma-name').value.trim();
-  const email = document.getElementById('ma-email').value.trim();
+  // Email facoltativa: se assente resta null (colonna UNIQUE → più NULL ammessi).
+  // Verrà comunque impostata dall'atleta al primo accesso (link_athlete_auth
+  // sovrascrive atleti.email con l'email dell'account auth). Se il coach la
+  // inserisce, dev'essere valida.
+  const emailRaw = document.getElementById('ma-email').value.trim();
+  const email = emailRaw || null;
   if (!name) { toast('Inserisci il nome'); return; }
-  if (!email || !email.includes('@')) { toast("Inserisci un'email valida"); return; }
+  if (email && !email.includes('@')) { toast("Email non valida (oppure lasciala vuota)"); return; }
 
   const w = parseFloat(document.getElementById('ma-w').value) || 0;
   const bf = parseFloat(document.getElementById('ma-bf').value) || 0;
@@ -1794,7 +1799,7 @@ export async function addAthlete() {
   renderAthletes(); closeMo('mo-ath');
   btn.textContent = 'Aggiungi'; btn.disabled = false;
 
-  document.getElementById('mac-info').innerHTML = `<strong>${escHtml(name)}</strong> &middot; ${escHtml(email)}`;
+  document.getElementById('mac-info').innerHTML = `<strong>${escHtml(name)}</strong>${email ? ' &middot; ' + escHtml(email) : ''}`;
   document.getElementById('mac-code').textContent = codiceGenerato;
   const _cpBtn = document.getElementById('mac-copy-btn');
   if (_cpBtn) _cpBtn.textContent = 'Copia codice';
