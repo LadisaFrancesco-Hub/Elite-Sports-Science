@@ -206,7 +206,8 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - **Atleta**: `loadLive`/`renderAthWeek`/`renderAthHome`/`showAthSummary` passano per `sessionsForWeek`/`activeScheduledDays`. Con data d'inizio impostata la **settimana è guidata dal calendario** (`mesoWk`) e il blocco/fase attivo scelto di conseguenza (selettore settimana riflette `mesoWk`); senza data, comportamento manuale legacy.
 - **Archivio meso**: snapshot include `blocks`/`mesoStartDate`; "Archivia & Nuovo Meso" resetta blocchi + azzera data d'inizio.
 - Verifica: `node --check` OK (utils/auth/app/workout/main); **17/17** test logica sullo scenario utente (sett 1 test / 2-3 casa / 4-12 carico, legacy, clamp); smoke Playwright coach 1360px (3 blocchi, range, filtro tab-seduta per blocco, **0 errori**) + atleta 390px (settimana 5 → `lv-week=5` e `lv-sess` mostra SOLO la seduta del blocco 4-12, **0 errori di codice**; i 2 errori osservati = FK Supabase su atleta demo, ambientali).
-- **NON ancora deployato**: SW bump a **v6.90** pronto; migration già in prod. Da fare: commit + push + `vercel --prod` su conferma.
+- Bug trovato dallo smoke e corretto: `renameCurrentSession` usava `.sess-tab.on` non scopato → collideva coi tab-blocco (stessa classe) sovrascrivendo l'etichetta del blocco col nome della seduta; ora scopato a `#ed-tabs`.
+- **DEPLOYATO**: SW **v6.90**, migration in prod, commit `f71db02` + push su `main` + `vercel --prod`. Verificato live su `coach-os-lime.vercel.app` (sw v6.90 + `ed-meso-start`/`ed-block-tabs` serviti).
 
 ---
 
