@@ -3501,8 +3501,12 @@ export function openProgressionModal(index) {
   <span style="font-size:11px;color:var(--teal);font-weight:700;display:block;margin-bottom:6px;">SETTIMANA ${w}</span>
   <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
   <div><label class="fl">Set</label><input type="number" id="p-set-${w}" value="${p.set}"></div>
-  <div><label class="fl">Rep</label><input type="text" id="p-rep-${w}" value="${p.rep}"></div>
-  <div><label class="fl">Kg</label><input type="number" step=".5" id="p-kg-${w}" value="${p.kg}"></div>
+  <div><label class="fl">Rep</label><input type="text" id="p-rep-${w}" value="${escHtml(String(p.rep ?? ''))}"></div>
+  <div><label class="fl">Kg</label><input type="text" id="p-kg-${w}" value="${escHtml(String(p.kg ?? ex.kg ?? ''))}"></div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 2fr;gap:6px;margin-top:6px;">
+  <div><label class="fl">RIR</label><input type="text" id="p-rir-${w}" value="${escHtml(String(p.rir ?? ''))}" placeholder="—"></div>
+  <div><label class="fl">TUT</label><input type="text" id="p-tut-${w}" value="${escHtml(String(p.tut ?? ''))}" placeholder="es. 3-1-2-0"></div>
   </div>
   </div>`;
   }
@@ -3517,7 +3521,6 @@ export async function saveProgressionData() {
   const athId = document.getElementById('ed-ath').value || appState.selAthId;
   const { start, end } = _edBlockRange(DB.schedules[athId]);
   const ex = getEdExercises()[appState.currentProgExIndex];
-  const _prevProg = ex.progression || {};   // preserva rir/tut per-settimana se presenti
   ex.progression = {};
   for (let w = start; w <= end; w++) {
   const setEl = document.getElementById(`p-set-${w}`);
@@ -3525,11 +3528,13 @@ export async function saveProgressionData() {
   const _pw = {
   set: parseInt(setEl.value) || ex.set,
   rep: document.getElementById(`p-rep-${w}`).value || ex.rep,
-  kg: parseFloat(document.getElementById(`p-kg-${w}`).value)|| ex.kg
+  kg: (document.getElementById(`p-kg-${w}`).value || '').trim() || ex.kg   // testo: "40", "al RIR", "elastico"...
   };
-  const _old = _prevProg[`w${w}`];
-  if (_old && _old.rir != null) _pw.rir = _old.rir;
-  if (_old && _old.tut != null) _pw.tut = _old.tut;
+  // RIR/TUT per-settimana (opzionali: vuoto = usa il valore fisso dell'esercizio)
+  const rirV = (document.getElementById(`p-rir-${w}`)?.value || '').trim();
+  const tutV = (document.getElementById(`p-tut-${w}`)?.value || '').trim();
+  if (rirV) _pw.rir = rirV;
+  if (tutV && tutV !== '-') _pw.tut = tutV;
   ex.progression[`w${w}`] = _pw;
   }
   const selType = document.getElementById('smart-prog-select')?.value;

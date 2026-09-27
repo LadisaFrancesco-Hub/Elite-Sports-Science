@@ -223,7 +223,13 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - **Difese editor (`app.js`)**: `saveProgressionData` e lo smart-microcycle preservano i `rir`/`tut` per-settimana esistenti quando ricostruiscono la progressione (prima li avrebbero persi). `saveLiveNextLoad` già modificava solo `.kg` → ok. Nessuna migration (la progressione vive dentro la colonna `exercises` JSONB).
 - Verifica: `node --check` OK (workout/app); smoke Playwright (atleta 390px, app reale + `replaceDB`) → S3 mostra RIR 2/TUT 3-1-1-0, S5 mostra RIR 1/TUT 3-0-X-0 (cambiano), fallback ai valori fissi quando la progressione non ha rir/tut, **0 errori console**.
 - Uso reale: scheda riabilitativa Agoge ricaricata con nomi corti + note minime + riscaldamenti espansi (sezione `warmup`) + RIR/TUT per settimana (13 sedute, 103 esercizi, round-trip verificato su Supabase).
-- **Da deployare**: SW bump v6.92 + commit + push + `vercel --prod` (client-only, tocca la vista atleta).
+- **DEPLOYATO**: SW **v6.92**, commit `6a53b44` + push + `vercel --prod`. Verificato live (`pW.rir`/`targetRir` in workout.js).
+
+**Campi RIR/TUT per settimana nell'editor coach (2026-09-27)**
+- Completa la feature precedente: la modale progressione (`openProgressionModal`/`saveProgressionData` in `app.js`) ora ha, per ogni settimana, oltre a Set/Rep/Kg anche i campi **RIR** e **TUT** (input testo, così accetta range tipo "1-2" e cadenze "3-0-X-0"). Vuoto = eredita il valore fisso dell'esercizio.
+- **Kg reso testuale** nella modale (prima `type=number`): supporta carichi non numerici ("al RIR", "elastico", "+2,5kg/sett"); pre-fill con fallback a `ex.kg`; salvato come stringa (`|| ex.kg`).
+- Verifica: `node --check` OK; smoke Playwright coach 1360px (app reale + `replaceDB`) → campi presenti e pre-compilati (S3 RIR2/3-1-1-0, S5 RIR1/3-0-X-0), modifica S4 salvata (RIR0/TUT 2-0-1-0/kg testo), settimane non toccate preservate, **0 errori console**.
+- **Da deployare**: SW bump v6.93 + commit + push + `vercel --prod` (client-only, editor coach).
 
 ---
 
