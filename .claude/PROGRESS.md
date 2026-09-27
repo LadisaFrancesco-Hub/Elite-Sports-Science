@@ -214,8 +214,8 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - **Fix (`app.js` `addAthlete`)**: email ora facoltativa. Se vuota → `null` (colonna `atleti.email` è `UNIQUE` ma nullable → Postgres ammette più `NULL`, niente conflitto tra atleti senza email). Se il coach la inserisce, dev'essere valida (`includes('@')`). Oggetto locale + insert Supabase ereditano `email || null`. Display codice invito: mostra "· email" solo se presente (niente separatore penzolante).
 - **`index.html`**: label campo → "opzionale, la imposta l'atleta al primo accesso", placeholder "Facoltativa".
 - Nessuna migration necessaria (colonna già nullable). `saveAthleteEdits` non tocca l'email → nessun cambiamento lato modifica.
-- Verifica: `node --check` OK (app/utils). Confermato via Supabase MCP: `link_athlete_auth` deployata linka per codice + sovrascrive email; `atleti.email` nullable + UNIQUE.
-- **Da deployare**: bump SW + commit + push + `vercel --prod` (client-only).
+- Verifica: `node --check` OK (app/utils). Confermato via Supabase MCP: `link_athlete_auth` deployata linka per codice + sovrascrive email; `atleti.email` nullable + UNIQUE. Smoke Playwright (chromium, app reale + Supabase stubbato) → 3 casi: senza email (insert con `email:null`, modal codice aperto, nessun "null"/separatore penzolante nel display), email malformata (insert bloccato), email valida (scritta + mostrata); **0 errori console**.
+- **DEPLOYATO**: SW **v6.91**, commit `fb80909` + push su `main` + `vercel --prod` (dpl_BYGFZ9YrpKimVGfLULAgsLqqMMcz). Verificato live su `coach-os-lime.vercel.app`: sw v6.91 + label "opzionale" + `emailRaw || null` serviti.
 
 ---
 
