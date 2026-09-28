@@ -139,6 +139,8 @@ function _renderResumeBanner(sessId, week, sessionName, ctxMatches) {
 
 // Istruzioni contestuali per ogni protocollo series_type
 const SERIES_TYPE_INSTRUCTIONS = {
+    drop_set:        'Arriva a cedimento (o al RIR previsto), poi riduci subito il carico del 20-30% e continua senza pausa fino a un nuovo cedimento. Ripeti il drop 1-2 volte come indicato.',
+    rest_pause:      'Esegui la serie a cedimento, riposa 15-20", poi riparti con lo stesso carico per altre reps. Ripeti 2-3 mini-serie: sfrutti il recupero parziale per accumulare volume ad alta intensità.',
     myo_reps:        'Set di attivazione al cedimento relativo, poi mini-set da 3 reps con 20" di riposo. Smetti quando non riesci a completare 3 reps pulite.',
     cluster:         'Dividi le rep in cluster con 15" di pausa intra-serie. Mantieni il carico alto — la pausa permette di recuperare ATP senza scaricare i muscoli.',
     triphasic:       'Alterna fasi: eccentrica lenta (5s), isometrica (3s al punto di massima tensione), concentrica esplosiva. Una tecnica per settimana.',
@@ -415,6 +417,9 @@ export function loadLive() {
             let targetKg  = ex.kg;
             let targetRir = ex.rir;
             let targetTut = ex.tut;
+            // Tecnica d'intensità attiva: prima quella della settimana (progressione),
+            // poi il fallback al series_type fisso dell'esercizio.
+            let activeTech = (ex.series_type && ex.series_type !== 'manual') ? ex.series_type : '';
             if (ex.progression && ex.progression[`w${currentWeek}`]) {
                 const pW  = ex.progression[`w${currentWeek}`];
                 targetSet = pW.set;
@@ -423,19 +428,21 @@ export function loadLive() {
                 // RIR/TUT per-settimana (fallback al valore fisso dell'esercizio)
                 if (pW.rir != null && pW.rir !== '') targetRir = pW.rir;
                 if (pW.tut != null && pW.tut !== '') targetTut = pW.tut;
+                // Tecnica per-settimana: se presente sovrascrive quella fissa
+                if (pW.tech) activeTech = pW.tech;
             }
 
             // ── Tipo esercizio e colore bordo ─────────────────
             const currentType = (ex.type || 'normal').toLowerCase();
             const borderColor = typeColors[currentType] || 'var(--accent)';
-            const _stLabels = { myo_reps:'MYO', hyper_block_dup:'BLK', hyper_stretch:'STRCH', hyper_metabolic:'META', block_period:'BLOCK', double_prog:'DBL', overreach:'OVER', lin_taper:'TAPER', step_load:'STEP', wave_contrast:'WAVE', french_contrast:'FC', cluster:'CLST', wave_load:'WL', wup:'WUP', triphasic:'TRI', wendler_531:'531', linear_classic:'LIN', amrap_top:'AMRAP' };
-            const seriesTypeBadge = (ex.series_type && ex.series_type !== 'manual')
-                ? `<span class="tag tn">${_stLabels[ex.series_type] || ex.series_type.toUpperCase().slice(0,5)}</span>`
+            const _stLabels = { myo_reps:'MYO', hyper_block_dup:'BLK', hyper_stretch:'STRCH', hyper_metabolic:'META', block_period:'BLOCK', double_prog:'DBL', overreach:'OVER', lin_taper:'TAPER', step_load:'STEP', wave_contrast:'WAVE', french_contrast:'FC', cluster:'CLST', wave_load:'WL', wup:'WUP', triphasic:'TRI', wendler_531:'531', linear_classic:'LIN', amrap_top:'AMRAP', drop_set:'DROP', rest_pause:'RP' };
+            const seriesTypeBadge = activeTech
+                ? `<span class="tag tn">${_stLabels[activeTech] || activeTech.toUpperCase().slice(0,5)}</span>`
                 : '';
 
             // ── GAP 2: Istruzioni protocollo collassabili ─────
-            const stInstr = ex.series_type && SERIES_TYPE_INSTRUCTIONS[ex.series_type];
-            const stLabel = ex.series_type ? (_stLabels[ex.series_type] || ex.series_type.toUpperCase().slice(0,5)) : '';
+            const stInstr = activeTech && SERIES_TYPE_INSTRUCTIONS[activeTech];
+            const stLabel = activeTech ? (_stLabels[activeTech] || activeTech.toUpperCase().slice(0,5)) : '';
             const seriesTypeInfoHtml = stInstr ? `
               <div style="margin-top:8px;">
                 <div onclick="(function(el){var b=el.nextElementSibling;var a=el.querySelector('.st-arr');b.style.display=b.style.display==='none'?'block':'none';a.textContent=b.style.display==='none'?'▾':'▴';})(this)"

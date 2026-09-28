@@ -79,6 +79,15 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**Tecniche d'intensità per-settimana nella progressione (2026-09-28)**
+- Contesto (richiesta coach): la progressione per-settimana copriva set/rep/kg/RIR/TUT, ma le tecniche d'intensità (drop set, ecc.) restavano fisse per esercizio → per dire "sett. 4 → drop set" il coach doveva scriverlo nelle note (orribile). Ora è un campo per-settimana come RIR/TUT.
+- Distinzione emersa dal codice: `series_type` mescolava **schemi di periodizzazione multi-settimana** (Wendler, block period, linear…) e **vere tecniche d'intensità da singola seduta**. Per il campo per-settimana esposto solo un **sottoinsieme curato** (scelta utente): Drop set, Rest-pause, Myo-reps, Cluster, Serie in allungamento, Top set/AMRAP, Densità metabolica. Aggiunte badge (`DROP`/`RP`) e schede istruzioni per Drop set e Rest-pause (prima mancavano).
+- **Modello**: campo opzionale `tech` dentro l'oggetto settimana della progressione (`ex.progression.w4.tech = 'drop_set'`), analogo a `rir`/`tut`. **Zero migration** (progressione già in `exercises` JSONB).
+- **Editor (`app.js`)**: nuova costante `INTENSITY_TECHNIQUES`; select "Tecnica d'intensità" per settimana in `openProgressionModal`; salvataggio in `saveProgressionData` (vuoto = nessuna); `applySmartMicrocycle` preserva `tech` esistente (come rir/tut); riepilogo progressione nell'editor mostra la sigla tecnica accanto alla settimana (viola). Badge `drop_set:'DROP'`/`rest_pause:'RP'` in `_seriesTypeLabels`.
+- **Atleta (`workout.js`)**: render live week-aware — `activeTech` legge `pW.tech` della settimana attiva (guidata da `mesoStartDate`), fallback a `ex.series_type` fisso; badge + scheda istruzioni "Come eseguire" seguono la tecnica della settimana. `_stLabels` e `SERIES_TYPE_INSTRUCTIONS` estesi con drop_set/rest_pause.
+- Verifica: `node --check` OK (app/workout); test logica 8/8 sul comportamento reale (scenario blocco 6 sett con drop set alla 4, fallback al fisso, override per-settimana, manual ignorato, tech vuota non salvata). SW bump v6.96.
+- **Da fare**: smoke test coach+atleta → commit + push + `vercel --prod` (client-only, nessuna migration).
+
 **Briefing IA settimanale coach — sintesi in linguaggio naturale (2026-09-28)**
 - Contesto/strategia: primo uso reale dell'IA nell'app. Scelta ragionata (obiettivo = primi coach beta + demo che converte): l'IA come **acceleratore di distribuzione** (momento wow nel demo) senza minare la credibilità S&C né i costi. Principio cardine: **l'IA NON calcola** — riceve i KPI già calcolati dal motore deterministico (`generateWeeklyInsight` + `calculateACWR` + readiness + rischio) e li trasforma in un briefing da coach. Fallback: resta l'analisi deterministica.
 - **Backend deployato (via Supabase MCP)**:
@@ -88,7 +97,8 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 - Controllo costi: Haiku + on-demand + prompt caching + cache DB. Credibilità: numeri solo dal motore, output bozza editabile, framing ACWR onesto.
 - Verifica: `node --check` OK (app/main/sw). Migration `success:true`; edge function `status:ACTIVE`.
 - **BLOCCANTE PRIMA DELL'USO**: impostare il secret `ANTHROPIC_API_KEY` sul progetto Supabase (`supabase secrets set ANTHROPIC_API_KEY=sk-ant-...` oppure dashboard → Edge Functions → Secrets). Senza, la function risponde `missing_api_key` e il client mostra il fallback ("analisi automatica resta valida").
-- **Da fare**: set secret → smoke test coach (genera briefing su atleta demo, cache hit alla riapertura) → commit + push + `vercel --prod`.
+- **Bottone nascosto dietro flag** (`AI_BRIEFING_ENABLED = false` in `app.js`): il backend è deployato ma il bottone "Genera briefing IA" NON è renderizzato finché la chiave non c'è. Quando il secret è impostato: `AI_BRIEFING_ENABLED = true` → commit + `vercel --prod`. (Deciso il 2026-09-28: utente non ancora pronto a pagare i crediti API → deployata solo la feature tecniche per-settimana, IA parcheggiata.)
+- **Da fare**: set secret → flip flag → smoke test coach (genera briefing su atleta demo, cache hit alla riapertura) → commit + push + `vercel --prod`.
 
 **FIX sync fine-allenamento: storico/calendario non si aggiornavano (2026-09-28)**
 - Sintomo (segnalato dal coach): a fine allenamento arriva il **messaggio recap in chat** ma **storico e calendario restano vuoti**.

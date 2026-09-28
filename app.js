@@ -1428,6 +1428,10 @@ function _insightRecommendation(findings, ctx) {
   return 'Prosegui sul programma pianificato: nessun aggiustamento urgente questa settimana.';
 }
 
+// Flag briefing IA: finché false il bottone resta nascosto (backend pronto ma
+// serve il secret ANTHROPIC_API_KEY). Quando la chiave è impostata: metti true e rideploya.
+const AI_BRIEFING_ENABLED = false;
+
 function _renderInsightCard() {
   const el = document.getElementById('dh-insight');
   if (!el) return;
@@ -1456,10 +1460,10 @@ function _renderInsightCard() {
   <div style="color:${tk.c};font-family:var(--fmono);font-size:10.5px;letter-spacing:.05em;font-weight:800;margin-bottom:3px">RACCOMANDAZIONE</div>
   ${escHtml(ins.rec)}
   </div>
-  <div style="margin-top:12px">
+  ${AI_BRIEFING_ENABLED ? `<div style="margin-top:12px">
     <button id="dh-ai-btn" onclick="generateAiBriefing('${athId}')" style="width:100%;background:var(--accent,#f97316);color:#111;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--fmono);letter-spacing:.02em">✨ Genera briefing IA</button>
     <div id="dh-ai-briefing" style="margin-top:10px"></div>
-  </div>`;
+  </div>` : ''}`;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -3467,7 +3471,7 @@ export function renderEdExercises() {
   ${ex.progression && Object.keys(ex.progression).length ? `
   <div style="margin-top:6px;padding:6px 8px;background:rgba(0,229,168,0.05);border:1px solid rgba(0,229,168,0.2);border-radius:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
   <span style="font-size:9px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;">Prog.</span>
-  ${Object.entries(ex.progression).sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).map(([w,v])=>`<span style="font-size:10px;color:var(--text);white-space:nowrap;"><span style="color:var(--teal);font-weight:700;">${w.toUpperCase()}</span> ${v.set}×${v.rep}@${v.kg}kg</span>`).join('<span style="color:var(--border);font-size:10px;">|</span>')}
+  ${Object.entries(ex.progression).sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).map(([w,v])=>`<span style="font-size:10px;color:var(--text);white-space:nowrap;"><span style="color:var(--teal);font-weight:700;">${w.toUpperCase()}</span> ${v.set}×${v.rep}@${v.kg}kg${v.tech?` <span style="color:var(--purple);font-weight:700;">${_seriesTypeLabel(v.tech)}</span>`:''}</span>`).join('<span style="color:var(--border);font-size:10px;">|</span>')}
   </div>` : ''}
   <input type="text" value="${ex.note||''}" placeholder="Note / CUE d'esecuzione" style="width:100%;font-size:11px;margin-top:6px;color:var(--purple)" oninput="updateEx(${i},'note',this.value)">`;
   wrap.appendChild(div);
@@ -3605,9 +3609,23 @@ const _seriesTypeLabels = {
   overreach:'OVER', lin_taper:'TAPER', step_load:'STEP',
   wave_contrast:'WAVE', french_contrast:'FC', cluster:'CLST',
   wave_load:'WL', wup:'WUP', triphasic:'TRI', wendler_531:'531',
-  linear_classic:'LIN', amrap_top:'AMRAP'
+  linear_classic:'LIN', amrap_top:'AMRAP',
+  drop_set:'DROP', rest_pause:'RP'
 };
 function _seriesTypeLabel(t){ return _seriesTypeLabels[t] || t.toUpperCase().slice(0,5); }
+
+// Tecniche d'intensità assegnabili per SINGOLA settimana nella progressione.
+// Sottoinsieme curato: solo tecniche da singola seduta (no schemi multi-settimana
+// tipo Wendler/block period, che per-settimana non avrebbero senso).
+const INTENSITY_TECHNIQUES = [
+  { code: 'drop_set',        label: 'Drop set' },
+  { code: 'rest_pause',      label: 'Rest-pause' },
+  { code: 'myo_reps',        label: 'Myo-reps' },
+  { code: 'cluster',         label: 'Cluster' },
+  { code: 'hyper_stretch',   label: 'Serie in allungamento' },
+  { code: 'amrap_top',       label: 'Top set / AMRAP' },
+  { code: 'hyper_metabolic', label: 'Densità metabolica' },
+];
 
 export function openProgressionModal(index) {
   appState.currentProgExIndex = index;
@@ -3636,6 +3654,13 @@ export function openProgressionModal(index) {
   <div><label class="fl">RIR</label><input type="text" id="p-rir-${w}" value="${escHtml(String(p.rir ?? ''))}" placeholder="—"></div>
   <div><label class="fl">TUT</label><input type="text" id="p-tut-${w}" value="${escHtml(String(p.tut ?? ''))}" placeholder="es. 3-1-2-0"></div>
   </div>
+  <div style="margin-top:6px;">
+  <label class="fl">Tecnica d'intensità</label>
+  <select id="p-tech-${w}">
+  <option value="">— nessuna —</option>
+  ${INTENSITY_TECHNIQUES.map(t => `<option value="${t.code}"${p.tech === t.code ? ' selected' : ''}>${t.label}</option>`).join('')}
+  </select>
+  </div>
   </div>`;
   }
   openMo('mo-prog');
@@ -3663,6 +3688,9 @@ export async function saveProgressionData() {
   const tutV = (document.getElementById(`p-tut-${w}`)?.value || '').trim();
   if (rirV) _pw.rir = rirV;
   if (tutV && tutV !== '-') _pw.tut = tutV;
+  // Tecnica d'intensità per-settimana (opzionale: vuoto = nessuna)
+  const techV = (document.getElementById(`p-tech-${w}`)?.value || '').trim();
+  if (techV) _pw.tech = techV;
   ex.progression[`w${w}`] = _pw;
   }
   const selType = document.getElementById('smart-prog-select')?.value;
@@ -3803,6 +3831,7 @@ export function applySmartMicrocycle(type) {
   };
   if (_oldPw && _oldPw.rir != null) ex.progression[`w${absW}`].rir = _oldPw.rir;
   if (_oldPw && _oldPw.tut != null) ex.progression[`w${absW}`].tut = _oldPw.tut;
+  if (_oldPw && _oldPw.tech != null) ex.progression[`w${absW}`].tech = _oldPw.tech;
   }
   ex.series_type = type;
   appState.currentSmartProgType = type;
