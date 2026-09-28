@@ -14,7 +14,8 @@
 
 import { DB, appState, KEY, EXERCISE_LIBRARY, PROGRAM_TEMPLATES, rpeDescs, starDescs } from './state.js';
 import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus, playEntrance,
-         ensureBlocks, mesoWeekFromDate, activeBlock, sessionsForWeek, activeScheduledDays, sessionCloudRow } from './utils.js';
+         ensureBlocks, mesoWeekFromDate, activeBlock, sessionsForWeek, activeScheduledDays, sessionCloudRow,
+         uploadFormCheckVideo, hydrateMediaBubbles, mediaBubbleHtml } from './utils.js';
 
 // Importazioni circolari risolte: questi moduli importano da state+utils,
 // e app.js li chiama solo dentro funzioni (mai al top-level).
@@ -5732,11 +5733,15 @@ export function renderMessaggi() {
   thread.innerHTML = msgs.map(m => {
   const isCoach = m.from_type === 'coach';
   const time = m.created_at ? new Date(m.created_at).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+  const body = (m.media_type === 'video' && m.media_url)
+  ? mediaBubbleHtml(m.media_url, m.content, isCoach)
+  : escHtml(m.content);
   return `<div style="display:flex;flex-direction:column;align-items:${isCoach ? 'flex-end' : 'flex-start'};margin-bottom:10px">
-  <div style="max-width:78%;padding:10px 14px;border-radius:${isCoach ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isCoach ? 'var(--teal)' : 'rgba(139,92,246,0.15)'};color:${isCoach ? '#000' : 'var(--text)'};font-size:13px;line-height:1.5;word-break:break-word">${escHtml(m.content)}</div>
+  <div style="max-width:78%;padding:10px 14px;border-radius:${isCoach ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isCoach ? 'var(--teal)' : 'rgba(139,92,246,0.15)'};color:${isCoach ? '#000' : 'var(--text)'};font-size:13px;line-height:1.5;word-break:break-word">${body}</div>
   <div style="font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px">${time}</div>
   </div>`;
   }).join('');
+  hydrateMediaBubbles(thread);
   thread.scrollTop = thread.scrollHeight;
   }
 
@@ -5792,11 +5797,15 @@ export function renderAthleteChat() {
   thread.innerHTML = msgs.map(m => {
   const isAth = m.from_type === 'athlete';
   const time = m.created_at ? new Date(m.created_at).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
+  const body = (m.media_type === 'video' && m.media_url)
+  ? mediaBubbleHtml(m.media_url, m.content, isAth)
+  : escHtml(m.content);
   return `<div style="display:flex;flex-direction:column;align-items:${isAth ? 'flex-end' : 'flex-start'};margin-bottom:10px">
-  <div class="ax-bubble ${isAth ? 'is-me' : 'is-coach'}">${escHtml(m.content)}</div>
+  <div class="ax-bubble ${isAth ? 'is-me' : 'is-coach'}">${body}</div>
   <div class="ax-time">${time}</div>
   </div>`;
   }).join('');
+  hydrateMediaBubbles(thread);
   thread.scrollTop = thread.scrollHeight;
   }
 
@@ -5837,6 +5846,45 @@ export async function sendMessageAthleta() {
   input.disabled = false;
   renderAthleteChat();
   _sendPushNotification('coach', null, ' Messaggio da Atleta', content.slice(0, 80), 'messaggi');
+}
+
+// Invio video form-check (chat coach↔atleta). side: 'coach' | 'athlete'.
+export async function onFormCheckPick(side, inputEl) {
+  const file = inputEl && inputEl.files && inputEl.files[0];
+  if (!file) return;
+  const isCoach = side === 'coach';
+  const athId = isCoach ? appState.selAthId : window.mioIdLoggato;
+  if (!athId) { toast(isCoach ? 'Seleziona un atleta.' : 'Atleta non identificato.', { type: 'error' }); inputEl.value = ''; return; }
+
+  const caption = isCoach ? '🎥 Video correzione' : '🎥 Video tecnica';
+  toast('Caricamento video…', { duration: 60000 });
+  try {
+    const path = await uploadFormCheckVideo(file, athId);
+    const from_type = isCoach ? 'coach' : 'athlete';
+    const row = { athlete_id: athId, from_type, content: caption, media_url: path, media_type: 'video' };
+    if (isCoach) row.read_at = new Date().toISOString();
+    const msg = { ...row, created_at: new Date().toISOString() };
+    if (window.mySupabase) {
+      const { data, error } = await window.mySupabase.from('messages').insert([row]).select().single();
+      if (error) { toast('Errore invio: ' + error.message, { type: 'error' }); return; }
+      if (data) { msg.id = data.id; msg.created_at = data.created_at; }
+    }
+    if (!DB.messages) DB.messages = {};
+    if (!DB.messages[athId]) DB.messages[athId] = [];
+    DB.messages[athId].push(msg);
+    if (isCoach) {
+      renderMessaggi();
+      _sendPushNotification('athlete', athId, ' Video dal Coach', 'Ti ha inviato un video', 'coach-reply');
+    } else {
+      renderAthleteChat();
+      _sendPushNotification('coach', null, ' Video da Atleta', 'Video tecnica da rivedere', 'messaggi');
+    }
+    toast('Video inviato', { type: 'success' });
+  } catch (e) {
+    toast(e.message || 'Upload fallito.', { type: 'error', duration: 4000 });
+  } finally {
+    inputEl.value = '';
+  }
 }
 
 export function updateMsgBadge() {

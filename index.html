@@ -556,7 +556,9 @@
   <select id="msg-ath-select" style="width:100%"></select>
   </div>
   <div id="msg-thread" style="background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:14px;min-height:200px;max-height:420px;overflow-y:auto;margin-bottom:12px;display:flex;flex-direction:column"></div>
-  <div style="display:flex;gap:8px">
+  <div style="display:flex;gap:8px;align-items:center">
+  <input type="file" id="msg-video-input" accept="video/*" style="display:none" onchange="onFormCheckPick('coach', this)">
+  <button class="btn" title="Invia video" onclick="document.getElementById('msg-video-input').click()" style="padding:10px 12px;font-size:15px;flex-shrink:0">🎥</button>
   <input type="text" id="msg-input" placeholder="Scrivi un messaggio..." style="flex:1;padding:10px 14px;font-size:13px" onkeydown="if(event.key==='Enter')sendMessageCoach()">
   <button class="btn btn-p" onclick="sendMessageCoach()">Invia</button>
   </div>
@@ -1002,7 +1004,9 @@
   <div class="ps">Chat e risposte del tuo coach</div>
   <div class="ax-section-l">Messaggi diretti</div>
   <div id="athlete-chat-thread" class="ax-thread" style="padding:14px;min-height:140px;max-height:320px;overflow-y:auto;margin-bottom:10px;display:flex;flex-direction:column"></div>
-  <div style="display:flex;gap:8px;margin-bottom:20px">
+  <div style="display:flex;gap:8px;align-items:center;margin-bottom:20px">
+  <input type="file" id="athlete-video-input" accept="video/*" style="display:none" onchange="onFormCheckPick('athlete', this)">
+  <button class="btn" title="Invia video tecnica" onclick="document.getElementById('athlete-video-input').click()" style="padding:10px 12px;font-size:15px;flex-shrink:0">🎥</button>
   <input type="text" id="athlete-chat-input" placeholder="Scrivi al coach..." style="flex:1;padding:10px 14px;font-size:13px" onkeydown="if(event.key==='Enter')sendMessageAthleta()">
   <button class="btn btn-p" onclick="sendMessageAthleta()">Invia</button>
   </div>

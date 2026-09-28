@@ -59,7 +59,7 @@ import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          showConfirm, copyCodiceAtleta, inviteAthleteWhatsApp,
          exportProgramPDF,
          renderMessaggi, sendMessageCoach,
-         renderAthleteChat, sendMessageAthleta, updateMsgBadge,
+         renderAthleteChat, sendMessageAthleta, updateMsgBadge, onFormCheckPick,
          renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
          applyMacroTemplate, saveMacroPlan,
          sendWellnessReminders,
@@ -163,7 +163,7 @@ Object.assign(window, {
     connectWearable, disconnectWearable, syncWearableNow: () => syncWearableData(appState.selAthId, true),
     // Messaggistica
     renderMessaggi, sendMessageCoach,
-    renderAthleteChat, sendMessageAthleta, updateMsgBadge,
+    renderAthleteChat, sendMessageAthleta, updateMsgBadge, onFormCheckPick,
     // Macro Periodizzazione
     renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
     applyMacroTemplate, saveMacroPlan,

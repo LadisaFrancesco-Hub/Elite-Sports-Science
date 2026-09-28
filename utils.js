@@ -46,6 +46,70 @@ export function toast(msg, opts = {}) {
 export function openMo(id)  { document.getElementById(id).classList.add('show'); }
 export function closeMo(id) { document.getElementById(id).classList.remove('show'); }
 
+// ─────────────────────────────────────────────────────────────
+// FORM-CHECK VIDEO (Supabase Storage)
+// Bucket privato 'form-checks', path = {athId}/{ts}-{rand}.{ext}.
+// I messaggi con media_type='video' portano in media_url il PATH
+// (non l'URL pubblico): l'URL firmato è generato on-render e scade.
+// ─────────────────────────────────────────────────────────────
+export const FORM_CHECK_BUCKET = 'form-checks';
+const FORM_CHECK_MAX_BYTES = 50 * 1024 * 1024; // 50MB, allineato al cap del bucket
+
+// Carica un file video nel bucket. Ritorna il path salvato, o lancia con messaggio pulito.
+export async function uploadFormCheckVideo(file, athId) {
+    if (!window.mySupabase) throw new Error('Connessione assente.');
+    if (!file) throw new Error('Nessun file.');
+    if (!/^video\//.test(file.type || '')) throw new Error('Serve un file video.');
+    if (file.size > FORM_CHECK_MAX_BYTES) {
+        throw new Error(`Video troppo grande (max 50MB, il tuo è ${(file.size / 1048576).toFixed(0)}MB).`);
+    }
+    const ext = (file.name.split('.').pop() || 'mp4').toLowerCase().replace(/[^a-z0-9]/g, '') || 'mp4';
+    const path = `${athId}/${Date.now()}-${uid()}.${ext}`;
+    const { error } = await window.mySupabase.storage
+        .from(FORM_CHECK_BUCKET)
+        .upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw new Error(error.message || 'Upload fallito.');
+    return path;
+}
+
+// Genera un URL firmato (default 2h) per un path del bucket. Null se fallisce.
+export async function signFormCheckUrl(path, expiresSec = 7200) {
+    if (!window.mySupabase || !path) return null;
+    try {
+        const { data, error } = await window.mySupabase.storage
+            .from(FORM_CHECK_BUCKET)
+            .createSignedUrl(path, expiresSec);
+        if (error) return null;
+        return data ? data.signedUrl : null;
+    } catch { return null; }
+}
+
+// Post-processa un container di chat: per ogni <video data-mpath> firma il path e imposta la src.
+export async function hydrateMediaBubbles(container) {
+    if (!container) return;
+    const vids = container.querySelectorAll('video[data-mpath]:not([data-hydrated])');
+    for (const v of vids) {
+        v.setAttribute('data-hydrated', '1');
+        const url = await signFormCheckUrl(v.getAttribute('data-mpath'));
+        if (url) v.src = url;
+        else {
+            const err = document.createElement('div');
+            err.style.cssText = 'font-size:11px;color:var(--muted);padding:6px 0';
+            err.textContent = 'Video non disponibile';
+            v.replaceWith(err);
+        }
+    }
+}
+
+// HTML di una bolla-video (placeholder: la src è iniettata da hydrateMediaBubbles).
+export function mediaBubbleHtml(path, caption, isMine) {
+    const cap = caption && caption.trim()
+        ? `<div style="font-size:11.5px;color:${isMine ? '#000' : 'var(--text)'};opacity:.85;margin-top:5px;word-break:break-word">${escHtml(caption)}</div>`
+        : '';
+    return `<video data-mpath="${escHtml(path)}" controls preload="metadata" playsinline
+        style="max-width:100%;width:220px;border-radius:10px;background:#000;display:block"></video>${cap}`;
+}
+
 export function updateCloudStatus(statusKey) {
     const dot = document.getElementById('save-dot');
     const txt = document.getElementById('save-txt');
