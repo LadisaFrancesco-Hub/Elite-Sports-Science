@@ -1455,7 +1455,134 @@ function _renderInsightCard() {
   <div style="background:var(--s1);border-left:3px solid ${tk.c};border-radius:6px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:var(--text)">
   <div style="color:${tk.c};font-family:var(--fmono);font-size:10.5px;letter-spacing:.05em;font-weight:800;margin-bottom:3px">RACCOMANDAZIONE</div>
   ${escHtml(ins.rec)}
+  </div>
+  <div style="margin-top:12px">
+    <button id="dh-ai-btn" onclick="generateAiBriefing('${athId}')" style="width:100%;background:var(--accent,#f97316);color:#111;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--fmono);letter-spacing:.02em">✨ Genera briefing IA</button>
+    <div id="dh-ai-briefing" style="margin-top:10px"></div>
   </div>`;
+}
+
+// ─────────────────────────────────────────────────────────────
+// BRIEFING IA — la sintesi settimanale in linguaggio da coach.
+// L'IA NON calcola: riceve i KPI già calcolati (generateWeeklyInsight +
+// ACWR + readiness + rischio) e li racconta. On-demand (mai automatico),
+// modello Haiku, con cache DB per atleta+settimana (input_hash) → riaperture
+// senza nuovi dati = costo zero. Fallback: resta l'analisi deterministica.
+// ─────────────────────────────────────────────────────────────
+function _isoWeek(d) {
+  const dt = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  const day = dt.getUTCDay() || 7;
+  dt.setUTCDate(dt.getUTCDate() + 4 - day);
+  const yearStart = new Date(Date.UTC(dt.getUTCFullYear(), 0, 1));
+  const wk = Math.ceil((((dt - yearStart) / 86400000) + 1) / 7);
+  return `${dt.getUTCFullYear()}-W${String(wk).padStart(2, '0')}`;
+}
+
+function _hashStr(s) {
+  let h = 0;
+  for (let i = 0; i < s.length; i++) { h = (h << 5) - h + s.charCodeAt(i); h |= 0; }
+  return String(h >>> 0);
+}
+
+// Impacchetta i KPI GIÀ calcolati per l'atleta. Payload compatto = meno token.
+function _buildInsightPayload(athId) {
+  const a = athById(athId);
+  if (!a) return null;
+  const ins = generateWeeklyInsight(athId);
+  if (!ins) return null;
+  const acwr = calculateACWR(athId) || {};
+  const w = (DB.wellnessByAthlete && DB.wellnessByAthlete[athId]) || {};
+  const raw = {
+    acwrField: acwr.field?.value ?? null,
+    acwrGym: acwr.gym?.value ?? null,
+    readiness: (w.readinessScore !== undefined ? w.readinessScore : null),
+    riskScore: getAthleteRiskScore(athId),
+  };
+  return {
+    athleteName: a.name,
+    sport: '',
+    goal: a.goal || '',
+    level: a.level || '',
+    insight: {
+      headline: ins.headline, tone: ins.tone, nWeek: ins.nWeek, target: ins.target,
+      findings: ins.findings, rec: ins.rec,
+    },
+    raw,
+  };
+}
+
+export async function generateAiBriefing(athId, force = false) {
+  const box = document.getElementById('dh-ai-briefing');
+  const btn = document.getElementById('dh-ai-btn');
+  if (!box) return;
+  const payload = _buildInsightPayload(athId);
+  if (!payload) { toast('Nessun dato sufficiente per il briefing'); return; }
+
+  const wk = _isoWeek(new Date());
+  const hash = _hashStr(JSON.stringify(payload.insight) + JSON.stringify(payload.raw));
+
+  // 1) Cache DB: stessa settimana + stessi dati → mostra e non paga
+  if (!force && window.mySupabase) {
+    try {
+      const { data: row } = await window.mySupabase
+        .from('ai_insights').select('summary,input_hash')
+        .eq('athlete_id', athId).eq('iso_week', wk).maybeSingle();
+      if (row && row.input_hash === hash && row.summary) {
+        _renderAiBriefingBox(athId, row.summary, true);
+        return;
+      }
+    } catch (e) { /* cache miss silenzioso → si genera */ }
+  }
+
+  // 2) Genera via edge function
+  if (btn) { btn.disabled = true; btn.textContent = '✨ Genero il briefing…'; }
+  box.innerHTML = '<div style="font-size:12px;color:var(--muted);font-family:var(--fmono)">Analisi in corso…</div>';
+  try {
+    const { data, error } = await window.mySupabase.functions.invoke('coach-insight', { body: payload });
+    if (error || !data?.ok || !data.summary) {
+      const reason = data?.error || error?.message || 'errore';
+      box.innerHTML = `<div style="font-size:12px;color:var(--coral);font-family:var(--fmono)">Briefing IA non disponibile (${escHtml(String(reason)).slice(0, 40)}). L'analisi automatica qui sopra resta valida.</div>`;
+      return;
+    }
+    _renderAiBriefingBox(athId, data.summary, false);
+    // 3) Salva in cache (best-effort)
+    if (window.mySupabase) {
+      window.mySupabase.from('ai_insights')
+        .upsert({ athlete_id: athId, iso_week: wk, input_hash: hash, summary: data.summary, model: data.model || 'claude-haiku-4-5-20251001' }, { onConflict: 'athlete_id,iso_week' })
+        .then(() => {}, () => {});
+    }
+  } catch (e) {
+    box.innerHTML = `<div style="font-size:12px;color:var(--coral);font-family:var(--fmono)">Briefing IA non disponibile. L'analisi automatica qui sopra resta valida.</div>`;
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '✨ Rigenera briefing IA'; }
+  }
+}
+
+function _renderAiBriefingBox(athId, summary, cached) {
+  const box = document.getElementById('dh-ai-briefing');
+  if (!box) return;
+  const btn = document.getElementById('dh-ai-btn');
+  if (btn) btn.textContent = '✨ Rigenera briefing IA';
+  box.innerHTML = `
+  <div style="background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:12px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <span style="font-size:10px;font-weight:800;letter-spacing:.04em;color:var(--accent,#f97316);font-family:var(--fmono);text-transform:uppercase">Bozza IA · rivedi prima di usare${cached ? ' · in cache' : ''}</span>
+    </div>
+    <textarea id="dh-ai-text" style="width:100%;min-height:130px;background:var(--bg,#0e1116);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:10px;font-size:13px;line-height:1.5;resize:vertical;font-family:inherit">${escHtml(summary)}</textarea>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button onclick="copyAiBriefing()" style="flex:1;background:var(--s2,#1a1f27);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">Copia</button>
+      <button onclick="generateAiBriefing('${athId}', true)" style="flex:1;background:var(--s2,#1a1f27);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:8px;font-size:12px;font-weight:700;cursor:pointer">Rigenera</button>
+    </div>
+  </div>`;
+}
+
+export function copyAiBriefing() {
+  const t = document.getElementById('dh-ai-text');
+  if (!t) return;
+  navigator.clipboard.writeText(t.value).then(
+    () => toast('Briefing copiato ✓'),
+    () => toast('Copia non riuscita')
+  );
 }
 
 // Colore semantico per un valore ACWR (alto = pericolo).

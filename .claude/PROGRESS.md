@@ -79,6 +79,17 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**Briefing IA settimanale coach — sintesi in linguaggio naturale (2026-09-28)**
+- Contesto/strategia: primo uso reale dell'IA nell'app. Scelta ragionata (obiettivo = primi coach beta + demo che converte): l'IA come **acceleratore di distribuzione** (momento wow nel demo) senza minare la credibilità S&C né i costi. Principio cardine: **l'IA NON calcola** — riceve i KPI già calcolati dal motore deterministico (`generateWeeklyInsight` + `calculateACWR` + readiness + rischio) e li trasforma in un briefing da coach. Fallback: resta l'analisi deterministica.
+- **Backend deployato (via Supabase MCP)**:
+  - Migration `ai_insight_cache`: tabella `ai_insights` (`athlete_id text` FK → `atleti.id`, `iso_week`, `input_hash`, `summary`, `model`, unique `(athlete_id, iso_week)`). RLS allineata alle tabelle esistenti: policy `coach_full_ai_insights` con `is_coach()` (nello schema NON esiste `coach_id`; modello mono-coach). File: `ai_insight_migration.sql`.
+  - Edge function `coach-insight` (ACTIVE, `verify_jwt=true`): chiama Anthropic `claude-haiku-4-5-20251001`, `max_tokens:500`, **prompt caching** (`cache_control: ephemeral`) sul system prompt fisso. System prompt blinda il framing: niente numeri inventati, ACWR = supporto non predizione, output ~120 parole, etichettato bozza. File: `supabase/functions/coach-insight/index.ts`.
+- **Client (v6.95)**: in `_renderInsightCard` (app.js) bottone "✨ Genera briefing IA" + contenitore `#dh-ai-briefing`. Nuove funzioni `generateAiBriefing(athId, force)` / `copyAiBriefing()` / helper `_buildInsightPayload` (payload compatto), `_isoWeek`, `_hashStr`, `_renderAiBriefingBox` (textarea **editabile** "Bozza IA · rivedi prima di usare" + Copia/Rigenera). **On-demand** (mai automatico) + **cache DB** per atleta+settimana via `input_hash` → riaperture senza nuovi dati = costo zero. Bridge in `main.js` (import + `Object.assign(window)`).
+- Controllo costi: Haiku + on-demand + prompt caching + cache DB. Credibilità: numeri solo dal motore, output bozza editabile, framing ACWR onesto.
+- Verifica: `node --check` OK (app/main/sw). Migration `success:true`; edge function `status:ACTIVE`.
+- **BLOCCANTE PRIMA DELL'USO**: impostare il secret `ANTHROPIC_API_KEY` sul progetto Supabase (`supabase secrets set ANTHROPIC_API_KEY=sk-ant-...` oppure dashboard → Edge Functions → Secrets). Senza, la function risponde `missing_api_key` e il client mostra il fallback ("analisi automatica resta valida").
+- **Da fare**: set secret → smoke test coach (genera briefing su atleta demo, cache hit alla riapertura) → commit + push + `vercel --prod`.
+
 **FIX sync fine-allenamento: storico/calendario non si aggiornavano (2026-09-28)**
 - Sintomo (segnalato dal coach): a fine allenamento arriva il **messaggio recap in chat** ma **storico e calendario restano vuoti**.
 - Causa (confermata con probe REST): in `_saveAndSend` (bottom sheet "Fine Allenamento", `workout.js`) e nel handler `ew-skip`, l'oggetto cloud era costruito con `{ ...sessObj, ... }` → portava chiavi **non-colonna** (`athlete`, `session`, `sRPE`, `maxE1rm`, `e1rmDom`, `e1rmNDom`). PostgREST rispondeva **400 PGRST204** "Could not find the 'athlete' column" → upsert su `sessions` fallito (errore solo in `console.error`, **silenziato in produzione**). Il messaggio invece partiva perché usa un oggetto pulito. Stesso bug latente in `saveSess` (aggiunta manuale coach, `app.js`).

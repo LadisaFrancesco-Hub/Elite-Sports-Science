@@ -67,7 +67,8 @@ import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          updateSessionType, addEmom, addAmrap, addTabata,
          calc1RM, calcHRZones, setVO2Tab, calcVO2, calcVDOT, calcPace,
          openTestModal, onTestCategoryChange, onTestNameChange, saveTest,
-         toggleStoCard, loadMoreSto, dismissOnboarding } from './app.js';
+         toggleStoCard, loadMoreSto, dismissOnboarding,
+         generateAiBriefing, copyAiBriefing } from './app.js';
 
 import { uid, openMo, closeMo } from './utils.js';
 import { appState, DB, replaceDB } from './state.js';
@@ -176,6 +177,8 @@ Object.assign(window, {
     calc1RM, calcHRZones, setVO2Tab, calcVO2, calcVDOT, calcPace,
     // Session types + conditioning
     updateSessionType, addEmom, addAmrap, addTabata,
+    // Briefing IA (sintesi settimanale coach)
+    generateAiBriefing, copyAiBriefing,
 });
 
 
