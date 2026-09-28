@@ -21,7 +21,7 @@
 
 import { DB, appState, EXERCISE_LIBRARY, KEY } from './state.js';
 import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus,
-         mesoWeekFromDate, sessionsForWeek } from './utils.js';
+         mesoWeekFromDate, sessionsForWeek, sessionCloudRow } from './utils.js';
 
 
 // ─────────────────────────────────────────────────────────────
@@ -2565,11 +2565,11 @@ export function endWorkout() {
         else { DB.sessions.push(sessObj); }
         window.saveDB();
         if (window.mySupabase) {
-            const cloud = { ...sessObj, athlete_id: athId, session_name: sessName,
-                session_type: 'Palestra', max_e1rm: maxE1rm,
-                e1rm_dom: window.liveE1rmDom||0, e1rm_ndom: window.liveE1rmNDom||0 };
+            const cloud = sessionCloudRow(sessObj);
             window.mySupabase.from('sessions').upsert([cloud])
-                .then(({ error }) => { if (error) console.error('[session upsert]', error); });
+                .then(({ error }) => {
+                    if (error) { console.error('[session upsert]', error); toast('Allenamento salvato in locale — sync cloud non riuscita.'); }
+                });
         }
         window._updateFeedbackBadge?.(athId);
 
@@ -2615,11 +2615,9 @@ export function endWorkout() {
         if (window.mySupabase) {
             const sk = DB.sessions.find(s => s.athlete === athId && s.session === sessName && s.date === today);
             if (sk) {
-                const cloud = { ...sk, athlete_id: athId, session_name: sessName,
-                    session_type: 'Palestra', max_e1rm: sk.maxE1rm||maxE1rm,
-                    e1rm_dom: sk.e1rmDom||0, e1rm_ndom: sk.e1rmNDom||0 };
+                const cloud = sessionCloudRow(sk);
                 window.mySupabase.from('sessions').upsert([cloud])
-                    .then(({ error }) => { if (error) console.error('[session upsert skip]', error); });
+                    .then(({ error }) => { if (error) { console.error('[session upsert skip]', error); toast('Salvato in locale — sync cloud non riuscita.'); } });
             }
         }
         window._updateFeedbackBadge?.(athId);

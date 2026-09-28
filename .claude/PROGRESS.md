@@ -79,6 +79,13 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**FIX sync fine-allenamento: storico/calendario non si aggiornavano (2026-09-28)**
+- Sintomo (segnalato dal coach): a fine allenamento arriva il **messaggio recap in chat** ma **storico e calendario restano vuoti**.
+- Causa (confermata con probe REST): in `_saveAndSend` (bottom sheet "Fine Allenamento", `workout.js`) e nel handler `ew-skip`, l'oggetto cloud era costruito con `{ ...sessObj, ... }` → portava chiavi **non-colonna** (`athlete`, `session`, `sRPE`, `maxE1rm`, `e1rmDom`, `e1rmNDom`). PostgREST rispondeva **400 PGRST204** "Could not find the 'athlete' column" → upsert su `sessions` fallito (errore solo in `console.error`, **silenziato in produzione**). Il messaggio invece partiva perché usa un oggetto pulito. Stesso bug latente in `saveSess` (aggiunta manuale coach, `app.js`).
+- Fix: nuovo helper condiviso **`sessionCloudRow(s)`** in `utils.js` che mappa camelCase→snake_case e include **solo** le colonne reali di `sessions` (`athlete_id, date, session_name, session_type, week, phase, readiness, vol, srpe, rpe, qual, hrv, max_e1rm, e1rm_dom, e1rm_ndom, doms, flag, notes, reply, variations`). Usato nei 3 punti di upsert. Aggiunto **toast visibile** on-error (prima era muto in prod).
+- Verifica: `node --check` OK (utils/workout/app); probe REST con anon key → oggetto "sporco" = **HTTP 400 PGRST204**, oggetto `sessionCloudRow` = **HTTP 201** (righe di test poi eliminate). Nessuno spread residuo verso `sessions`.
+- **Da deployare**: SW bump (v6.94) + commit + push + `vercel --prod` (client-only).
+
 **Fiducia minima — privacy + export dati + rinomina "AI" (2026-09-19)**
 - Privacy policy linkata in-app (login, foot sidebar, footer atleta)
 - Fix wording: "AI Insight" → "Analisi automatica" + sottotitolo trasparenza

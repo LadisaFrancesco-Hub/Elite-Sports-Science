@@ -14,7 +14,7 @@
 
 import { DB, appState, KEY, EXERCISE_LIBRARY, PROGRAM_TEMPLATES, rpeDescs, starDescs } from './state.js';
 import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus, playEntrance,
-         ensureBlocks, mesoWeekFromDate, activeBlock, sessionsForWeek, activeScheduledDays } from './utils.js';
+         ensureBlocks, mesoWeekFromDate, activeBlock, sessionsForWeek, activeScheduledDays, sessionCloudRow } from './utils.js';
 
 // Importazioni circolari risolte: questi moduli importano da state+utils,
 // e app.js li chiama solo dentro funzioni (mai al top-level).
@@ -2905,8 +2905,9 @@ export async function saveSess() {
   await saveDB(); renderStorico(); closeMo('mo-sess'); toast('Sessione salvata!');
   try {
   if (window.mySupabase) {
-  const cloud = { ...sessObj, athlete_id: a, session_name: sn, session_type: 'Palestra', max_e1rm: sessObj.maxE1rm, e1rm_dom: 0, e1rm_ndom: 0 };
-  await window.mySupabase.from('sessions').upsert([cloud]);
+  const cloud = sessionCloudRow(sessObj);
+  const { error } = await window.mySupabase.from('sessions').upsert([cloud]);
+  if (error) { console.error('[saveSess upsert]', error); toast('Salvata in locale — sync cloud non riuscita.'); }
   }
   } catch (e) { console.error(e); }
 }

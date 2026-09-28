@@ -255,3 +255,36 @@ export function activeScheduledDays(sch, week) {
     if (blk && Array.isArray(blk.scheduledDays) && blk.scheduledDays.length) return blk.scheduledDays;
     return (sch && sch.scheduledDays && sch.scheduledDays.length) ? sch.scheduledDays : null;
 }
+
+/**
+ * Converte un oggetto sessione locale (camelCase) in una riga cloud che contiene
+ * SOLO le colonne realmente esistenti nella tabella `sessions`.
+ * Evita il bug PGRST204: uno spread {...sessObj} portava chiavi non-colonna
+ * (athlete, session, sRPE, maxE1rm, e1rmDom, e1rmNDom) → upsert 400 e sessione
+ * mai salvata (storico/calendario non aggiornati) mentre il messaggio in chat sì.
+ */
+export function sessionCloudRow(s) {
+    return {
+        id:           s.id,
+        athlete_id:   s.athlete,
+        date:         s.date,
+        session_name: s.session,
+        session_type: s.sessionType || 'Palestra',
+        week:         s.week,
+        phase:        s.phase,
+        readiness:    s.readiness,
+        vol:          s.vol,
+        srpe:         s.sRPE,
+        rpe:          s.rpe,
+        qual:         s.qual,
+        hrv:          s.hrv || 0,
+        max_e1rm:     s.maxE1rm  || 0,
+        e1rm_dom:     s.e1rmDom  || 0,
+        e1rm_ndom:    s.e1rmNDom || 0,
+        doms:         s.doms  || '',
+        flag:         s.flag  || '',
+        notes:        s.notes || '',
+        reply:        s.reply || '',
+        variations:   s.variations || ''
+    };
+}
