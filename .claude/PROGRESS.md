@@ -79,6 +79,14 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**FIX "Annota" non apriva l'editor — `_anRate` typo (2026-09-29)**
+- **Sintomo (coach)**: premere ✏️ Annota su un video in chat non apriva nulla ("il bottone non fa niente").
+- **Causa**: in `_anOpen` (app.js) la chiamata era a **`_anRate(1)`** (helper interno **inesistente**) invece di **`annotRate(1)`** (la funzione esiste solo come export). `_anRate(1)` è **prima** di `openMo('mo-annot')` → `ReferenceError` → il modal non veniva mai aperto. `node --check` e i test logici NON l'hanno preso perché è una reference a runtime dentro `_anOpen`, mai eseguita nei test puri.
+- **Diagnosi (Playwright, guidando `openAnnotator` con `mySupabase` stubbato + `window.appState.selAthId`)**: `THROW: _anRate is not defined`. Post-fix: modal = classe `"mo show"`, `display:flex`, video src impostato, toolbar visibile.
+- **Fix**: `_anRate(1)` → `annotRate(1)` in `_anOpen`.
+- **DEPLOYATO**: **v7.01** (SW + `APP_ASSET_VERSION` in sync), commit `2c6744f` + push + `vercel --prod` (coach-gstv104z0). Verificato sul live: asset v7.01, `openAnnotator` apre il modal, 0 errori.
+- **Lezione/processo**: la verifica pre-deploy della v2 era solo `node --check` + test logici puri; il flusso reale (aprire l'editor) non era stato guidato in un browser → il typo runtime è passato. Per feature con molta UI, guidare almeno un happy-path in Playwright prima del deploy.
+
 **FIX splash infinito dopo login — regressione del loader import-map (2026-09-29)**
 - **Sintomo (coach, sul telefono)**: dopo aver inserito la password, l'app resta sullo splash "Elite Sports Science" e non entra mai (schermata di caricamento infinita).
 - **Causa-radice**: il loader import-map (fix precedente) inietta l'entry module **dinamicamente** (`document.head.appendChild`). Uno `<script type="module">` **statico** è *deferred* (esegue prima di `DOMContentLoaded`), ma uno **iniettato** è *async* → su rete lenta esegue **dopo** che `DOMContentLoaded` è già scattato → `document.addEventListener('DOMContentLoaded', bootstrap)` registra un handler per un evento **già passato** → **il bootstrap non parte mai** → lo splash (nascosto solo nel `finally` del bootstrap) resta infinito. Aggravante: `auth.js` fa `location.reload()` su `controllerchange` (auto-reload quando un nuovo SW prende il controllo) → ogni update SW colpiva la race.
