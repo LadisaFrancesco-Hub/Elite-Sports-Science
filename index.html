@@ -1757,6 +1757,24 @@
   if (window._deferredInstallPrompt) show();   // evento già scattato prima di questo script
 })();
 </script>
-<script type="module" src="main.js"></script>
+<!-- Bootstrap moduli versionati: aggiornamenti ATOMICI (mai mix vecchio/nuovo tra deploy).
+     Un import map (generato da un'unica costante) versiona ogni import a catena.
+     ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
+<script>
+(function () {
+  var V = '6.99'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
+  var imports = {};
+  MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });
+  var im = document.createElement('script');
+  im.type = 'importmap';
+  im.textContent = JSON.stringify({ imports: imports });
+  document.head.appendChild(im);           // deve precedere qualunque modulo
+  var entry = document.createElement('script');
+  entry.type = 'module';
+  entry.src = './main.js?v=' + V;
+  document.head.appendChild(entry);
+}());
+</script>
 </body>
 </html>
