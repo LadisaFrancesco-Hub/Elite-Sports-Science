@@ -15,7 +15,9 @@
 import { DB, appState, KEY, EXERCISE_LIBRARY, PROGRAM_TEMPLATES, rpeDescs, starDescs } from './state.js';
 import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus, playEntrance,
          ensureBlocks, mesoWeekFromDate, activeBlock, sessionsForWeek, activeScheduledDays, sessionCloudRow,
-         uploadFormCheckVideo, hydrateMediaBubbles, mediaBubbleHtml } from './utils.js';
+         uploadFormCheckVideo, hydrateMediaBubbles, mediaBubbleHtml,
+         signFormCheckUrl, hasAnnotations, videoContentRect, drawAnnotationShapes,
+         activeMomentShapes, annotationMoments } from './utils.js';
 
 // Importazioni circolari risolte: questi moduli importano da state+utils,
 // e app.js li chiama solo dentro funzioni (mai al top-level).
@@ -5733,9 +5735,7 @@ export function renderMessaggi() {
   thread.innerHTML = msgs.map(m => {
   const isCoach = m.from_type === 'coach';
   const time = m.created_at ? new Date(m.created_at).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
-  const body = (m.media_type === 'video' && m.media_url)
-  ? mediaBubbleHtml(m.media_url, m.content, isCoach)
-  : escHtml(m.content);
+  const body = _chatBody(m, isCoach, 'coach');
   return `<div style="display:flex;flex-direction:column;align-items:${isCoach ? 'flex-end' : 'flex-start'};margin-bottom:10px">
   <div style="max-width:78%;padding:10px 14px;border-radius:${isCoach ? '14px 14px 4px 14px' : '14px 14px 14px 4px'};background:${isCoach ? 'var(--teal)' : 'rgba(139,92,246,0.15)'};color:${isCoach ? '#000' : 'var(--text)'};font-size:13px;line-height:1.5;word-break:break-word">${body}</div>
   <div style="font-size:10px;color:var(--muted);margin-top:3px;padding:0 4px">${time}</div>
@@ -5797,9 +5797,7 @@ export function renderAthleteChat() {
   thread.innerHTML = msgs.map(m => {
   const isAth = m.from_type === 'athlete';
   const time = m.created_at ? new Date(m.created_at).toLocaleString('it-IT', { day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit' }) : '';
-  const body = (m.media_type === 'video' && m.media_url)
-  ? mediaBubbleHtml(m.media_url, m.content, isAth)
-  : escHtml(m.content);
+  const body = _chatBody(m, isAth, 'athlete');
   return `<div style="display:flex;flex-direction:column;align-items:${isAth ? 'flex-end' : 'flex-start'};margin-bottom:10px">
   <div class="ax-bubble ${isAth ? 'is-me' : 'is-coach'}">${body}</div>
   <div class="ax-time">${time}</div>
@@ -5884,6 +5882,325 @@ export async function onFormCheckPick(side, inputEl) {
     toast(e.message || 'Upload fallito.', { type: 'error', duration: 4000 });
   } finally {
     inputEl.value = '';
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
+// ANNOTAZIONI VIDEO (form-check v2) — overlay vettoriale + timestamp
+// Coach: openAnnotator(path) → disegna → saveAnnotations() (nuovo msg,
+// stesso file). Chiunque: openAnnotationReview(msgId) → sola lettura.
+// ─────────────────────────────────────────────────────────────
+const _AN_COLORS = ['#ff3b30', '#ffd60a', '#34c759', '#0a84ff', '#ffffff'];
+let _an = null;
+let _anOnResize = null;
+
+// Body di una bolla chat (testo / video / correzione annotata). side = 'coach'|'athlete'.
+function _chatBody(m, isMine, side) {
+  const isVideo = m.media_type === 'video' && m.media_url;
+  if (isVideo && hasAnnotations(m)) return _annotationReviewCard(m, isMine);
+  if (isVideo) {
+    let html = mediaBubbleHtml(m.media_url, m.content, isMine);
+    if (side === 'coach') {
+      html += `<button class="btn btn-g btn-sm" style="margin-top:6px" onclick="openAnnotator('${escHtml(m.media_url)}')">✏️ Annota</button>`;
+    }
+    return html;
+  }
+  return escHtml(m.content);
+}
+
+function _annotationReviewCard(m, isMine) {
+  const moments = annotationMoments(m.annotations.shapes).length;
+  const col = isMine ? '#000' : 'var(--text)';
+  return `<div onclick="openAnnotationReview('${escHtml(m.id)}')" style="cursor:pointer;display:flex;align-items:center;gap:10px;min-width:210px">
+    <div style="width:44px;height:44px;border-radius:10px;background:rgba(20,184,166,.20);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0">📝</div>
+    <div style="min-width:0">
+      <div style="font-weight:800;font-size:12.5px;color:${col}">Correzione video</div>
+      <div style="font-size:11px;opacity:.82;color:${col}">${moments} ${moments === 1 ? 'momento' : 'momenti'} · tocca per rivedere ▶</div>
+    </div>
+  </div>`;
+}
+
+function _findMsg(id) {
+  if (!DB.messages || !id) return null;
+  for (const k in DB.messages) { const m = DB.messages[k].find(x => x.id === id); if (m) return m; }
+  return null;
+}
+
+export async function openAnnotator(path) {
+  const athId = appState.selAthId;
+  if (!athId) { toast('Seleziona un atleta.', { type: 'error' }); return; }
+  if (!path) return;
+  toast('Apertura video…', { duration: 30000 });
+  const url = await signFormCheckUrl(path);
+  toast('', { duration: 1 });
+  if (!url) { toast('Video non disponibile.', { type: 'error' }); return; }
+  _anOpen({ readonly: false, path, athId, url, shapes: [], title: 'Annota video' });
+}
+
+export async function openAnnotationReview(id) {
+  const m = _findMsg(id);
+  if (!m || !m.media_url) { toast('Correzione non disponibile.', { type: 'error' }); return; }
+  const url = await signFormCheckUrl(m.media_url);
+  if (!url) { toast('Video non più disponibile.', { type: 'error' }); return; }
+  const shapes = (m.annotations && Array.isArray(m.annotations.shapes)) ? m.annotations.shapes.slice() : [];
+  _anOpen({ readonly: true, path: m.media_url, athId: m.athlete_id, url, shapes, title: 'Correzione del coach' });
+}
+
+function _anOpen(opts) {
+  const video = document.getElementById('an-video');
+  const canvas = document.getElementById('an-canvas');
+  if (!video || !canvas) return;
+  _an = {
+    readonly: !!opts.readonly, path: opts.path, athId: opts.athId,
+    video, canvas, ctx: canvas.getContext('2d'),
+    shapes: opts.shapes || [], tool: 'pen', color: _AN_COLORS[0],
+    drawing: false, cur: null, dpr: window.devicePixelRatio || 1, prevT: 0, pausedMoment: null
+  };
+  document.getElementById('an-title').textContent = opts.title;
+  // Toggle authoring vs review
+  const tools = document.getElementById('an-tools');
+  const saveBtn = document.getElementById('an-save');
+  const cancelBtn = document.getElementById('an-cancel');
+  if (tools) tools.style.display = _an.readonly ? 'none' : '';
+  if (saveBtn) saveBtn.style.display = _an.readonly ? 'none' : '';
+  if (cancelBtn) cancelBtn.textContent = _an.readonly ? 'Chiudi' : 'Annulla';
+  _anRenderColors();
+  _anTool('pen');
+  _anRate(1);
+  document.getElementById('an-continue').style.display = 'none';
+
+  video.src = opts.url;
+  video.playbackRate = 1;
+  video.currentTime = 0;
+
+  // Listeners
+  video.onloadedmetadata = () => { _anResize(); _anUpdateTime(); _anRedraw(); };
+  video.onseeked = () => { _an && (_an.pausedMoment = null); _anRedraw(); };
+  video.ontimeupdate = _anOnTimeUpdate;
+  video.onplay = () => { const b = document.getElementById('an-playbtn'); if (b) b.textContent = '❚❚'; document.getElementById('an-continue').style.display = 'none'; };
+  video.onpause = () => { const b = document.getElementById('an-playbtn'); if (b) b.textContent = '▶'; };
+
+  canvas.onpointerdown = _anPointerDown;
+  canvas.onpointermove = _anPointerMove;
+  canvas.onpointerup = _anPointerUp;
+  canvas.onpointercancel = _anPointerUp;
+
+  _anOnResize = () => { _anResize(); _anRedraw(); };
+  window.addEventListener('resize', _anOnResize);
+
+  openMo('mo-annot');
+  _anUpdateCount();
+  setTimeout(() => { _anResize(); _anRedraw(); }, 60);
+}
+
+export function closeAnnotator() {
+  if (_anOnResize) { window.removeEventListener('resize', _anOnResize); _anOnResize = null; }
+  const v = document.getElementById('an-video');
+  if (v) { try { v.pause(); } catch (e) {} v.onloadedmetadata = v.onseeked = v.ontimeupdate = v.onplay = v.onpause = null; v.removeAttribute('src'); v.load(); }
+  const c = document.getElementById('an-canvas');
+  if (c) { c.onpointerdown = c.onpointermove = c.onpointerup = c.onpointercancel = null; }
+  closeMo('mo-annot');
+  _an = null;
+}
+
+function _anResize() {
+  if (!_an) return;
+  const { canvas, ctx, dpr } = _an;
+  const w = canvas.clientWidth, h = canvas.clientHeight;
+  canvas.width = Math.round(w * dpr);
+  canvas.height = Math.round(h * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+}
+
+function _anRedraw() {
+  if (!_an) return;
+  const { ctx, canvas, video } = _an;
+  ctx.clearRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+  const rect = videoContentRect(video);
+  const shapes = activeMomentShapes(_an.shapes, video.currentTime || 0);
+  drawAnnotationShapes(ctx, shapes, rect);
+  if (_an.cur) drawAnnotationShapes(ctx, [_an.cur], rect);
+}
+
+function _fmtT(s) {
+  s = Math.max(0, s || 0);
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2, '0')}`;
+}
+
+function _anUpdateTime() {
+  if (!_an) return;
+  const { video } = _an;
+  const dur = video.duration || 0;
+  const lbl = document.getElementById('an-time');
+  if (lbl) lbl.textContent = `${_fmtT(video.currentTime)} / ${_fmtT(dur)}`;
+  const seek = document.getElementById('an-seek');
+  if (seek && dur) seek.value = String(Math.round((video.currentTime / dur) * 1000));
+  _anRenderMarkers();
+}
+
+function _anRenderMarkers() {
+  const box = document.getElementById('an-markers');
+  if (!box || !_an) return;
+  const dur = _an.video.duration || 0;
+  if (!dur) { box.innerHTML = ''; return; }
+  box.innerHTML = annotationMoments(_an.shapes).map(mo => {
+    const pct = Math.min(100, Math.max(0, (mo.t / dur) * 100));
+    return `<span style="position:absolute;top:2px;left:${pct}%;transform:translateX(-50%);width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 0 1.5px #000"></span>`;
+  }).join('');
+}
+
+function _anOnTimeUpdate() {
+  if (!_an) return;
+  _anUpdateTime();
+  if (_an.readonly && !_an.video.paused) {
+    const cur = _an.video.currentTime;
+    const moments = annotationMoments(_an.shapes);
+    for (const mo of moments) {
+      if (_an.prevT < mo.t && mo.t <= cur && _an.pausedMoment !== mo.t) {
+        _an.video.pause();
+        _an.pausedMoment = mo.t;
+        _an.video.currentTime = mo.t;
+        document.getElementById('an-continue').style.display = 'flex';
+        break;
+      }
+    }
+    _an.prevT = cur;
+  } else {
+    _an.prevT = _an.video.currentTime;
+    if (!_an.readonly) _anRedraw();
+  }
+}
+
+// ── coordinate: punto evento → normalizzato 0..1 sul content-rect ──
+function _anNorm(e) {
+  const { canvas, video } = _an;
+  const b = canvas.getBoundingClientRect();
+  const rect = videoContentRect(video);
+  if (!rect.w || !rect.h) return null;
+  const nx = ((e.clientX - b.left) - rect.x) / rect.w;
+  const ny = ((e.clientY - b.top) - rect.y) / rect.h;
+  return [Math.min(1, Math.max(0, nx)), Math.min(1, Math.max(0, ny))];
+}
+
+function _anPointerDown(e) {
+  if (!_an) return;
+  if (_an.readonly) { annotPlayPause(); return; }
+  const pt = _anNorm(e);
+  if (!pt) return;
+  try { _an.video.pause(); } catch (err) {}
+  const t = Math.round((_an.video.currentTime || 0) * 1000) / 1000;
+  if (_an.tool === 'text') {
+    const txt = (prompt('Etichetta:') || '').trim();
+    if (!txt) return;
+    _an.shapes.push({ id: uid(), t, type: 'text', color: _an.color, x: pt[0], y: pt[1], text: txt.slice(0, 60) });
+    _anRedraw(); _anUpdateCount(); _anRenderMarkers();
+    return;
+  }
+  // penna
+  _an.drawing = true;
+  _an.cur = { id: uid(), t, type: 'pen', color: _an.color, w: 0.006, pts: [pt] };
+  _an.canvas.setPointerCapture && _an.canvas.setPointerCapture(e.pointerId);
+}
+
+function _anPointerMove(e) {
+  if (!_an || !_an.drawing || !_an.cur) return;
+  const pt = _anNorm(e);
+  if (!pt) return;
+  _an.cur.pts.push(pt);
+  _anRedraw();
+}
+
+function _anPointerUp(e) {
+  if (!_an || !_an.drawing) return;
+  _an.drawing = false;
+  if (_an.cur && _an.cur.pts.length) { _an.shapes.push(_an.cur); }
+  _an.cur = null;
+  _anRedraw(); _anUpdateCount(); _anRenderMarkers();
+}
+
+// ── transport ──
+export function annotPlayPause() { if (!_an) return; const v = _an.video; if (v.paused) v.play().catch(() => {}); else v.pause(); }
+export function annotFrame(dir) { if (!_an) return; const v = _an.video; try { v.pause(); } catch (e) {} v.currentTime = Math.min(v.duration || 0, Math.max(0, (v.currentTime || 0) + dir * (1 / 30))); }
+export function annotSeek(val) { if (!_an) return; const v = _an.video; const dur = v.duration || 0; if (dur) { v.currentTime = (Number(val) / 1000) * dur; _an.pausedMoment = null; } }
+export function annotRate(r) {
+  if (_an) _an.video.playbackRate = r;
+  document.querySelectorAll('#mo-annot .an-rate').forEach(b => {
+    const on = Math.abs(Number(b.dataset.rate) - r) < 1e-6;
+    b.style.borderColor = on ? 'var(--teal)' : '';
+    b.style.color = on ? 'var(--teal)' : '';
+  });
+}
+export function annotResume() { if (!_an) return; document.getElementById('an-continue').style.display = 'none'; _an.video.play().catch(() => {}); }
+
+// ── strumenti authoring ──
+export function annotTool(t) { _anTool(t); }
+function _anTool(t) {
+  if (_an) _an.tool = t;
+  document.querySelectorAll('#mo-annot .an-tool').forEach(b => {
+    const on = b.dataset.tool === t;
+    b.style.borderColor = on ? 'var(--teal)' : '';
+    b.style.color = on ? 'var(--teal)' : '';
+  });
+}
+export function annotColor(c) {
+  if (_an) _an.color = c;
+  _anRenderColors();
+}
+function _anRenderColors() {
+  const box = document.getElementById('an-colors');
+  if (!box) return;
+  const cur = _an ? _an.color : _AN_COLORS[0];
+  box.innerHTML = _AN_COLORS.map(c => {
+    const on = c === cur;
+    return `<span onclick="annotColor('${c}')" title="${c}" style="width:20px;height:20px;border-radius:50%;background:${c};cursor:pointer;box-shadow:0 0 0 ${on ? '2px var(--text)' : '1px rgba(255,255,255,.25)'}"></span>`;
+  }).join('');
+}
+export function annotUndo() {
+  if (!_an || _an.readonly || !_an.shapes.length) return;
+  _an.shapes.pop();
+  _anRedraw(); _anUpdateCount(); _anRenderMarkers();
+}
+export function annotClearMoment() {
+  if (!_an || _an.readonly) return;
+  const active = activeMomentShapes(_an.shapes, _an.video.currentTime || 0);
+  if (!active.length) { toast('Nessun disegno in questo momento.'); return; }
+  const ids = new Set(active.map(s => s.id));
+  _an.shapes = _an.shapes.filter(s => !ids.has(s.id));
+  _anRedraw(); _anUpdateCount(); _anRenderMarkers();
+}
+function _anUpdateCount() {
+  const el = document.getElementById('an-count');
+  if (!el || !_an) return;
+  if (_an.readonly) { el.textContent = ''; return; }
+  const n = _an.shapes.length, mo = annotationMoments(_an.shapes).length;
+  el.textContent = n ? `${n} ${n === 1 ? 'annotazione' : 'annotazioni'} · ${mo} ${mo === 1 ? 'momento' : 'momenti'}` : 'Nessuna annotazione';
+}
+
+export async function saveAnnotations() {
+  if (!_an || _an.readonly) return;
+  if (!_an.shapes.length) { toast('Aggiungi almeno un\'annotazione.', { type: 'error' }); return; }
+  const athId = _an.athId, path = _an.path;
+  const annotations = { v: 1, shapes: _an.shapes };
+  const row = { athlete_id: athId, from_type: 'coach', content: '📝 Video corretto', media_url: path, media_type: 'video', annotations, read_at: new Date().toISOString() };
+  const msg = { ...row, created_at: new Date().toISOString() };
+  const saveBtn = document.getElementById('an-save');
+  if (saveBtn) saveBtn.disabled = true;
+  try {
+    if (window.mySupabase) {
+      const { data, error } = await window.mySupabase.from('messages').insert([row]).select().single();
+      if (error) { toast('Errore invio: ' + error.message, { type: 'error' }); return; }
+      if (data) { msg.id = data.id; msg.created_at = data.created_at; }
+    }
+    if (!DB.messages) DB.messages = {};
+    if (!DB.messages[athId]) DB.messages[athId] = [];
+    DB.messages[athId].push(msg);
+    renderMessaggi();
+    _sendPushNotification('athlete', athId, ' Correzione video', 'Il coach ha corretto il tuo video', 'coach-reply');
+    toast('Correzione inviata', { type: 'success' });
+    closeAnnotator();
+  } finally {
+    if (saveBtn) saveBtn.disabled = false;
   }
 }
 

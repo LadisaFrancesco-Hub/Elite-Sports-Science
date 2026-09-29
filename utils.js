@@ -110,6 +110,89 @@ export function mediaBubbleHtml(path, caption, isMine) {
         style="max-width:100%;width:220px;border-radius:10px;background:#000;display:block"></video>${cap}`;
 }
 
+// ─────────────────────────────────────────────────────────────
+// FORM-CHECK ANNOTAZIONI (overlay vettoriale sincronizzato ai timestamp)
+// Un'annotazione = { v:1, shapes:[ {id,t,type,color,...} ] } salvata in
+// messages.annotations. shape.t = secondi nel video; coord normalizzate 0..1
+// sul content-rect del frame (così l'allineamento regge su schermi diversi).
+// type 'pen' → { pts:[[x,y],...], w }; type 'text' → { x, y, text }.
+// ─────────────────────────────────────────────────────────────
+
+export function hasAnnotations(msg) {
+    return !!(msg && msg.annotations && Array.isArray(msg.annotations.shapes) && msg.annotations.shapes.length);
+}
+
+// Rettangolo reale del frame dentro l'elemento <video> (letterbox object-fit:contain),
+// in px relativi all'elemento. Senza dimensioni intrinseche → usa l'intero box.
+export function videoContentRect(videoEl) {
+    if (!videoEl) return { x: 0, y: 0, w: 0, h: 0 };
+    const bw = videoEl.clientWidth, bh = videoEl.clientHeight;
+    const vw = videoEl.videoWidth, vh = videoEl.videoHeight;
+    if (!vw || !vh || !bw || !bh) return { x: 0, y: 0, w: bw, h: bh };
+    const scale = Math.min(bw / vw, bh / vh);
+    const w = vw * scale, h = vh * scale;
+    return { x: (bw - w) / 2, y: (bh - h) / 2, w, h };
+}
+
+const _snapT = (t) => Math.round((t || 0) * 1000) / 1000;
+
+// Shapes del momento attivo a t: il momento "vive" dal suo timestamp fino a quello
+// del momento successivo. Prima del primo momento → [].
+export function activeMomentShapes(shapes, t) {
+    if (!Array.isArray(shapes) || !shapes.length) return [];
+    const moments = [...new Set(shapes.map(s => _snapT(s.t)))].sort((a, b) => a - b);
+    let active = null;
+    for (const m of moments) { if (m <= t + 1e-3) active = m; else break; }
+    if (active === null) return [];
+    return shapes.filter(s => _snapT(s.t) === active);
+}
+
+// Momenti distinti ordinati con conteggio shapes (per lista + markers scrubber).
+export function annotationMoments(shapes) {
+    if (!Array.isArray(shapes) || !shapes.length) return [];
+    const map = new Map();
+    for (const s of shapes) { const t = _snapT(s.t); map.set(t, (map.get(t) || 0) + 1); }
+    return [...map.entries()].map(([t, count]) => ({ t, count })).sort((a, b) => a.t - b.t);
+}
+
+// Disegna gli shapes sul contesto 2D. rect = content-rect (px); coord shape 0..1.
+export function drawAnnotationShapes(ctx, shapes, rect) {
+    if (!ctx || !Array.isArray(shapes) || !rect || !rect.w || !rect.h) return;
+    const { x, y, w, h } = rect;
+    const px = (nx) => x + nx * w, py = (ny) => y + ny * h;
+    for (const s of shapes) {
+        ctx.save();
+        ctx.strokeStyle = s.color || '#ff3b30';
+        ctx.fillStyle = s.color || '#ff3b30';
+        ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+        if (s.type === 'pen' && Array.isArray(s.pts) && s.pts.length) {
+            ctx.lineWidth = Math.max(2, (s.w || 0.006) * w);
+            if (s.pts.length === 1) {
+                ctx.beginPath();
+                ctx.arc(px(s.pts[0][0]), py(s.pts[0][1]), ctx.lineWidth / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                ctx.beginPath();
+                ctx.moveTo(px(s.pts[0][0]), py(s.pts[0][1]));
+                for (let i = 1; i < s.pts.length; i++) ctx.lineTo(px(s.pts[i][0]), py(s.pts[i][1]));
+                ctx.stroke();
+            }
+        } else if (s.type === 'text' && s.text) {
+            const fs = Math.max(13, 0.04 * h);
+            ctx.font = `700 ${fs}px Inter, system-ui, sans-serif`;
+            ctx.textBaseline = 'top';
+            const tx = px(s.x || 0), ty = py(s.y || 0);
+            const mw = ctx.measureText(s.text).width;
+            const padX = fs * 0.4, padY = fs * 0.25;
+            ctx.fillStyle = 'rgba(0,0,0,0.55)';
+            ctx.fillRect(tx - padX, ty - padY, mw + padX * 2, fs + padY * 2);
+            ctx.fillStyle = s.color || '#ffd60a';
+            ctx.fillText(s.text, tx, ty);
+        }
+        ctx.restore();
+    }
+}
+
 export function updateCloudStatus(statusKey) {
     const dot = document.getElementById('save-dot');
     const txt = document.getElementById('save-txt');

@@ -1665,6 +1665,65 @@
   </div>
 </div>
 
+<!-- ── Modale Annotazione Video (form-check v2) ─────────── -->
+<div class="mo" id="mo-annot">
+  <div class="mo-box" style="max-width:640px;padding:0;overflow:hidden;background:#0b0d10;display:flex;flex-direction:column;max-height:96vh">
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;background:var(--s2);border-bottom:1px solid var(--border);flex-shrink:0">
+    <span id="an-title" style="font-size:13px;font-weight:700;color:var(--text)">Annota video</span>
+    <button class="mo-x" onclick="closeAnnotator()">✕</button>
+  </div>
+
+  <div id="an-stage" style="position:relative;width:100%;height:min(50vh,440px);min-height:170px;background:#000;overflow:hidden;flex-shrink:0">
+    <video id="an-video" playsinline preload="auto" style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video>
+    <canvas id="an-canvas" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none"></canvas>
+    <div id="an-continue" style="display:none;position:absolute;bottom:12px;left:0;right:0;justify-content:center;gap:8px;z-index:5">
+      <button class="btn btn-p btn-sm" onclick="annotResume()">▶ Continua</button>
+    </div>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;flex-shrink:0">
+    <button class="btn btn-g btn-sm" id="an-playbtn" onclick="annotPlayPause()" title="Play/Pausa" style="min-width:36px">▶</button>
+    <button class="btn btn-g btn-sm" onclick="annotFrame(-1)" title="Fotogramma indietro" style="min-width:36px">⏮</button>
+    <button class="btn btn-g btn-sm" onclick="annotFrame(1)" title="Fotogramma avanti" style="min-width:36px">⏭</button>
+    <div style="flex:1;position:relative">
+      <input type="range" id="an-seek" min="0" max="1000" value="0" step="1" oninput="annotSeek(this.value)" style="width:100%;accent-color:var(--teal)">
+      <div id="an-markers" style="position:absolute;left:0;right:0;top:-2px;height:100%;pointer-events:none"></div>
+    </div>
+    <span id="an-time" style="font-size:11px;color:var(--muted);font-family:var(--fmono);min-width:82px;text-align:right">0:00 / 0:00</span>
+  </div>
+
+  <div style="display:flex;align-items:center;gap:6px;padding:0 12px 8px;flex-shrink:0">
+    <span style="font-size:10px;color:var(--muted);font-family:var(--fmono)">VELOCITÀ</span>
+    <button class="btn btn-g btn-sm an-rate" data-rate="1" onclick="annotRate(1)">1×</button>
+    <button class="btn btn-g btn-sm an-rate" data-rate="0.5" onclick="annotRate(0.5)">0.5×</button>
+    <button class="btn btn-g btn-sm an-rate" data-rate="0.25" onclick="annotRate(0.25)">0.25×</button>
+  </div>
+
+  <div id="an-tools" style="border-top:1px solid var(--border);padding:8px 12px;flex-shrink:0">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-g btn-sm an-tool" data-tool="pen" onclick="annotTool('pen')">✏️ Penna</button>
+      <button class="btn btn-g btn-sm an-tool" data-tool="text" onclick="annotTool('text')">🅣 Testo</button>
+      <span style="width:1px;height:20px;background:var(--border)"></span>
+      <span id="an-colors" style="display:flex;gap:5px"></span>
+      <span style="flex:1"></span>
+      <button class="btn btn-g btn-sm" onclick="annotUndo()" title="Annulla ultimo tratto">↶</button>
+      <button class="btn btn-d btn-sm" onclick="annotClearMoment()" title="Cancella i disegni di questo fotogramma">Pulisci</button>
+    </div>
+    <div style="font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.4">
+      Metti in pausa sul fotogramma da correggere, poi disegna o tocca per un'etichetta. Ogni pausa annotata = un momento.
+    </div>
+  </div>
+
+  <div id="an-foot" style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:10px 12px;border-top:1px solid var(--border);flex-shrink:0">
+    <span id="an-count" style="font-size:11px;color:var(--muted);font-family:var(--fmono)"></span>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-g" id="an-cancel" onclick="closeAnnotator()">Annulla</button>
+      <button class="btn btn-p" id="an-save" onclick="saveAnnotations()">Invia correzione</button>
+    </div>
+  </div>
+  </div>
+</div>
+
 <!-- ── Banner installa PWA (Android/desktop, via beforeinstallprompt) ── -->
 <div id="pwa-install-banner" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:calc(74px + env(safe-area-inset-bottom));z-index:9998;max-width:360px;width:calc(100% - 28px);background:linear-gradient(145deg,#161A20,#12161B);border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.5);padding:11px 13px;align-items:center;gap:11px">
   <div style="width:34px;height:34px;border-radius:8px;background:linear-gradient(145deg,oklch(0.72 0.16 52),oklch(0.56 0.15 40));display:flex;align-items:center;justify-content:center;font:600 13px/1 'IBM Plex Mono',monospace;color:#120A04;flex-shrink:0">ES</div>

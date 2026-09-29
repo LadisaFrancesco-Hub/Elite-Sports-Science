@@ -79,6 +79,22 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**Video form-check con annotazioni — v2 (2026-09-29)**
+- Contesto/strategia: dal confronto competitivo, il gap #1 vs mercato NON era analytics (lì vinciamo) ma le *table-stake del coaching a distanza*. La v1 dava l'upload atleta→coach; la killer feature di TrueCoach/CoachRx è che il coach **disegni sopra il video** per correggere la tecnica. Questa v2 la aggiunge.
+- **Scope deciso con l'utente**: strumenti = **penna libera + testo** (niente linea/freccia/angolo per ora); **solo coach** annota; **voice-over rimandato** a v2.1.
+- **Architettura (scelta chiave)**: annotazioni come **overlay vettoriale sincronizzato ai timestamp**, NON video ri-codificato. Niente `ffmpeg.wasm` (pesante/lento su mobile), file invariati, editabile, riusa la playback con URL firmato della v1. **Zero costo Storage aggiuntivo.**
+- **Modello di consegna**: l'annotazione è un **nuovo messaggio del coach che riusa lo stesso `media_url` (path)** del video dell'atleta (nessun secondo upload) + nuova colonna `annotations` (JSONB). Verificato che passa dal realtime esistente (`_onMessageChange`, `auth.js`, `event:'*'`, upsert by id + re-render → arriva live all'atleta con badge non-letto + push) e che la retention (`cleanup-form-checks`, `.in('media_url', chunk)`) pulisce coerentemente entrambi i messaggi che condividono il path.
+- **Struttura JSON**: `{ v:1, shapes:[ {id,t,type:'pen',color,w,pts:[[x,y]…]} | {id,t,type:'text',color,x,y,text} ] }`. Coord **normalizzate 0..1 sul content-rect** del frame (letterbox `contain`) → allineamento regge su schermi/aspetti diversi. "Momento" = timestamp distinto; vive dal suo `t` al `t` successivo.
+- **Backend (via Supabase MCP, migration `form_check_annotations`)**: `ALTER TABLE messages ADD COLUMN annotations jsonb` (nullable, retro-compatibile). RLS invariata (`USING(true)`). `success:true`.
+- **Client (v6.98)**:
+  - `utils.js` — helper puri condivisi: `hasAnnotations`, `videoContentRect` (letterbox), `activeMomentShapes`, `annotationMoments`, `drawAnnotationShapes` (penna→polilinea/dot, testo→label con sfondo).
+  - `app.js` — motore annotator: `openAnnotator(path)` (coach authoring), `openAnnotationReview(id)` (sola lettura, atleta+coach), `saveAnnotations` (insert nuovo msg, push, re-render), transport (`annotPlayPause/annotFrame` ±1/30s/`annotSeek`/`annotRate` 1×·0.5×·0.25×/`annotResume`), strumenti (`annotTool/annotColor/annotUndo/annotClearMoment`), pointer events → penna/testo, redraw su `timeupdate/seeked/resize`, auto-pausa ai momenti in review + "▶ Continua", markers sullo scrubber. Bolle chat: bottone **"✏️ Annota"** sui video (chat coach) + card **"📝 Correzione video"** per i messaggi con annotazioni (entrambe le chat). Canvas separato dal video → **nessun taint CORS** (non si legge il pixel del video).
+  - `index.html` — modal unico **`mo-annot`** (authoring + review via toggle `an-tools`/`an-save`): stage video+canvas sovrapposti, transport, velocità, toolbar, momenti, Salva/Annulla.
+  - `main.js` — bridge (13 funzioni su window). `sw.js` — bump **v6.98**.
+- Verifica: `node --check` OK (utils/app/main/sw); **test logica 15/15** (hasAnnotations, videoContentRect landscape/portrait/no-meta, activeMomentShapes confini+carry-over, annotationMoments, drawAnnotationShapes mappatura coord + no-throw su testo con `<b>`); cross-check handler↔export↔bridge (13/13, 0 typo).
+- **DA FARE**: smoke test reale (coach annota video atleta → atleta rivede correzione ai timestamp giusti) → commit + push + `vercel --prod` + aggiornare questo file. Client-only + 1 migration già applicata.
+- **Follow-up esclusi da v2**: voice-over (v2.1), linea/freccia/angolo, editing di un'annotazione esistente (ora ogni annotazione = nuovo messaggio), side-by-side di due video.
+
 **Video form-check coach↔atleta — v1 (2026-09-29)**
 - Contesto/strategia: analisi competitiva (TrueCoach, Everfit, TrainHeroic, CoachRx, Trainerize) → la lacuna vera vs mercato non era analytics ma una *table-stake del coaching a distanza*: **il video form-check** (l'atleta filma l'alzata, il coach la rivede). È LA killer feature di TrueCoach. Prima l'app aveva video **solo coach→atleta** come demo (link YouTube in iframe), zero upload dall'atleta.
 - **Ostacolo nascosto**: l'app **non usava Supabase Storage** da nessuna parte (tutti i "video" erano embed YouTube). v1 = prima infra Storage.

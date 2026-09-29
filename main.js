@@ -60,6 +60,9 @@ import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          exportProgramPDF,
          renderMessaggi, sendMessageCoach,
          renderAthleteChat, sendMessageAthleta, updateMsgBadge, onFormCheckPick,
+         openAnnotator, openAnnotationReview, closeAnnotator, saveAnnotations,
+         annotPlayPause, annotFrame, annotSeek, annotRate, annotResume,
+         annotTool, annotColor, annotUndo, annotClearMoment,
          renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
          applyMacroTemplate, saveMacroPlan,
          sendWellnessReminders,
@@ -164,6 +167,10 @@ Object.assign(window, {
     // Messaggistica
     renderMessaggi, sendMessageCoach,
     renderAthleteChat, sendMessageAthleta, updateMsgBadge, onFormCheckPick,
+    // Annotazioni video (form-check v2)
+    openAnnotator, openAnnotationReview, closeAnnotator, saveAnnotations,
+    annotPlayPause, annotFrame, annotSeek, annotRate, annotResume,
+    annotTool, annotColor, annotUndo, annotClearMoment,
     // Macro Periodizzazione
     renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
     applyMacroTemplate, saveMacroPlan,
