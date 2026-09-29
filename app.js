@@ -5966,7 +5966,7 @@ function _anOpen(opts) {
   if (cancelBtn) cancelBtn.textContent = _an.readonly ? 'Chiudi' : 'Annulla';
   _anRenderColors();
   _anTool('pen');
-  _anRate(1);
+  annotRate(1);
   document.getElementById('an-continue').style.display = 'none';
 
   video.src = opts.url;
