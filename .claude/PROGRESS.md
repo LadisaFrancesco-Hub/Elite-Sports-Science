@@ -79,6 +79,14 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**Aggiornamenti atomici: import map versionato per i moduli JS (2026-09-29)**
+- **Sintomo (segnalato dall'utente sul telefono)**: dopo il deploy v6.98, premere "Annota" non faceva nulla + toast globale "Qualcosa non ha risposto". Diagnosi: il codice era **corretto** (verificato su caricamento pulito del live via Playwright headless: `window.openAnnotator` = function, 0 errori), ma il telefono eseguiva un **`main.js` vecchio dalla cache** (senza il bridge) mentre l'`app.js` nuovo disegnava già il bottone → `openAnnotator is not defined` → error handler globale (`index.html` `window.addEventListener('error')`).
+- **Causa-radice**: i moduli JS erano caricati **senza cache-busting** (`<script type="module" src="main.js">` + `import './app.js'` a catena). Il SW usa `networkFirst` ma su rete mobile ballerina può servire un file fresco (`app.js`) e uno dalla cache (`main.js`) → **mix vecchio/nuovo** tra deploy.
+- **Fix (`index.html`)**: sostituito il tag modulo statico con un **loader inline** che genera un **import map** da un'unica costante `APP_ASSET_VERSION` (`V='6.99'`): ogni import a catena viene versionato (`./app.js` → `./app.js?v=6.99`), entry `main.js` versionato nel `src`. Il browser tratta i file di ogni deploy come URL nuovi → **impossibile mischiare versioni**. Import map iniettato **prima** del modulo entry. Fallback sicuro sui browser senza import map (caricano non versionato, funziona lo stesso). `library.js` escluso (codice morto, non importato).
+- Verifica: test locale (python http.server + Playwright headless) → **14/14 moduli caricati con `?v=6.99`**, `window.openAnnotator`/`renderMessaggi`/`go` = function, **0 errori console**. Live: SW v6.99 + loader `importmap`/`APP_ASSET_VERSION` serviti, `app.js?v=6.99` → 200. **L'utente ha confermato: dopo reload "Annota" funziona.**
+- **MANUTENZIONE**: ad ogni deploy futuro bump **due numeri in sync** → `sw.js` `APP_VERSION` **e** `index.html` `APP_ASSET_VERSION` (costante `V` nel loader). Entrambi commentati con l'avviso.
+- **DEPLOYATO**: SW **v6.99**, commit `330847f` + push su `main` + `vercel --prod` (dpl_… coach-9249vrq60), aliasato su `coach-os-lime.vercel.app`.
+
 **Video form-check con annotazioni — v2 (2026-09-29)**
 - Contesto/strategia: dal confronto competitivo, il gap #1 vs mercato NON era analytics (lì vinciamo) ma le *table-stake del coaching a distanza*. La v1 dava l'upload atleta→coach; la killer feature di TrueCoach/CoachRx è che il coach **disegni sopra il video** per correggere la tecnica. Questa v2 la aggiunge.
 - **Scope deciso con l'utente**: strumenti = **penna libera + testo** (niente linea/freccia/angolo per ora); **solo coach** annota; **voice-over rimandato** a v2.1.
@@ -92,8 +100,8 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
   - `index.html` — modal unico **`mo-annot`** (authoring + review via toggle `an-tools`/`an-save`): stage video+canvas sovrapposti, transport, velocità, toolbar, momenti, Salva/Annulla.
   - `main.js` — bridge (13 funzioni su window). `sw.js` — bump **v6.98**.
 - Verifica: `node --check` OK (utils/app/main/sw); **test logica 15/15** (hasAnnotations, videoContentRect landscape/portrait/no-meta, activeMomentShapes confini+carry-over, annotationMoments, drawAnnotationShapes mappatura coord + no-throw su testo con `<b>`); cross-check handler↔export↔bridge (13/13, 0 typo).
-- **DA FARE**: smoke test reale (coach annota video atleta → atleta rivede correzione ai timestamp giusti) → commit + push + `vercel --prod` + aggiornare questo file. Client-only + 1 migration già applicata.
-- **Follow-up esclusi da v2**: voice-over (v2.1), linea/freccia/angolo, editing di un'annotazione esistente (ora ogni annotazione = nuovo messaggio), side-by-side di due video.
+- **DEPLOYATO + VERIFICATO LIVE (2026-09-29)**: commit `3965d45` + push su `main` + `vercel --prod` (dpl_6CfvRhVJE43kVkbK3L5A8yUA2Dyw). SW v6.98 servito, `openAnnotator`/`openAnnotationReview` bridgeati, modal `mo-annot` presente. **L'utente ha confermato dal telefono che "Annota" apre l'editor** (dopo il fix cache sotto). Feature v2 LIVE.
+- **Follow-up esclusi da v2**: voice-over (v2.1), linea/freccia/angolo, editing di un'annotazione esistente (ora ogni annotazione = nuovo messaggio), side-by-side di due video. **Da validare sul campo**: allineamento disegni tra schermo coach/atleta (video verticali) + auto-pausa ai momenti nel replay.
 
 **Video form-check coach↔atleta — v1 (2026-09-29)**
 - Contesto/strategia: analisi competitiva (TrueCoach, Everfit, TrainHeroic, CoachRx, Trainerize) → la lacuna vera vs mercato non era analytics ma una *table-stake del coaching a distanza*: **il video form-check** (l'atleta filma l'alzata, il coach la rivede). È LA killer feature di TrueCoach. Prima l'app aveva video **solo coach→atleta** come demo (link YouTube in iframe), zero upload dall'atleta.
