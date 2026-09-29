@@ -192,7 +192,7 @@ Object.assign(window, {
 // ─────────────────────────────────────────────────────────────
 // BOOTSTRAP — DOMContentLoaded
 // ─────────────────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
+async function _bootstrap() {
 
     const authResult = await initApp();
     window.userRole  = authResult;
@@ -290,4 +290,20 @@ document.addEventListener('DOMContentLoaded', async () => {
             splash.classList.add('hidden');
         }
     }
-});
+}
+
+// L'entry module è iniettato dinamicamente (loader import-map in index.html) →
+// è async, quindi può eseguire DOPO che DOMContentLoaded è già scattato. In quel
+// caso addEventListener('DOMContentLoaded') non partirebbe mai. Guardia readyState:
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', _bootstrap);
+} else {
+    _bootstrap();
+}
+
+// Rete-di-sicurezza: qualunque cosa accada nel boot, non lasciare mai lo splash
+// infinito (mostra almeno il login). Idempotente con l'hide del finally.
+setTimeout(() => {
+    const s = document.getElementById('splash-screen');
+    if (s && !s.classList.contains('hidden')) { s.style.opacity = '0'; s.classList.add('hidden'); }
+}, 12000);
