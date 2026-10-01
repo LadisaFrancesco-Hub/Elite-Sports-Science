@@ -79,6 +79,14 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**Demo athlete popolato — Luca Verdi (2026-10-01)**
+- Scopo: preparare il video demo per il primo coach beta (profilo **Strength & Conditioning**). Scoperto che l'atleta demo `Luca Verdi` (id `ziovvy8`, goal "Performance Atletica") era un **guscio vuoto** (0 sessioni, 0 HRV/readiness, 0 messaggi, 0 video, peso/bf a 0) → il demo sarebbe girato su schermate vuote.
+- Seminato via SQL (NON codice): **32 sessioni su 8 settimane** con periodizzazione realistica (Accumulo w1-3 → Deload w4 → Intensificazione w5-7 con **overreaching in w7**: readiness 66, HRV 56, carico al picco → Realizzazione w8 con e1RM PR 161 e recupero). Alimenta tutti gli analytics S&C (ACWR ~1.16 in w7, monotonia/strain, e1RM trend, HRV+MA7, readiness, volume). Composizione corporea (82kg/11.5% + `anthropo_history` 4 punti ricomposizione). 5 messaggi chat coach↔atleta coerenti (ultimo non letto → badge).
+- **Pulizia** (è tutto fixture): sessioni `delete from sessions where id like 'seed_lv_%'`; chat `delete from messages where athlete_id='ziovvy8'` (aveva 0 msg prima, tutti seed); body-comp azzerabile a mano su `atleti` id `ziovvy8`.
+- **Da fare nel demo (dal vivo)**: il beat form-check video + annotazione NON è seminabile (serve file reale in Storage) → registrarlo dal vivo (atleta carica video → coach annota), che coincide con lo smoke test sul telefono. Script demo 75s + messaggi outreach S&C pronti (in chat sessione, non in repo).
+
+
+
 **Foto-progressi coach↔atleta — v1 (2026-09-29)**
 - Contesto/strategia: confronto competitivo (TrueCoach, Trainerize, Everfit, TrainHeroic, CoachRx) → gap #1 per impatto/sforzo. Le foto-progressi sono table-stake in tutti i top e la feature di retention/motivazione più usata; l'app aveva solo numeri di composizione corporea, nessuna foto. Costo basso perché riusa l'infra Storage del form-check.
 - **Modello**: l'atleta carica foto datate per posa (Fronte/Lato/Retro); atleta e coach le vedono; il **coach le confronta side-by-side su due date**. Metadati in `atleti.progress_photos` JSONB (`[{id,date,pose,path}]`, camelCase `progressPhotos` in memoria); immagini nel bucket **privato** `progress-photos` (URL firmati on-render, scad. 2h) — stesso pattern del form-check, **zero rete al render se non firmando**.
