@@ -92,7 +92,7 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
   - `main.js` — bridge 7 funzioni. `sw.js` + import-map `V` → **v7.02** in sync.
 - Verifica: `node --check` OK (utils/app/analytics/auth/main/sw); cross-check export↔bridge↔onclick 7/7; test logica raggruppamento/confronto (date desc, default new-vs-old, unione pose) OK; **smoke Playwright reale** (app servita in locale, Supabase stubbato, SW neutralizzato per evitare il reload su controllerchange) → galleria atleta 4 foto+hydrate, modale upload (pose+data precompilata), upload stub → 5 foto/nuova data, confronto coach (2 date, 3 pose affiancate front-both/side-old/back-new), cambio data B, lightbox. **0 errori reali** (unico errore = stub SW incompleto del test, non del codice).
 - **Escluso da v1** (naturale follow-up): retention/cleanup del bucket foto (come `cleanup-form-checks`), riordino/reorder pose, note per foto, misura con overlay. Da fare dopo validazione sul campo.
-- **DA DEPLOYARE**: backend già in prod (migration applicata). Client: commit + push su `main` + `vercel --prod`. Smoke su telefono vero consigliato (upload da camera + confronto coach) prima del deploy.
+- **DEPLOYATO (2026-10-01)**: backend già in prod (migration applicata). Client: commit `c3da56c` + push su `main` + `vercel --prod` (coach-nsouuaaf4). Live su `coach-os-lime.vercel.app` verificato via curl → SW v7.02, `APP_ASSET_VERSION = 7.02`, `renderProgressPhotos` nel bundle. **Smoke su telefono vero ancora consigliato** (upload da camera + confronto coach side-by-side) come validazione finale sul campo.
 
 **FIX "Annota" non apriva l'editor — `_anRate` typo (2026-09-29)**
 - **Sintomo (coach)**: premere ✏️ Annota su un video in chat non apriva nulla ("il bottone non fa niente").
