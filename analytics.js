@@ -290,6 +290,7 @@ export function renderAnalytics() {
   ath ? `${ath.name} · ${sess.length} sessioni` : '';
 
   renderBodyComp(ath);
+  if (typeof window.renderPhotoCompare === 'function') window.renderPhotoCompare(appState.selAthId);
   renderTestDB(ath);
 
   // ── b) Inietta il wrapper del Radar (DOM dinamico) ───────
@@ -1525,6 +1526,9 @@ export function renderAthProgressi() {
   bodcompEl.innerHTML = '';
   }
   }
+
+  // ── Foto progressi (galleria atleta) ──────────────────────
+  if (typeof window.renderProgressPhotos === 'function') window.renderProgressPhotos(athId);
 
   // ── Nutrition card ────────────────────────────────────────
   renderNutritionCard(athId);

@@ -593,7 +593,14 @@ export async function loadDB() {
         if (!errA && atletiData) {
             DB.athletes = atletiData;
             DB.macroPlans = {};
-            atletiData.forEach(a => { if (a.macro_plan) DB.macroPlans[a.id] = a.macro_plan; });
+            atletiData.forEach(a => {
+                if (a.macro_plan) DB.macroPlans[a.id] = a.macro_plan;
+                // Normalizza snake_case → camelCase (le righe cloud arrivano grezze):
+                // senza questo lo storico composizione/foto sopravvive solo via cache
+                // localforage sullo stesso device e si perde cross-device.
+                if (a.anthropo_history && !a.anthropoHistory) a.anthropoHistory = a.anthropo_history;
+                if (a.progress_photos  && !a.progressPhotos)  a.progressPhotos  = a.progress_photos;
+            });
         }
 
         const { data: schedData, error: errSch } = await window.mySupabase.from('schedules').select('*');

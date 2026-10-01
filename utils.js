@@ -111,6 +111,56 @@ export function mediaBubbleHtml(path, caption, isMine) {
 }
 
 // ─────────────────────────────────────────────────────────────
+// FOTO-PROGRESSI (Supabase Storage, bucket privato 'progress-photos')
+// Stesso pattern del form-check: il metadato salva il PATH (non l'URL
+// pubblico), l'URL firmato è generato on-render e scade. I metadati
+// (data/posa/path) vivono in atleti.progress_photos (JSONB).
+// ─────────────────────────────────────────────────────────────
+export const PROGRESS_PHOTO_BUCKET = 'progress-photos';
+const PROGRESS_PHOTO_MAX_BYTES = 10 * 1024 * 1024; // 10MB, allineato al cap del bucket
+
+// Carica un'immagine nel bucket. Ritorna il path salvato, o lancia con messaggio pulito.
+export async function uploadProgressPhoto(file, athId) {
+    if (!window.mySupabase) throw new Error('Connessione assente.');
+    if (!file) throw new Error('Nessun file.');
+    if (!/^image\//.test(file.type || '')) throw new Error('Serve un\'immagine.');
+    if (file.size > PROGRESS_PHOTO_MAX_BYTES) {
+        throw new Error(`Immagine troppo grande (max 10MB, la tua è ${(file.size / 1048576).toFixed(0)}MB).`);
+    }
+    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = `${athId}/${Date.now()}-${uid()}.${ext}`;
+    const { error } = await window.mySupabase.storage
+        .from(PROGRESS_PHOTO_BUCKET)
+        .upload(path, file, { contentType: file.type, upsert: false });
+    if (error) throw new Error(error.message || 'Upload fallito.');
+    return path;
+}
+
+// Genera un URL firmato (default 2h) per un path del bucket foto. Null se fallisce.
+export async function signProgressPhotoUrl(path, expiresSec = 7200) {
+    if (!window.mySupabase || !path) return null;
+    try {
+        const { data, error } = await window.mySupabase.storage
+            .from(PROGRESS_PHOTO_BUCKET)
+            .createSignedUrl(path, expiresSec);
+        if (error) return null;
+        return data ? data.signedUrl : null;
+    } catch { return null; }
+}
+
+// Post-processa un container: per ogni <img data-ppath> firma il path e imposta la src.
+export async function hydratePhotoThumbs(container) {
+    if (!container) return;
+    const imgs = container.querySelectorAll('img[data-ppath]:not([data-hydrated])');
+    for (const im of imgs) {
+        im.setAttribute('data-hydrated', '1');
+        const url = await signProgressPhotoUrl(im.getAttribute('data-ppath'));
+        if (url) im.src = url;
+        else im.setAttribute('alt', 'Foto non disponibile');
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
 // FORM-CHECK ANNOTAZIONI (overlay vettoriale sincronizzato ai timestamp)
 // Un'annotazione = { v:1, shapes:[ {id,t,type,color,...} ] } salvata in
 // messages.annotations. shape.t = secondi nel video; coord normalizzate 0..1

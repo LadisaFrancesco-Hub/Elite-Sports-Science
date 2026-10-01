@@ -1035,6 +1035,7 @@
   </div>
   </div>
   <div id="ap-bodcomp" style="margin-bottom:12px"></div>
+  <div id="ap-photos" style="margin-bottom:12px"></div>
   <div class="card">
   <div class="card-t">I miei record</div>
   <div id="ap-records"></div>
@@ -1073,7 +1074,10 @@
   <div style="position:relative;height:180px;margin-bottom:12px;"><canvas id="an-bc-chart"></canvas></div>
   <div id="an-bc-history" style="font-size:12px;max-height:140px;overflow-y:auto;color:var(--text);"></div>
   </div>
-  
+
+  <!-- Foto progressi · confronto side-by-side (coach) -->
+  <div id="an-photos"></div>
+
   <!-- Test Atletici -->
   <div class="card" style="margin-bottom:10px;">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -1548,6 +1552,35 @@
   </div>
 </div>
 
+<!-- ── Modale Foto Progressi (upload) ──────────────────── -->
+<div class="mo" id="mo-photo">
+  <div class="mo-box" style="max-width:360px;">
+  <div class="mo-hdr">
+  <span class="mo-title">Aggiungi foto progressi</span>
+  <button class="mo-x" onclick="closeMo('mo-photo')">✕</button>
+  </div>
+  <div class="fr">
+  <div class="fg"><label class="fl">Data</label><input type="date" id="pp-date"></div>
+  <div class="fg"><label class="fl">Posa</label><select id="pp-pose"></select></div>
+  </div>
+  <label class="btn btn-p" style="width:100%;margin-top:10px;display:block;text-align:center;cursor:pointer;">
+  📷 Scatta / Scegli foto
+  <input type="file" id="pp-file" accept="image/*" capture="environment" onchange="onProgressPhotoPick(this)" style="display:none;">
+  </label>
+  <div style="font-size:11px;color:var(--muted);margin-top:8px;text-align:center;">Stessa luce e posa ad ogni scatto per un confronto affidabile.</div>
+  </div>
+</div>
+
+<!-- ── Modale Foto Progressi (lightbox) ────────────────── -->
+<div class="mo" id="mo-photo-view">
+  <div class="mo-box" style="max-width:420px;background:transparent;box-shadow:none;padding:0;">
+  <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+  <button class="mo-x" onclick="closeMo('mo-photo-view')">✕</button>
+  </div>
+  <img id="pv-img" data-ppath="" style="width:100%;border-radius:12px;background:#000;display:block;" alt="Foto progressi">
+  </div>
+</div>
+
 <!-- ── Modale Nutrition Log ──────────────────────────── -->
 <div class="mo" id="mo-nutrition">
   <div class="mo-box" style="max-width:360px;">
@@ -1762,7 +1795,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.01'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.02'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });

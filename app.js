@@ -17,7 +17,9 @@ import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStat
          ensureBlocks, mesoWeekFromDate, activeBlock, sessionsForWeek, activeScheduledDays, sessionCloudRow,
          uploadFormCheckVideo, hydrateMediaBubbles, mediaBubbleHtml,
          signFormCheckUrl, hasAnnotations, videoContentRect, drawAnnotationShapes,
-         activeMomentShapes, annotationMoments } from './utils.js';
+         activeMomentShapes, annotationMoments,
+         uploadProgressPhoto, signProgressPhotoUrl, hydratePhotoThumbs,
+         PROGRESS_PHOTO_BUCKET } from './utils.js';
 
 // Importazioni circolari risolte: questi moduli importano da state+utils,
 // e app.js li chiama solo dentro funzioni (mai al top-level).
@@ -5243,6 +5245,186 @@ export async function saveBodyComp() {
   closeMo('mo-body-comp');
   renderBodyComp(ath);
   toast(' Misurazione salvata');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// FOTO-PROGRESSI
+// L'atleta carica foto (fronte/lato/retro) datate; atleta e coach le
+// vedono; il coach le confronta side-by-side su due date. Metadati in
+// atleti.progressPhotos = [{id,date,pose,path}] (cloud: progress_photos,
+// normalizzato in loadDB). Immagini nel bucket privato 'progress-photos'
+// (URL firmati on-render, stesso pattern del form-check).
+// ═══════════════════════════════════════════════════════════════
+export const PROGRESS_POSES = [
+  { id: 'front', label: 'Fronte' },
+  { id: 'side',  label: 'Lato'   },
+  { id: 'back',  label: 'Retro'  },
+];
+const _poseLabel = id => (PROGRESS_POSES.find(p => p.id === id) || {}).label || id;
+
+// ID atleta nel contesto corrente (atleta loggato, o atleta selezionato dal coach)
+function _photoAthId() { return window.mioIdLoggato || appState.selAthId; }
+
+// Persiste l'array foto: cache locale + update mirato sul cloud (come body comp)
+async function _persistPhotos(ath) {
+  await saveDB();
+  if (window.mySupabase && ath) {
+    try { await window.mySupabase.from('atleti').update({ progress_photos: ath.progressPhotos }).eq('id', ath.id); }
+    catch (e) { console.error('Sync foto progressi fallito:', e); }
+  }
+}
+
+// ── Galleria atleta: card in Progressi, raggruppata per data ──
+export function renderProgressPhotos(athId) {
+  const el = document.getElementById('ap-photos');
+  if (!el) return;
+  const ath = athById(athId);
+  const photos = (ath && ath.progressPhotos) || [];
+  const addBtn = `<button class="btn btn-p btn-sm" onclick="openPhotoUpload()">+ Aggiungi foto</button>`;
+
+  if (!photos.length) {
+    el.innerHTML = `<div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div class="card-t" style="margin-bottom:0">Foto progressi</div>${addBtn}
+      </div>
+      <div style="color:var(--muted);font-size:12px;padding:6px 0">
+        Nessuna foto ancora. Scatta fronte, lato e retro con la stessa luce e posa: potrai confrontare i progressi nel tempo.
+      </div></div>`;
+    return;
+  }
+
+  const byDate = {};
+  photos.forEach(p => { (byDate[p.date] = byDate[p.date] || []).push(p); });
+  const dates = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+
+  const rows = dates.map(d => {
+    const thumbs = byDate[d]
+      .sort((a, b) => PROGRESS_POSES.findIndex(x => x.id === a.pose) - PROGRESS_POSES.findIndex(x => x.id === b.pose))
+      .map(p => `
+      <div style="text-align:center">
+        <img data-ppath="${escHtml(p.path)}" onclick="openPhotoLightbox('${escHtml(p.path)}')"
+          style="width:82px;height:110px;object-fit:cover;border-radius:8px;background:var(--s2);cursor:pointer;display:block" alt="${escHtml(_poseLabel(p.pose))}">
+        <div style="font-size:9px;color:var(--muted);margin-top:3px;display:flex;gap:5px;justify-content:center;align-items:center">
+          ${escHtml(_poseLabel(p.pose))}
+          <span onclick="deleteProgressPhoto('${escHtml(p.id)}')" style="cursor:pointer;color:var(--coral);font-weight:800">✕</span>
+        </div>
+      </div>`).join('');
+    return `<div style="margin-bottom:12px">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;margin-bottom:6px">${escHtml(d)}</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">${thumbs}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `<div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div class="card-t" style="margin-bottom:0">Foto progressi</div>${addBtn}
+    </div>${rows}</div>`;
+  hydratePhotoThumbs(el);
+}
+
+export function openPhotoUpload() {
+  const dEl = document.getElementById('pp-date');
+  if (dEl) dEl.value = new Date().toISOString().slice(0, 10);
+  const pEl = document.getElementById('pp-pose');
+  if (pEl && !pEl.options.length) pEl.innerHTML = PROGRESS_POSES.map(p => `<option value="${p.id}">${p.label}</option>`).join('');
+  const f = document.getElementById('pp-file');
+  if (f) f.value = '';
+  openMo('mo-photo');
+}
+
+export async function onProgressPhotoPick(inputEl) {
+  const file = inputEl && inputEl.files && inputEl.files[0];
+  if (!file) return;
+  const athId = _photoAthId();
+  const ath = athById(athId);
+  if (!ath) { toast('Nessun atleta selezionato'); return; }
+  const date = (document.getElementById('pp-date') || {}).value || new Date().toISOString().slice(0, 10);
+  const pose = (document.getElementById('pp-pose') || {}).value || 'front';
+  toast('Caricamento foto…');
+  try {
+    const path = await uploadProgressPhoto(file, athId);
+    if (!ath.progressPhotos) ath.progressPhotos = [];
+    ath.progressPhotos.push({ id: uid(), date, pose, path });
+    await _persistPhotos(ath);
+    closeMo('mo-photo');
+    renderProgressPhotos(athId);
+    if (typeof window.renderPhotoCompare === 'function') window.renderPhotoCompare(athId);
+    toast('✓ Foto salvata');
+  } catch (e) {
+    toast(e.message || 'Upload fallito');
+  } finally {
+    inputEl.value = '';
+  }
+}
+
+export function deleteProgressPhoto(id) {
+  const athId = _photoAthId();
+  const ath = athById(athId);
+  if (!ath || !ath.progressPhotos) return;
+  showConfirm('Eliminare questa foto?', async () => {
+    const idx = ath.progressPhotos.findIndex(p => p.id === id);
+    if (idx < 0) return;
+    const [removed] = ath.progressPhotos.splice(idx, 1);
+    await _persistPhotos(ath);
+    if (window.mySupabase && removed && removed.path) {
+      try { await window.mySupabase.storage.from(PROGRESS_PHOTO_BUCKET).remove([removed.path]); } catch (e) { console.error(e); }
+    }
+    renderProgressPhotos(athId);
+    if (typeof window.renderPhotoCompare === 'function') window.renderPhotoCompare(athId);
+    toast('Foto eliminata');
+  });
+}
+
+export function openPhotoLightbox(path) {
+  const img = document.getElementById('pv-img');
+  if (!img) return;
+  img.removeAttribute('src');
+  img.setAttribute('data-ppath', path);
+  img.removeAttribute('data-hydrated');
+  openMo('mo-photo-view');
+  hydratePhotoThumbs(document.getElementById('mo-photo-view'));
+}
+
+// ── Confronto coach: due date affiancate, per posa ──
+let _cmpAth = null, _cmpA = null, _cmpB = null;
+
+export function setCompareDate(which, val) {
+  if (which === 'A') _cmpA = val; else _cmpB = val;
+  renderPhotoCompare(_cmpAth);
+}
+
+export function renderPhotoCompare(athId) {
+  const el = document.getElementById('an-photos');
+  if (!el) return;
+  const ath = athById(athId);
+  const photos = (ath && ath.progressPhotos) || [];
+  if (!photos.length) { el.innerHTML = ''; return; }
+
+  const dates = [...new Set(photos.map(p => p.date))].sort((a, b) => b.localeCompare(a));
+  if (_cmpAth !== athId) { _cmpAth = athId; _cmpA = dates[0]; _cmpB = dates[dates.length - 1]; }
+  if (!dates.includes(_cmpA)) _cmpA = dates[0];
+  if (!dates.includes(_cmpB)) _cmpB = dates[dates.length - 1];
+
+  const opts = sel => dates.map(d => `<option value="${d}" ${d === sel ? 'selected' : ''}>${d}</option>`).join('');
+  const photoAt = (date, pose) => photos.find(p => p.date === date && p.pose === pose);
+  const cell = p => p
+    ? `<img data-ppath="${escHtml(p.path)}" onclick="openPhotoLightbox('${escHtml(p.path)}')" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:8px;background:var(--s2);cursor:pointer;display:block" alt="">`
+    : `<div style="width:100%;aspect-ratio:3/4;border-radius:8px;background:var(--s2);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:11px">—</div>`;
+
+  const posesShown = PROGRESS_POSES.filter(pz => photoAt(_cmpA, pz.id) || photoAt(_cmpB, pz.id));
+  const rows = posesShown.map(pz => `
+    <div style="margin-bottom:12px">
+      <div style="font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">${pz.label}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${cell(photoAt(_cmpA, pz.id))}${cell(photoAt(_cmpB, pz.id))}</div>
+    </div>`).join('');
+
+  el.innerHTML = `<div class="card">
+    <div class="card-t">Foto progressi · confronto</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
+      <select onchange="setCompareDate('A', this.value)">${opts(_cmpA)}</select>
+      <select onchange="setCompareDate('B', this.value)">${opts(_cmpB)}</select>
+    </div>${rows}</div>`;
+  hydratePhotoThumbs(el);
 }
 
 export async function submitFB() {

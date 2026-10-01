@@ -67,6 +67,8 @@ import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          applyMacroTemplate, saveMacroPlan,
          sendWellnessReminders,
          openBodyCompModal, toggleSkinfoldInputs, calcBFFromSkinfolds, saveBodyComp,
+         renderProgressPhotos, renderPhotoCompare, openPhotoUpload, onProgressPhotoPick,
+         deleteProgressPhoto, openPhotoLightbox, setCompareDate,
          updateSessionType, addEmom, addAmrap, addTabata,
          calc1RM, calcHRZones, setVO2Tab, calcVO2, calcVDOT, calcPace,
          openTestModal, onTestCategoryChange, onTestNameChange, saveTest,
@@ -180,6 +182,9 @@ Object.assign(window, {
     openTestModal, onTestCategoryChange, onTestNameChange, saveTest,
     // Body Composition
     openBodyCompModal, toggleSkinfoldInputs, calcBFFromSkinfolds, saveBodyComp,
+    // Foto progressi
+    renderProgressPhotos, renderPhotoCompare, openPhotoUpload, onProgressPhotoPick,
+    deleteProgressPhoto, openPhotoLightbox, setCompareDate,
     // Calcolatori S&C
     calc1RM, calcHRZones, setVO2Tab, calcVO2, calcVDOT, calcPace,
     // Session types + conditioning
