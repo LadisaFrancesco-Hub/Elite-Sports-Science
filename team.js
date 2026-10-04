@@ -85,7 +85,7 @@ export async function renderTeamPanel(containerId) {
   </select>
   <button onclick="sendTeamInvite()" class="btn btn-p" style="white-space:nowrap;font-size:12px">Invita →</button>
   </div>
-  <p style="font-size:10px;color:var(--muted);margin-top:8px">L'assistente riceverà il link di accesso via email. Puoi avere fino a 3 coach nel piano Team.</p>
+  <p style="font-size:10px;color:var(--muted);margin-top:8px">Generi un link d'invito da inviare tu al coach (WhatsApp/email). Il coach deve avere già un account coach nell'app prima di aprirlo. Puoi avere fino a 3 coach nel piano Team.</p>
   </div>
   </div>`;
   } catch (e) {
@@ -172,6 +172,8 @@ export async function checkAndAcceptInvite() {
   const { data, error } = await window.mySupabase.rpc('accept_team_invitation', { p_token: token });
   if (error || data === 'invalid_or_expired') {
   toast(' Link invito non valido o scaduto');
+  } else if (data === 'no_coach_account') {
+  toast('Prima crea il tuo account coach nell\'app, poi riapri questo link d\'invito');
   } else {
   toast(' Sei entrato nel team! Ricarica l\'app.');
   setTimeout(() => window.location.reload(), 2000);
