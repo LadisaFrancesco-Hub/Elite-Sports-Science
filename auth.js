@@ -283,6 +283,13 @@ export async function handleAthleteFirstTimeSetup() {
     if (pass !== confirm)     { _loginErr('err-ath-setup', 'Le password non coincidono.');                return; }
     if (!email.includes('@')) { _loginErr('err-ath-setup', "Inserisci un'email valida.");                 return; }
 
+    // Consenso GDPR obbligatorio alla creazione account (art. 7 GDPR). NON pre-spuntato.
+    const consentEl = document.getElementById('ath-setup-consent');
+    if (consentEl && !consentEl.checked) {
+        _loginErr('err-ath-setup', 'Per creare l\'account devi accettare Privacy Policy e Termini di Servizio e confermare di avere almeno 14 anni.');
+        return;
+    }
+
     const btn = document.querySelector('#login-step-athlete-setup button');
     if (btn) { btn.disabled = true; btn.textContent = 'Creazione account...'; }
 
@@ -450,6 +457,13 @@ export function nextOnbStep(nextStep) {
 }
 
 export async function submitOnboarding() {
+    // Consenso esplicito al trattamento dei dati sulla salute (art. 9(2)(a) GDPR). NON pre-spuntato.
+    const healthConsent = document.getElementById('onb-health-consent');
+    if (healthConsent && !healthConsent.checked) {
+        toast('Per completare il profilo devi acconsentire al trattamento dei dati sulla salute (farmaci, infortuni, recupero).', { type: 'error', duration: 6000 });
+        return;
+    }
+
     let selectedSport = document.getElementById('onb-sport').value;
     if (selectedSport === 'Altro') selectedSport = document.getElementById('onb-sport-other').value.trim();
 

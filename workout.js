@@ -2380,7 +2380,8 @@ export function openVideoModal(rawUrl, title = '') {
         videoId = rawUrl; // fallback: tratta come ID diretto
     }
 
-    iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+    // youtube-nocookie: niente cookie pubblicitari finché l'utente non interagisce (GDPR/ePrivacy)
+    iframe.src = `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`;
     if (titleEl) titleEl.textContent = title || 'Video esercizio';
     openMo('mo-video');
 }

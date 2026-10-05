@@ -170,8 +170,8 @@ function _buildUpgradeModal() {
             <li>✅ Supporto prioritario</li>
           </ul>
           <div style="display:flex;gap:8px;">
-            <button id="upgrade-checkout-btn" class="btn btn-p" style="flex:1;font-size:13px;" onclick="window._billingCheckout('pro_monthly')">Mensile €29/mese →</button>
-            <button class="btn btn-g" style="flex:1;font-size:13px;" onclick="window._billingCheckout('pro_yearly')">Annuale €249/anno →</button>
+            <button class="btn btn-g" style="flex:1;font-size:13px;opacity:.6;cursor:default;" disabled>Mensile €29 · in arrivo</button>
+            <button class="btn btn-g" style="flex:1;font-size:13px;opacity:.6;cursor:default;" disabled>Annuale €249 · in arrivo</button>
           </div>
         </div>
 
@@ -187,11 +187,11 @@ function _buildUpgradeModal() {
             <li>✅ White-label (nome + logo custom)</li>
             <li>✅ Dashboard multi-coach</li>
           </ul>
-          <button class="btn btn-g" style="width:100%;font-size:13px;border-color:rgba(139,92,246,.4);color:#8b5cf6;" onclick="window._billingCheckout('team_monthly')">Team €69/mese →</button>
+          <a href="mailto:ladisafrancesco03@gmail.com?subject=CoachOS%20Team" class="btn btn-g" style="display:block;width:100%;box-sizing:border-box;font-size:13px;border-color:rgba(139,92,246,.4);color:#8b5cf6;text-align:center;text-decoration:none;">Team €69/mese · contattaci</a>
         </div>
 
         <p style="font-size:10px;color:var(--muted);text-align:center;margin-top:14px;">
-          Pagamento sicuro via Stripe · Cancella in qualsiasi momento
+          I piani a pagamento sono in arrivo. Per ora il servizio è disponibile nel piano gratuito.
         </p>
       </div>`;
     document.body.appendChild(mo);

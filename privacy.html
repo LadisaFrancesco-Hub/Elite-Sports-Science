@@ -42,7 +42,7 @@
   </div>
 
   <h1>Privacy Policy</h1>
-  <div class="meta">Ultimo aggiornamento: 8 settembre 2026 · Versione 1.0</div>
+  <div class="meta">Ultimo aggiornamento: 5 ottobre 2026 · Versione 1.1</div>
 
   <div class="box">
     <p><strong>In sintesi:</strong> Elite Sports Science raccoglie solo i dati necessari per il monitoraggio dell'allenamento e della salute degli atleti. Non vendiamo dati a terzi. I dati sono conservati su Supabase (EU) e protetti con cifratura in transito (HTTPS/TLS) e a riposo.</p>
@@ -75,9 +75,11 @@
   <p>Il trattamento è basato su:</p>
   <ul>
     <li><strong>Esecuzione di un contratto</strong> (art. 6 c.1 lett. b GDPR) — per fornire il servizio di coaching atletico</li>
-    <li><strong>Consenso dell'interessato</strong> (art. 6 c.1 lett. a GDPR) — per le notifiche push e i dati di composizione corporea</li>
+    <li><strong>Consenso dell'interessato</strong> (art. 6 c.1 lett. a GDPR) — per le notifiche push, i dati di composizione corporea e i contenuti di terze parti che impostano cookie (es. video YouTube, font esterni)</li>
+    <li><strong>Consenso esplicito per categorie particolari di dati</strong> (art. 9 c.2 lett. a GDPR) — per i <strong>dati relativi alla salute</strong> (infortuni, dolori/VAS, farmaci, ciclo mestruale, HRV, qualità del sonno e altri parametri di recupero). Questi dati sono trattati solo dopo il tuo consenso esplicito e separato, raccolto in app, e sono revocabili in qualsiasi momento.</li>
     <li><strong>Legittimo interesse</strong> (art. 6 c.1 lett. f GDPR) — per la sicurezza dell'applicazione e il miglioramento del servizio</li>
   </ul>
+  <div class="box"><p><strong>Dati sulla salute:</strong> alcuni dati raccolti (infortuni, farmaci, ciclo mestruale, HRV, recupero) rientrano tra le "categorie particolari" dell'art. 9 GDPR. L'app è uno strumento di monitoraggio dell'allenamento e <strong>non fornisce diagnosi, terapie o consulenza medica</strong>.</p></div>
 
   <h2>4. Condivisione dei dati</h2>
   <p>I tuoi dati non vengono venduti né ceduti a terzi per finalità commerciali. Li condividiamo esclusivamente con:</p>
@@ -85,8 +87,11 @@
     <tr><th>Fornitore</th><th>Ruolo</th><th>Sede</th></tr>
     <tr><td><strong>Supabase Inc.</strong></td><td>Database, autenticazione, realtime — Responsabile del trattamento</td><td>USA (con garanzie adeguate — SCC)</td></tr>
     <tr><td><strong>Vercel Inc.</strong></td><td>Hosting e CDN dell'applicazione</td><td>USA (con garanzie adeguate — SCC)</td></tr>
+    <tr><td><strong>Stripe Payments Europe</strong></td><td>Gestione dei pagamenti e degli abbonamenti (solo se attivi un piano a pagamento)</td><td>UE/USA (con garanzie adeguate — SCC)</td></tr>
+    <tr><td><strong>Google LLC (YouTube)</strong></td><td>Riproduzione dei video degli esercizi (YouTube in modalità no-cookie) — solo su consenso cookie</td><td>USA (con garanzie adeguate — SCC)</td></tr>
+    <tr><td><strong>jsDelivr / Cloudflare</strong></td><td>CDN per il caricamento di librerie tecniche (es. client Supabase, grafici)</td><td>Rete globale</td></tr>
   </table>
-  <p>Entrambi i fornitori operano in conformità al GDPR tramite Clausole Contrattuali Standard (SCC) approvate dalla Commissione Europea.</p>
+  <p>I fornitori operano in conformità al GDPR tramite Clausole Contrattuali Standard (SCC) approvate dalla Commissione Europea. Le integrazioni con dispositivi indossabili (Garmin/Polar/WHOOP) non sono ancora attive; se attivate, questa informativa sarà aggiornata. Il dettaglio dei cookie di terze parti è nella <a href="/cookie.html">Cookie Policy</a>.</p>
 
   <h2>5. Trasferimento dati extra-UE</h2>
   <p>I dati possono essere elaborati negli Stati Uniti dai fornitori sopra indicati. Il trasferimento avviene con le garanzie previste dall'art. 46 GDPR (Clausole Contrattuali Standard). Per ulteriori informazioni puoi contattarci all'indirizzo email indicato nella sezione 1.</p>
@@ -125,16 +130,16 @@
   </ul>
 
   <h2>9. Minori</h2>
-  <p>L'applicazione non è destinata a minori di 16 anni. Se hai meno di 16 anni è necessario il consenso di un genitore o tutore legale. Se veniamo a conoscenza di dati di minori raccolti senza consenso, li elimineremo tempestivamente.</p>
+  <p>In Italia l'età minima per prestare validamente il consenso ai servizi della società dell'informazione è <strong>14 anni</strong> (art. 2-quinquies D.Lgs. 196/2003). Se hai meno di 14 anni, il trattamento richiede il consenso di un genitore o tutore legale. Per gli atleti minorenni che usano l'app su indicazione del proprio coach, il coach è tenuto a verificare la presenza del consenso del genitore/tutore. Se veniamo a conoscenza di dati di minori raccolti senza il necessario consenso, li elimineremo tempestivamente.</p>
 
   <h2>10. Cookie e archiviazione locale</h2>
-  <p>L'applicazione non utilizza cookie di profilazione. Utilizza:</p>
+  <p>L'applicazione <strong>non utilizza cookie di profilazione proprietari</strong>. Utilizza archiviazione locale tecnica che resta sul tuo dispositivo:</p>
   <ul>
-    <li><strong>IndexedDB / localStorage:</strong> per la cache locale dei dati di allenamento (funzionamento offline)</li>
-    <li><strong>sessionStorage:</strong> per preferenze di sessione (es. stato banner notifiche)</li>
-    <li><strong>Service Worker cache:</strong> per il funzionamento offline dell'app</li>
+    <li><strong>IndexedDB / localStorage:</strong> cache locale dei dati di allenamento (funzionamento offline) e memorizzazione della tua scelta sui cookie</li>
+    <li><strong>sessionStorage:</strong> preferenze di sessione (es. stato banner notifiche)</li>
+    <li><strong>Service Worker cache:</strong> funzionamento offline dell'app</li>
   </ul>
-  <p>Questi dati restano esclusivamente sul tuo dispositivo e non vengono trasmessi a terzi.</p>
+  <p>I <strong>font sono ospitati sui nostri server</strong> (nessun trasferimento a Google per i caratteri tipografici). Solo previo tuo <strong>consenso</strong> tramite l'apposito banner, possono essere impostati <strong>cookie di terze parti</strong> da contenuti incorporati — in particolare i video degli esercizi (YouTube in modalità no-cookie) e, sul sito vetrina, un cookie tecnico di attribuzione referral. Alcune librerie tecniche sono caricate tramite CDN di terzi (jsDelivr, Cloudflare) che possono registrare il tuo indirizzo IP. L'elenco completo e aggiornato è nella <a href="/cookie.html">Cookie Policy</a>.</p>
 
   <h2>11. Modifiche alla Privacy Policy</h2>
   <p>Ci riserviamo il diritto di modificare questa Privacy Policy. Le modifiche sostanziali saranno comunicate tramite notifica nell'app o via email almeno 15 giorni prima dell'entrata in vigore. La versione aggiornata sarà sempre disponibile a questo URL.</p>

@@ -20,7 +20,7 @@
 <meta name="robots" content="index, follow">
 <meta name="theme-color" content="#f97316">
 <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="/fonts/fonts.css" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -222,7 +222,7 @@ footer a:hover { color: var(--text); }
 <section class="hero">
     <div class="hero-label">Sports Science Platform · v6.37</div>
     <h1>La piattaforma di<br><span>sports science</span><br>per coach seri</h1>
-    <p>Gestisci atleti, programma mesocicli, traccia recupero e carico di lavoro con strumenti usati dai migliori preparatori atletici.</p>
+    <p>Gestisci atleti, programma mesocicli, traccia recupero e carico di lavoro con strumenti di sports science: ACWR, HRV, e1RM e periodizzazione, in un'unica app.</p>
     <div class="hero-btns">
         <a href="/index.html" class="btn-hero btn-hero-p">Inizia gratis — 3 atleti →</a>
         <a href="#pricing" class="btn-hero btn-hero-g">Vedi i piani</a>
@@ -245,8 +245,8 @@ footer a:hover { color: var(--text); }
 <!-- FEATURES -->
 <section>
     <div class="section-title">
-        <h2>Tutto ciò che serve per<br>allenare ad alto livello</h2>
-        <p>Strumenti che normalmente trovavi solo nei centri sportivi di élite, ora accessibili a ogni coach.</p>
+        <h2>Tutto ciò che serve per<br>programmare e monitorare</h2>
+        <p>Strumenti di analisi del carico e del recupero in un'unica app, accessibili a ogni coach.</p>
     </div>
     <div class="feat-grid">
         <div class="feat-card">
@@ -263,7 +263,7 @@ footer a:hover { color: var(--text); }
         </div>
         <div class="feat-card">
             <div class="feat-icon">♡</div>
-            <div class="feat-title">Wellness Tracking Superiore</div>
+            <div class="feat-title">Wellness Tracking Completo</div>
             <div class="feat-desc">Hooper Index completo, HRV, test tap CNS, injury map con scala VAS, ciclo mestruale. Autoregolazione automatica del carico.</div>
             <span class="feat-badge">Readiness · Recovery</span>
         </div>
@@ -303,8 +303,8 @@ footer a:hover { color: var(--text); }
 <!-- COMPETITOR COMPARISON -->
 <section>
     <div class="section-title">
-        <h2>Perché scegliere CoachOS</h2>
-        <p>Confronto onesto con le alternative più usate nel mercato.</p>
+        <h2>Perché CoachOS</h2>
+        <p>Cosa cambia rispetto a un'app di schede generica o ai fogli di calcolo.</p>
     </div>
     <div style="overflow-x:auto;border:1px solid var(--border);border-radius:12px;">
         <table class="comp-table">
@@ -312,30 +312,30 @@ footer a:hover { color: var(--text); }
                 <tr>
                     <th>Funzione</th>
                     <th class="col-us">CoachOS</th>
-                    <th>Volt Athletics</th>
-                    <th>QuickCoach</th>
+                    <th>App di schede generiche</th>
+                    <th>Excel / carta</th>
                 </tr>
             </thead>
             <tbody>
-                <tr><td>Wellness tracking (HRV, CNS, injury)</td><td class="col-us yes">✓ Completo</td><td class="partial">⚠ Base</td><td class="no">—</td></tr>
-                <tr><td>ACWR + Foster + LSI</td><td class="col-us yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
-                <tr><td>Periodizzazione + mesocicli</td><td class="col-us yes">✓</td><td class="yes">✓</td><td class="partial">⚠ Base</td></tr>
-                <tr><td>Chat coach ↔ atleta</td><td class="col-us yes">✓</td><td class="yes">✓</td><td class="no">—</td></tr>
-                <tr><td>Autoregolazione carico (readiness)</td><td class="col-us yes">✓</td><td class="yes">✓ AI</td><td class="no">—</td></tr>
-                <tr><td>Push notification</td><td class="col-us yes">✓</td><td class="yes">✓</td><td class="yes">✓</td></tr>
-                <tr><td>Offline / PWA</td><td class="col-us yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
-                <tr><td>Free tier</td><td class="col-us yes">✓ 3 atleti</td><td class="no">—</td><td class="yes">✓ 20 atleti</td></tr>
-                <tr><td>Prezzo Pro</td><td class="col-us" style="color:var(--teal)">€29/mese</td><td class="no">€27+/mese</td><td class="yes">€30/mese</td></tr>
+                <tr><td>Wellness tracking (HRV, CNS, injury map)</td><td class="col-us yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+                <tr><td>ACWR + Foster + LSI</td><td class="col-us yes">✓</td><td class="no">—</td><td class="partial">manuale</td></tr>
+                <tr><td>Periodizzazione + mesocicli</td><td class="col-us yes">✓</td><td class="partial">parziale</td><td class="partial">manuale</td></tr>
+                <tr><td>Chat coach ↔ atleta</td><td class="col-us yes">✓</td><td class="partial">parziale</td><td class="no">—</td></tr>
+                <tr><td>Autoregolazione del carico su readiness</td><td class="col-us yes">✓</td><td class="no">—</td><td class="no">—</td></tr>
+                <tr><td>Push notification</td><td class="col-us yes">✓</td><td class="partial">parziale</td><td class="no">—</td></tr>
+                <tr><td>Offline / PWA installabile</td><td class="col-us yes">✓</td><td class="partial">parziale</td><td class="no">—</td></tr>
+                <tr><td>Piano gratuito</td><td class="col-us yes">✓ 3 atleti</td><td class="partial">variabile</td><td class="no">—</td></tr>
             </tbody>
         </table>
     </div>
+    <p style="font-size:11px;color:var(--muted);font-family:var(--fm);margin-top:12px;text-align:center;">Confronto indicativo con categorie generiche di strumenti; le funzioni dei singoli prodotti di terzi variano.</p>
 </section>
 
 <!-- PRICING -->
 <section id="pricing">
     <div class="section-title">
         <h2>Piani semplici, nessuna sorpresa</h2>
-        <p>Inizia gratis. Passa a Pro quando sei pronto. Cancelli quando vuoi.</p>
+        <p>Inizia subito col piano gratuito. I piani a pagamento sono in arrivo.</p>
     </div>
     <div class="pricing-grid">
         <!-- FREE -->
@@ -357,9 +357,9 @@ footer a:hover { color: var(--text); }
         </div>
         <!-- PRO -->
         <div class="pricing-card featured">
-            <div class="pricing-plan featured">Pro · Più popolare</div>
+            <div class="pricing-plan featured">Pro <span style="display:inline-block;font-size:10px;font-family:var(--fm);font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:20px;background:var(--amber);color:#0a0f1d;margin-left:6px;">IN ARRIVO</span></div>
             <div class="pricing-price">€29</div>
-            <div class="pricing-sub">/mese · o €249/anno (risparmia €99)</div>
+            <div class="pricing-sub">/mese · o €249/anno (risparmia €99) · prezzo indicativo</div>
             <ul class="pricing-features">
                 <li>Atleti illimitati</li>
                 <li>Tutte le analytics (ACWR, HRV, e1RM)</li>
@@ -372,13 +372,13 @@ footer a:hover { color: var(--text); }
                 <li>Badge & achievement system atleta</li>
                 <li>Supporto prioritario</li>
             </ul>
-            <a href="/index.html" class="btn-pricing btn-pricing-p">Inizia Pro →</a>
+            <span class="btn-pricing btn-pricing-g" style="opacity:.6;cursor:default;">In arrivo</span>
         </div>
         <!-- TEAM -->
         <div class="pricing-card">
-            <div class="pricing-plan">Team</div>
+            <div class="pricing-plan">Team <span style="display:inline-block;font-size:10px;font-family:var(--fm);font-weight:700;letter-spacing:.08em;padding:3px 9px;border-radius:20px;background:var(--amber);color:#0a0f1d;margin-left:6px;">IN ARRIVO</span></div>
             <div class="pricing-price">€69</div>
-            <div class="pricing-sub">/mese · Per società e staff S&C</div>
+            <div class="pricing-sub">/mese · Per società e staff S&C · prezzo indicativo</div>
             <ul class="pricing-features">
                 <li>Tutto il piano Pro</li>
                 <li>Fino a 3 coach nel team</li>
@@ -400,28 +400,54 @@ footer a:hover { color: var(--text); }
     </div>
 </section>
 
+<!-- Cookie / consent banner (ePrivacy + Linee guida Garante 2021) -->
+<div id="cookie-banner" role="dialog" aria-live="polite" aria-label="Preferenze cookie" style="display:none; position:fixed; left:12px; right:12px; bottom:12px; z-index:1000; max-width:720px; margin:0 auto; background:var(--s1); border:1px solid rgba(249,115,22,0.35); border-radius:14px; padding:18px 20px; box-shadow:0 16px 48px rgba(0,0,0,0.6);">
+  <div style="font-size:13px; color:var(--text); line-height:1.55; margin-bottom:14px;">
+    Usiamo cookie tecnici necessari. Con il tuo consenso usiamo un cookie di attribuzione (referral) e contenuti di terze parti. Dettagli nella <a href="/cookie.html" target="_blank" rel="noopener" style="color:var(--teal);">Cookie Policy</a>.
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+    <button onclick="window._cookieConsent('necessary')" style="padding:10px 18px; border-radius:8px; border:1px solid var(--border); background:transparent; color:var(--muted); font-family:var(--fm); font-size:12px; font-weight:600; cursor:pointer;">Solo necessari</button>
+    <button onclick="window._cookieConsent('all')" style="padding:10px 18px; border-radius:8px; border:none; background:var(--teal); color:#fff; font-size:13px; font-weight:700; cursor:pointer;">Accetta tutti</button>
+  </div>
+</div>
 <script>
-// Referral tracking — salva ref=... nei cookie per attribuzione
+// Cookie consent + referral tracking (il cookie referral parte SOLO dopo consenso)
 (function(){
-    const p = new URLSearchParams(location.search);
-    const ref = p.get('ref');
-    if (ref) {
-        document.cookie = `coachos_ref=${encodeURIComponent(ref)};max-age=2592000;path=/;SameSite=Lax`;
-        // Aggiunge ref a tutti i link verso l'app
+    const KEY='coachos_cookie_consent';
+    function readConsent(){try{return localStorage.getItem(KEY);}catch(_){return null;}}
+    function applyRef(){
+        const ref = new URLSearchParams(location.search).get('ref');
+        if (!ref) return;
+        // Propaga il ref ai link (non è un cookie, non richiede consenso)
         document.querySelectorAll('a[href*="index.html"], a[href="/"]').forEach(a => {
             const u = new URL(a.href, location.href);
             u.searchParams.set('ref', ref);
             a.href = u.toString();
         });
+        // Il cookie di attribuzione è impostato solo con consenso "all"
+        if (readConsent() === 'all') {
+            document.cookie = `coachos_ref=${encodeURIComponent(ref)};max-age=2592000;path=/;SameSite=Lax`;
+        }
     }
+    window._cookieConsent=function(choice){
+        try{localStorage.setItem(KEY,choice);localStorage.setItem(KEY+'_at',new Date().toISOString());}catch(_){}
+        const b=document.getElementById('cookie-banner'); if(b) b.style.display='none';
+        applyRef();
+    };
+    document.addEventListener('DOMContentLoaded',function(){
+        applyRef();
+        if(!readConsent()){const b=document.getElementById('cookie-banner'); if(b) b.style.display='block';}
+    });
 })();
 </script>
 
 <!-- FOOTER -->
 <footer>
     <div>© 2026 CoachOS — Elite Sports Science</div>
-    <div style="display:flex;gap:20px;">
+    <div style="display:flex;gap:20px;flex-wrap:wrap;">
         <a href="/privacy.html">Privacy Policy</a>
+        <a href="/terms.html">Termini di Servizio</a>
+        <a href="/cookie.html">Cookie Policy</a>
         <a href="mailto:ladisafrancesco03@gmail.com">Supporto</a>
         <a href="/index.html">Accedi</a>
     </div>

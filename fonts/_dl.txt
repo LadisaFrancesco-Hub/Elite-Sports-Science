@@ -1,0 +1,10 @@
+archivo https://cdn.jsdelivr.net/npm/@fontsource-variable/archivo@latest/files/archivo-latin-wght-normal.woff2
+syne https://cdn.jsdelivr.net/npm/@fontsource-variable/syne@latest/files/syne-latin-wght-normal.woff2
+bebas-neue https://cdn.jsdelivr.net/npm/@fontsource/bebas-neue@latest/files/bebas-neue-latin-400-normal.woff2
+dm-mono-300 https://cdn.jsdelivr.net/npm/@fontsource/dm-mono@latest/files/dm-mono-latin-300-normal.woff2
+dm-mono-400 https://cdn.jsdelivr.net/npm/@fontsource/dm-mono@latest/files/dm-mono-latin-400-normal.woff2
+dm-mono-500 https://cdn.jsdelivr.net/npm/@fontsource/dm-mono@latest/files/dm-mono-latin-500-normal.woff2
+dm-mono-italic https://cdn.jsdelivr.net/npm/@fontsource/dm-mono@latest/files/dm-mono-latin-400-italic.woff2
+ibm-plex-mono-400 https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@latest/files/ibm-plex-mono-latin-400-normal.woff2
+ibm-plex-mono-500 https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@latest/files/ibm-plex-mono-latin-500-normal.woff2
+ibm-plex-mono-600 https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@latest/files/ibm-plex-mono-latin-600-normal.woff2

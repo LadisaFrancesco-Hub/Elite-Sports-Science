@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "tiny-text",
+        "value": "*",
+        "files": [
+          "landing.html"
+        ],
+        "createdAt": "2026-10-05T21:20:51.006Z",
+        "reason": "Claude: legal fine-print disclaimer at 11px, matches landing's existing caption scale (footer/pills/table th already 11px)"
+      }
+    ]
+  }
+}

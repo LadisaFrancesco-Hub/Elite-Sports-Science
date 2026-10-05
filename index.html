@@ -88,7 +88,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Elite">
 <meta name="theme-color" content="#14181E">
-<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,400&family=Bebas+Neue&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link href="/fonts/fonts.css" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -165,6 +165,10 @@
   <input type="password" id="input-ath-setup-password" name="password" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:15px; outline:none; box-sizing:border-box;" oninput="_clearLoginErr('err-ath-setup')">
   <label style="display:block; text-align:left; color:#9ca3af; font-size:12px; font-weight:600; text-transform:uppercase; margin-bottom:8px;">Conferma password</label>
   <input type="password" id="input-ath-setup-confirm" name="password-confirm" autocomplete="new-password" placeholder="••••••••" style="width:100%; padding:12px 16px; background:#1f2937; border:1px solid rgba(255,255,255,0.1); border-radius:8px; color:#fff; font-size:15px; margin-bottom:20px; outline:none; box-sizing:border-box;" oninput="_clearLoginErr('err-ath-setup')">
+  <label style="display:flex; gap:9px; align-items:flex-start; text-align:left; font-size:12px; color:#9ca3af; line-height:1.5; margin-bottom:16px; cursor:pointer;">
+  <input type="checkbox" id="ath-setup-consent" style="margin-top:2px; width:16px; height:16px; accent-color:#f97316; flex-shrink:0;">
+  <span>Ho letto e accetto la <a href="/privacy.html" target="_blank" rel="noopener" style="color:#f97316;">Privacy Policy</a> e i <a href="/terms.html" target="_blank" rel="noopener" style="color:#f97316;">Termini di Servizio</a>. Confermo di avere almeno 14 anni (se minore, con il consenso di un genitore).</span>
+  </label>
   <div class="login-err" id="err-ath-setup"></div>
   <button onclick="handleAthleteFirstTimeSetup()" style="width:100%; padding:14px; background:#f97316; border:none; border-radius:8px; color:#0a0f1d; font-weight:700; font-size:15px; cursor:pointer;">Crea account e accedi</button>
   <button onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">← Torna indietro</button>
@@ -179,10 +183,39 @@
   <button id="btn-admin-back" onclick="backToCodeStep()" style="width:100%; margin-top:10px; padding:10px; background:transparent; border:none; color:#6b7280; font-size:13px; cursor:pointer;">Torna indietro</button>
   </div>
   </div>
-  <a href="/privacy.html" target="_blank" rel="noopener" style="font-size:11px; color:#4b5563; text-decoration:none; letter-spacing:0.05em;">Privacy Policy</a>
+  <div style="display:flex; gap:14px; justify-content:center; flex-wrap:wrap;">
+  <a href="/privacy.html" target="_blank" rel="noopener" style="font-size:11px; color:#94a3b8; text-decoration:none; letter-spacing:0.05em;">Privacy Policy</a>
+  <a href="/terms.html" target="_blank" rel="noopener" style="font-size:11px; color:#94a3b8; text-decoration:none; letter-spacing:0.05em;">Termini</a>
+  <a href="/cookie.html" target="_blank" rel="noopener" style="font-size:11px; color:#94a3b8; text-decoration:none; letter-spacing:0.05em;">Cookie</a>
+  </div>
 </div>
 
 <div class="toast" id="toast"></div>
+
+<!-- Cookie / consent banner (ePrivacy + Linee guida Garante 2021). Blocca gli embed di terze parti finché non c'è consenso. -->
+<div id="cookie-banner" role="dialog" aria-live="polite" aria-label="Preferenze cookie" style="display:none; position:fixed; left:12px; right:12px; bottom:12px; z-index:100000; max-width:720px; margin:0 auto; background:#111827; border:1px solid rgba(249,115,22,0.35); border-radius:14px; padding:18px 20px; box-shadow:0 16px 48px rgba(0,0,0,0.6); font-family:inherit;">
+  <div style="font-size:13.5px; color:#e5e7eb; line-height:1.55; margin-bottom:14px;">
+    Usiamo lo storage locale necessario al funzionamento dell'app. Con il tuo consenso usiamo anche contenuti di terze parti (video YouTube) che possono impostare cookie. Dettagli nella <a href="/cookie.html" target="_blank" rel="noopener" style="color:#f97316;">Cookie Policy</a>.
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+    <button onclick="window._cookieConsent&&window._cookieConsent('necessary')" style="padding:10px 18px; border-radius:8px; border:1px solid rgba(255,255,255,0.18); background:transparent; color:#cbd5e1; font-size:13px; font-weight:600; cursor:pointer;">Solo necessari</button>
+    <button onclick="window._cookieConsent&&window._cookieConsent('all')" style="padding:10px 18px; border-radius:8px; border:none; background:#f97316; color:#0a0f1d; font-size:13px; font-weight:800; cursor:pointer;">Accetta tutti</button>
+  </div>
+</div>
+<script>
+(function(){
+  var KEY='coachos_cookie_consent';
+  window._cookieConsentValue=function(){try{return localStorage.getItem(KEY);}catch(_){return null;}};
+  window._cookieConsent=function(choice){
+    try{localStorage.setItem(KEY,choice);localStorage.setItem(KEY+'_at',new Date().toISOString());}catch(_){}
+    var b=document.getElementById('cookie-banner'); if(b) b.style.display='none';
+    document.dispatchEvent(new CustomEvent('cookieconsent',{detail:choice}));
+  };
+  document.addEventListener('DOMContentLoaded',function(){
+    if(!window._cookieConsentValue()){var b=document.getElementById('cookie-banner'); if(b) b.style.display='block';}
+  });
+})();
+</script>
 
 <div class="sw-update-banner" id="sw-update-banner" role="status" aria-live="polite">
   <span>Aggiornamento disponibile</span>
@@ -515,6 +548,8 @@
   </div>
   <button class="foot-btn" onclick="exportJSON()">Esporta i miei dati</button>
   <button class="foot-btn" onclick="window.open('/privacy.html','_blank')">Privacy Policy</button>
+  <button class="foot-btn" onclick="window.open('/terms.html','_blank')">Termini di Servizio</button>
+  <button class="foot-btn" onclick="window.open('/cookie.html','_blank')">Cookie Policy</button>
   <button class="foot-btn danger" onclick="confirmReset()"> Reset dati</button>
   </div>
 </nav>
@@ -1458,7 +1493,11 @@
   <option value="Ipertrofia"> Ipertrofia Meccanica / Massa</option>
   <option value="Ricondizionamento"> Ricondizionamento Post-Infortunio</option>
   </select>
-  <button class="btn btn-p" style="width: 100%; margin-top: 40px; background: var(--teal); color: #000; font-weight: bold;" onclick="submitOnboarding()">Completa Profilo </button>
+  <label style="display:flex; gap:9px; align-items:flex-start; font-size:12px; color:var(--muted); line-height:1.5; margin-top:28px; cursor:pointer;">
+  <input type="checkbox" id="onb-health-consent" style="margin-top:2px; width:16px; height:16px; accent-color:var(--teal); flex-shrink:0;">
+  <span>Acconsento espressamente al trattamento dei miei dati relativi alla salute (farmaci, infortuni, dolori, ciclo mestruale, parametri di recupero) per la programmazione e il monitoraggio dell'allenamento, ai sensi dell'art. 9 GDPR. Vedi <a href="/privacy.html" target="_blank" rel="noopener" style="color:var(--teal);">Privacy Policy</a>.</span>
+  </label>
+  <button class="btn btn-p" style="width: 100%; margin-top: 20px; background: var(--teal); color: #000; font-weight: bold;" onclick="submitOnboarding()">Completa Profilo </button>
   </div>
 
   </div>
