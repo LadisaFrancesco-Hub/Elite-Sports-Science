@@ -39,6 +39,7 @@ import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          renderEditor, renderEdExercises, renderProg,
          getEdExercises, loadEditorForAthlete,
          getAthleteRiskScore, cockpitSelectAthlete, openNewAthleteModal, openEditAthleteModal,
+         renderAthleteWorkbar, awGo, awSelectAthlete, openAthlete, renderAthleteOverview, _todayGoUnanswered,
          deleteSelectedAthlete, addAthlete, nudgeAthlete, nudgeSilent,
          editReply, saveReply, delSess, saveSess,
          addExType, openCustomTypeModal, addCircuit, addCircuitEx, removeCircuitEx,
@@ -124,6 +125,8 @@ Object.assign(window, {
     // Editor
     renderEditor, renderEdExercises, loadEditorForAthlete,
     getEdExercises, getAthleteRiskScore, cockpitSelectAthlete,
+    // Athlete workspace (contesto atleta persistente)
+    renderAthleteWorkbar, awGo, awSelectAthlete, openAthlete, renderAthleteOverview, _todayGoUnanswered,
     addExType, openCustomTypeModal, addCircuit, addCircuitEx, removeCircuitEx,
     updateCircuitMeta, updateCircuitEx, updateEx, linkToGroup,
     delExConfirm, moveExercise, handleExNameChange,
@@ -237,7 +240,7 @@ async function _bootstrap() {
                 if (hamburger) hamburger.style.setProperty('display', 'none', 'important');
                 document.querySelector('.topbar').style.setProperty('padding-left', '20px', 'important');
                 document.querySelector('.content').style.paddingBottom = '90px';
-                const athPill = document.querySelector('.ath-pill');
+                const athPill = document.querySelector('.ath-pill') || document.getElementById('top-workspace');
                 if (athPill) athPill.style.setProperty('display', 'none', 'important');
                 const saveDot = document.getElementById('save-dot');
                 const saveTxt = document.getElementById('save-txt');

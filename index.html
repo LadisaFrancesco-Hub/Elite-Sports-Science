@@ -437,17 +437,22 @@
 <div class="shell">
 
 <header class="topbar">
-  <div style="display:flex;align-items:center;gap:9px">
+  <div class="top-brand">
   <div style="width:22px;height:22px;border-radius:5px;background:linear-gradient(145deg,oklch(0.72 0.16 52),oklch(0.56 0.15 40));display:flex;align-items:center;justify-content:center;font:600 10px/1 'IBM Plex Mono',monospace;color:#120A04;flex-shrink:0">ES</div>
   <div class="logo">Elite Sports Science</div>
   <div id="role-badge" class="logo-sub" style="border:1px solid rgba(255,255,255,.09);border-radius:3px;padding:2px 5px">COACH</div>
   </div>
-  <div class="top-spacer"></div>
-  <div class="ath-pill">
-  <div style="font-size:11px;color:var(--muted)">Atleta:</div>
-  <select id="g-ath" onchange="onAthChange()"></select>
+  <!-- Workspace atleta integrato nella topbar: switcher (avatar + atleta) + tab.
+       Le tab compaiono solo nelle viste atleta-scoped (gestite da renderAthleteWorkbar). -->
+  <div class="top-workspace" id="top-workspace">
+  <div class="aw-switch">
+  <span class="aw-avatar" id="aw-avatar">—</span>
+  <select id="g-ath" onchange="onAthChange()" aria-label="Atleta attivo"></select>
   </div>
-  <div style="display:flex;align-items:center;gap:6px; transition: all 0.3s ease;">
+  <div class="aw-tabs" id="aw-tabs" hidden></div>
+  </div>
+  <!-- Indicatore salvataggio mantenuto nel DOM (lo aggiorna updateCloudStatus) ma nascosto -->
+  <div style="display:none" aria-hidden="true">
   <div class="save-dot" id="save-dot"></div>
   <div class="save-txt" id="save-txt">Salvato</div>
   </div>
@@ -472,22 +477,30 @@
 
 <nav class="sidebar">
   <div class="nav-group">
-  <span class="nav-lbl">Coach</span>
   <button class="nav-btn on" onclick="go('dashboard',this)"><span class="ico"><svg><use href="#ic-dash"/></svg></span>Dashboard</button>
-  <button class="nav-btn" onclick="go('athletes',this)"><span class="ico"><svg><use href="#ic-ath"/></svg></span>Atleti <span class="nav-badge" id="nb-ath">0</span></button>
-  <button class="nav-btn" onclick="go('storico',this)"><span class="ico"><svg><use href="#ic-hist"/></svg></span>Storico <span class="nav-badge" id="nb-sto">0</span><span class="nav-badge-warn" id="nb-reply" style="display:none">0</span></button>
-  <button class="nav-btn" onclick="go('messaggi',this)"><span class="ico"><svg><use href="#ic-msg"/></svg></span>Messaggi <span class="nav-badge" id="nb-msg" style="display:none">0</span></button>
-  <button class="nav-btn" onclick="go('calendario',this)"><span class="ico"><svg><use href="#ic-cal"/></svg></span>Calendario</button>
-  <button class="nav-btn" onclick="go('editor',this)"><span class="ico"><svg><use href="#ic-edit"/></svg></span>Editor schede</button>
-  <button class="nav-btn" onclick="go('macro',this)"><span class="ico"><svg><use href="#ic-macro"/></svg></span>Macro Periodiz.</button>
-  <button class="nav-btn" onclick="go('libreria',this)"><span class="ico"><svg><use href="#ic-lib"/></svg></span>Libreria Esercizi</button>
   </div>
   <!-- [RIMOSSO dalla sidebar coach] Wellness, Sessione, Feedback coach sono pannelli atleta.
   Accessibili dall'atleta via bottom bar. Il coach accede al feedback atleta da Storico e Messaggi. -->
   <div class="nav-group">
-  <span class="nav-lbl">Analisi</span>
-  <button class="nav-btn" onclick="go('analytics',this)"><span class="ico"><svg><use href="#ic-analytics"/></svg></span>Analytics</button>
+  <span class="nav-lbl">Chi alleno</span>
+  <button class="nav-btn" onclick="go('athletes',this)"><span class="ico"><svg><use href="#ic-ath"/></svg></span>Atleti <span class="nav-badge" id="nb-ath">0</span></button>
+  <button class="nav-btn" onclick="go('storico',this)"><span class="ico"><svg><use href="#ic-hist"/></svg></span>Storico <span class="nav-badge" id="nb-sto">0</span><span class="nav-badge-warn" id="nb-reply" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="go('messaggi',this)"><span class="ico"><svg><use href="#ic-msg"/></svg></span>Messaggi <span class="nav-badge" id="nb-msg" style="display:none">0</span></button>
+  <button class="nav-btn" onclick="go('calendario',this)"><span class="ico"><svg><use href="#ic-cal"/></svg></span>Calendario</button>
+  </div>
+  <div class="nav-group">
+  <span class="nav-lbl">Cosa programmo</span>
+  <button class="nav-btn" onclick="go('editor',this)"><span class="ico"><svg><use href="#ic-edit"/></svg></span>Editor schede</button>
+  <button class="nav-btn" onclick="go('macro',this)"><span class="ico"><svg><use href="#ic-macro"/></svg></span>Macro Periodiz.</button>
   <button class="nav-btn" onclick="go('progressione',this)"><span class="ico"><svg><use href="#ic-prog"/></svg></span>Progressione</button>
+  <button class="nav-btn" onclick="go('libreria',this)"><span class="ico"><svg><use href="#ic-lib"/></svg></span>Libreria Esercizi</button>
+  </div>
+  <div class="nav-group">
+  <span class="nav-lbl">Come va</span>
+  <button class="nav-btn" onclick="go('analytics',this)"><span class="ico"><svg><use href="#ic-analytics"/></svg></span>Analytics</button>
+  </div>
+  <div class="nav-group">
+  <span class="nav-lbl">Strumenti</span>
   <button class="nav-btn" onclick="go('calcolatori',this)"><span class="ico"><svg><use href="#ic-calc"/></svg></span>Calcolatori S&C</button>
   </div>
   <div class="nav-group" id="nav-team-group" style="display:none">
@@ -510,42 +523,44 @@
 
   <div class="panel" id="p-dashboard">
   <div class="ph" id="dh-title">Dashboard</div>
-  <div class="ps" id="dh-sub">Vista globale</div>
-  <div class="card" id="dh-cockpit" style="margin-bottom:10px;display:none"></div>
+  <div class="ps" id="dh-sub">Il colpo d'occhio sulla squadra e sull'atleta attivo</div>
+
+  <!-- ① DA FARE OGGI — cosa richiede un'azione adesso -->
+  <div class="co-eyebrow"><span>Da fare oggi</span></div>
+  <div class="card" id="dh-today" style="margin-bottom:6px"></div>
+
+  <!-- ② ATLETA ATTIVO — dettaglio del singolo -->
+  <div class="co-eyebrow">
+  <span>Atleta attivo</span>
+  <span class="co-eyebrow-note" id="dh-active-ath">—</span>
+  <button class="aw-tab" style="box-shadow:none;color:var(--teal)" onclick="if(appState.selAthId)openAthlete(appState.selAthId)">Apri scheda atleta →</button>
+  </div>
   <div class="g4" id="dh-kpis"></div>
-  <div class="card" id="dh-insight" style="margin-bottom:10px;display:none"></div>
+  <div class="card" id="dh-insight" style="margin-bottom:12px;display:none"></div>
   <div class="g2">
   <div class="card"><div class="card-t">Volume — ultime 8 sessioni</div><div class="bc" id="dh-bc"></div></div>
   <div class="card"><div class="card-t">Alert automatici & Sports Science</div><div id="dh-alerts"></div></div>
   </div>
+
+  <!-- ③ SQUADRA — overview di tutti gli atleti -->
+  <div class="co-eyebrow"><span>Squadra</span><span class="co-eyebrow-note">clic su un atleta per aprirlo</span></div>
+  <div class="card" id="dh-cockpit" style="margin-bottom:12px;display:none"></div>
+  <div class="card" id="dh-compliance" style="margin-bottom:12px"></div>
   <div id="dh-inattivi" style="display:none" class="card"></div>
-  <div class="card" id="dh-compliance" style="margin-bottom:10px"></div>
-  <div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:14px 20px !important;">
-  <div>
-  <div style="font-size:12px;font-weight:700;color:var(--text);"> Report Mensile Atleta</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:3px;">Genera un PDF con sessioni, volume, e1RM, ACWR e wellness</div>
+
+  <!-- ④ AZIONI RAPIDE — operazioni, separate dalla lettura dati -->
+  <div class="co-eyebrow"><span>Azioni rapide</span></div>
+  <div class="co-actions">
+  <button class="co-action" onclick="exportAthleteReport()"><span class="co-action-ic">📄</span><span>Report mensile PDF<small>Sessioni · volume · e1RM · ACWR · wellness</small></span></button>
+  <button class="co-action" onclick="sendWellnessReminders()"><span class="co-action-ic">🔔</span><span>Reminder wellness <span id="wellness-reminder-status" style="color:var(--teal);font-family:var(--fmono);font-size:10px"></span><small>Promemoria check-in agli atleti mancanti</small></span></button>
+  <button class="co-action" onclick="testPushNotification()"><span class="co-action-ic">📲</span><span>Test notifiche push<small>Verifica il sistema di notifiche</small></span></button>
   </div>
-  <button class="btn btn-g btn-sm" onclick="exportAthleteReport()" style="color:var(--teal);border-color:rgba(249,115,22,.3);white-space:nowrap;">Esporta PDF</button>
-  </div>
-  <div class="card" style="margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;padding:14px 20px !important;">
-  <div>
-  <div style="font-size:12px;font-weight:700;color:var(--text);"> Reminder Wellness</div>
-  <div style="font-size:11px;color:var(--muted);margin-top:3px;">Invia un promemoria agli atleti che non hanno ancora fatto il check-in oggi</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:8px;">
-  <span id="wellness-reminder-status" style="font-size:10px;color:var(--muted);"></span>
-  <button class="btn btn-g btn-sm" onclick="sendWellnessReminders()" style="color:var(--amber);border-color:var(--amber);white-space:nowrap;">Invia Reminder</button>
-  </div>
-  </div>
-  <div class="card" style="display:flex; align-items:center; justify-content:space-between; padding:14px 20px !important;">
-  <div>
-  <div style="font-size:12px; font-weight:700; color:var(--text);"> Notifiche Push</div>
-  <div style="font-size:11px; color:var(--muted); margin-top:3px;">Verifica che il sistema di notifiche funzioni correttamente</div>
-  </div>
-  <button class="btn btn-g btn-sm" onclick="testPushNotification()" style="color:var(--teal); border-color:var(--teal); white-space:nowrap;">
-  Test Push
-  </button>
-  </div>
+</div>
+
+<div class="panel" id="p-ath-overview">
+  <div class="ph" id="ao-title">Panoramica atleta</div>
+  <div class="ps" id="ao-sub">—</div>
+  <div id="ao-body"></div>
 </div>
 
 <div class="panel" id="p-messaggi">
@@ -1795,7 +1810,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.03'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.05'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });

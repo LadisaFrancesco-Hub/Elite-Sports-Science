@@ -665,8 +665,11 @@ export function go(id, btn) {
 
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('on'));
   document.getElementById('p-' + id).classList.add('on');
+  // Evidenzia la voce sidebar corrispondente anche quando si entra senza btn
+  // esplicito (es. dalla barra workspace atleta o dal cockpit).
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('on'));
-  if (btn) btn.classList.add('on');
+  const navBtn = btn || document.querySelector(`.sidebar .nav-btn[onclick*="'${id}'"]`);
+  if (navBtn) navBtn.classList.add('on');
   appState.curPanel = id;
 
   const renders = {
@@ -683,6 +686,7 @@ export function go(id, btn) {
   'ath-home': renderAthHome,
   'ath-week': renderAthWeek,
   'ath-summary': () => {},
+  'ath-overview': renderAthleteOverview,
   'ath-progressi': renderAthProgressi,
   'ath-storico': renderAthStorico,
   'calendario': renderCalendario,
@@ -693,6 +697,7 @@ export function go(id, btn) {
   'libreria': () => { import('./library.js').then(m => m.renderExerciseLibrary()); }
   };
   if (renders[id]) renders[id]();
+  renderAthleteWorkbar();   // mostra/aggiorna la barra workspace atleta (no-op per l'atleta)
   playEntrance(document.getElementById('p-' + id));   // no-op fuori dall'app atleta
 
   document.querySelectorAll('.bb-item').forEach(b => b.classList.remove('on'));
@@ -747,6 +752,7 @@ export function populateSelects() {
   updateReplyBadge();
   updateMsgBadge();
   updateModalSessions();
+  renderAthleteWorkbar();   // aggiorna avatar/tab nella topbar dopo il popolamento
 }
 
 export function onAthChange() {
@@ -1018,7 +1024,10 @@ export function renderDashboard() {
 
   const sess = appState.selAthId ? DB.sessions.filter(s => s.athlete === appState.selAthId) : [];
   const ath = appState.selAthId ? athById(appState.selAthId) : null;
-  document.getElementById('dh-title').textContent = ath ? ath.name : 'Seleziona un Atleta';
+  // Titolo pannello statico ("Dashboard"); il nome dell'atleta attivo vive
+  // nell'eyebrow della sezione ② (contesto chiaro senza confondere la home-squadra).
+  const activeLbl = document.getElementById('dh-active-ath');
+  if (activeLbl) activeLbl.textContent = ath ? [ath.name, ath.level, ath.goal].filter(Boolean).join(' · ') : 'Nessun atleta selezionato';
 
   // Auto-invio reminder wellness: una volta al giorno, finestra 6-11am
   const _now = new Date();
@@ -1036,19 +1045,21 @@ export function renderDashboard() {
   statusEl.textContent = 'Inviato oggi ✓';
   }
 
-  // Cruscotto settimanale — tutti gli atleti in un colpo d'occhio (sempre)
+  // ① Da fare oggi — triage distillato (sempre, livello squadra)
+  _renderTodayCard();
+
+  // ③ Cruscotto settimanale — tutti gli atleti in un colpo d'occhio (sempre)
   _renderWeeklyCockpit();
 
-  // AI Insight settimanale — executive summary per l'atleta selezionato
+  // ② AI Insight settimanale — executive summary per l'atleta selezionato
   _renderInsightCard();
 
-  // Motore di adozione — attività/logging atleti (sempre, indip. dall'atleta selezionato)
+  // ③ Motore di adozione — attività/logging atleti (sempre, indip. dall'atleta selezionato)
   _renderAdoptionCard();
 
   if (!ath) return;
 
   const acwrData = appState.selAthId ? calculateACWR(appState.selAthId) : null;
-  document.getElementById('dh-sub').textContent = [ath.level, ath.goal].filter(Boolean).join(' · ');
 
   let alertCaricoHTML = '';
   if (acwrData && acwrData.field && acwrData.field.value !== null && acwrData.field.level !== 'insufficient') {
@@ -1604,6 +1615,47 @@ function _acwrColor(v) {
   return 'var(--dim)';
 }
 
+// ① DA FARE OGGI — triage distillato in cima alla dashboard.
+// Non duplica il cruscotto: estrae SOLO ciò che richiede un'azione del coach
+// adesso (critici, sessioni da rispondere, inattivi da sollecitare, infortuni)
+// con l'azione a portata di clic. Stato positivo quando non c'è nulla.
+function _renderTodayCard() {
+  const el = document.getElementById('dh-today');
+  if (!el) return;
+  if (!DB.athletes.length) { el.style.display = 'none'; return; }
+  el.style.display = '';
+
+  const critici = DB.athletes.filter(a => { const i = generateWeeklyInsight(a.id); return i && i.tone === 'bad'; });
+  const unanswered = DB.sessions.filter(s => s.notes && s.notes.trim() && (!s.reply || !s.reply.trim()));
+  const daSollecitare = DB.athletes.filter(a => _athAdoptionStatus(a.id).tier !== 'active');
+  const infortuni = (DB.injuries || []).filter(x => x.status === 'Attivo');
+
+  const rows = [];
+  if (critici.length) {
+    rows.push(`<div class="alert alert-bad"><span class="alert-ic">▲</span><span><b>${critici.length} ${critici.length === 1 ? 'atleta in stato critico' : 'atleti in stato critico'}</b> — ${critici.slice(0, 4).map(a => `<a onclick="openAthlete('${a.id}')" style="color:inherit;text-decoration:underline;cursor:pointer;font-weight:700">${escHtml(a.name.split(' ')[0])}</a>`).join(', ')}${critici.length > 4 ? ' …' : ''}</span></div>`);
+  }
+  if (unanswered.length) {
+    rows.push(`<div class="alert alert-warn" style="align-items:center;justify-content:space-between"><span style="display:flex;gap:9px;align-items:flex-start"><span class="alert-ic">✎</span><span><b>${unanswered.length} ${unanswered.length === 1 ? 'sessione da rispondere' : 'sessioni da rispondere'}</b> — note dagli atleti senza reply del coach</span></span><button class="btn btn-a btn-sm" style="flex:0 0 auto" onclick="_todayGoUnanswered()">Rispondi →</button></div>`);
+  }
+  if (daSollecitare.length) {
+    rows.push(`<div class="alert alert-warn" style="align-items:center;justify-content:space-between"><span style="display:flex;gap:9px;align-items:flex-start"><span class="alert-ic">◷</span><span><b>${daSollecitare.length} ${daSollecitare.length === 1 ? 'atleta inattivo' : 'atleti inattivi'}</b> — non loggano da un po'</span></span><button class="btn btn-a btn-sm" style="flex:0 0 auto" onclick="nudgeSilent()">Sollecita</button></div>`);
+  }
+  if (infortuni.length) {
+    rows.push(`<div class="alert alert-bad"><span class="alert-ic">◆</span><span><b>${infortuni.length} ${infortuni.length === 1 ? 'infortunio attivo' : 'infortuni attivi'}</b> — verifica il programma di chi è coinvolto</span></div>`);
+  }
+
+  el.innerHTML = rows.length
+    ? rows.join('')
+    : `<div class="alert alert-ok"><span class="alert-ic">✓</span><span>Nessuna azione urgente — tutto sotto controllo.</span></div>`;
+}
+
+// Scorciatoia del triage: mostra lo Storico filtrato sulle sessioni da rispondere.
+export function _todayGoUnanswered() {
+  const f = document.getElementById('sf-ath'); if (f) f.value = '';
+  const u = document.getElementById('sf-unanswered'); if (u) u.checked = true;
+  go('storico', null);
+}
+
 // Cruscotto settimanale — tutti gli atleti in un colpo d'occhio.
 // Una riga per atleta: verdetto (dall'insight engine), aderenza, ACWR peggiore,
 // ultimo log, rischio, infortunio + il rilievo prioritario. Ordinati per gravità.
@@ -1691,6 +1743,177 @@ export function cockpitSelectAthlete(id) {
   go(appState.curPanel, document.querySelector('.nav-btn.on'));
   const panel = document.getElementById('p-dashboard');
   if (panel && panel.scrollIntoView) panel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+// ─────────────────────────────────────────────────────────────
+// ATHLETE WORKSPACE — contesto atleta persistente (solo coach)
+// Vive nella topbar: lo switcher atleta (avatar + #g-ath) è sempre presente;
+// le tab (Panoramica/Scheda/Progr./Analytics/Storico/Messaggi) compaiono solo
+// nelle viste atleta-scoped. È un layer di presentazione: le tab riusano i
+// pannelli esistenti via go() con selAthId già impostato.
+// ─────────────────────────────────────────────────────────────
+const AW_TABS = [
+  { id: 'ath-overview', label: 'Panoramica' },
+  { id: 'editor',       label: 'Scheda' },
+  { id: 'progressione', label: 'Progr.' },
+  { id: 'analytics',    label: 'Analytics' },
+  { id: 'storico',      label: 'Storico' },
+  { id: 'messaggi',     label: 'Messaggi' },
+];
+const AW_PANELS = AW_TABS.map(t => t.id);
+
+function _initials(name) {
+  return (name || '?').trim().split(/\s+/).slice(0, 2).map(w => w[0] || '').join('').toUpperCase() || '?';
+}
+
+export function renderAthleteWorkbar() {
+  const tabsEl = document.getElementById('aw-tabs');
+  const av = document.getElementById('aw-avatar');
+  if (window.userRole === 'ATLETA') { if (tabsEl) tabsEl.hidden = true; return; }
+
+  // Avatar: riflette sempre l'atleta attivo (lo switcher è fisso in topbar)
+  const ath = athById(appState.selAthId);
+  if (av) av.textContent = ath ? _initials(ath.name) : '—';
+
+  if (!tabsEl) return;
+  // Le tab compaiono solo nelle viste atleta-scoped
+  if (!AW_PANELS.includes(appState.curPanel) || !DB.athletes.length) {
+    tabsEl.hidden = true;
+    tabsEl.innerHTML = '';
+    return;
+  }
+  tabsEl.hidden = false;
+
+  const _awMsgs = (DB.messages && DB.messages[appState.selAthId]) || [];
+  const unreadByAth = _awMsgs.filter(m => m.from_type === 'athlete' && !m.read_at).length;
+  tabsEl.innerHTML = AW_TABS.map(t => {
+    const on = appState.curPanel === t.id ? ' on' : '';
+    const badge = (t.id === 'messaggi' && unreadByAth > 0) ? `<span class="aw-tab-badge">${unreadByAth}</span>` : '';
+    return `<button class="aw-tab${on}" onclick="awGo('${t.id}')">${t.label}${badge}</button>`;
+  }).join('');
+}
+
+// Naviga a una tab del workspace mantenendo l'atleta attivo + scoping dei filtri.
+export function awGo(panelId) {
+  if (panelId === 'storico') {
+    const f = document.getElementById('sf-ath');
+    if (f) f.value = appState.selAthId || '';
+  }
+  if (panelId === 'messaggi') {
+    const m = document.getElementById('msg-ath-select');
+    if (m) m.value = appState.selAthId || '';
+  }
+  go(panelId, null);
+}
+
+// Cambia l'atleta attivo dalla barra workspace e sincronizza tutti i selettori.
+export function awSelectAthlete(id) {
+  appState.selAthId = id;
+  const g = document.getElementById('g-ath'); if (g) g.value = id;
+  const ed = document.getElementById('ed-ath');
+  if (ed) {
+    ed.value = id;
+    const sch = DB.schedules[id];
+    appState.edSessId = (sch && sch.sessions && sch.sessions.length) ? sch.sessions[0].id : '';
+  }
+  const f = document.getElementById('sf-ath'); if (f) f.value = id;
+  const m = document.getElementById('msg-ath-select'); if (m) m.value = id;
+  go(appState.curPanel, null);
+}
+
+// Entra nel workspace di un atleta (dal roster, dal cockpit o dalla dashboard).
+export function openAthlete(id) {
+  if (id) {
+    appState.selAthId = id;
+    const g = document.getElementById('g-ath'); if (g) g.value = id;
+    const ed = document.getElementById('ed-ath');
+    if (ed) {
+      ed.value = id;
+      const sch = DB.schedules[id];
+      appState.edSessId = (sch && sch.sessions && sch.sessions.length) ? sch.sessions[0].id : '';
+    }
+  }
+  go('ath-overview', null);
+}
+
+// Panoramica atleta — landing del workspace. Riusa i motori esistenti
+// (insight settimanale, ACWR, risk) e offre scorciatoie alle altre tab.
+export function renderAthleteOverview() {
+  const body = document.getElementById('ao-body');
+  if (!body) return;
+  const ath = appState.selAthId ? athById(appState.selAthId) : null;
+  const titleEl = document.getElementById('ao-title');
+  const subEl = document.getElementById('ao-sub');
+
+  if (!ath) {
+    if (titleEl) titleEl.textContent = 'Panoramica atleta';
+    if (subEl) subEl.textContent = 'Nessun atleta selezionato';
+    body.innerHTML = `<div class="alert alert-info"><span class="alert-ic">○</span><span>Seleziona un atleta dalla barra in alto o dal roster per vedere la sua panoramica.</span></div>`;
+    return;
+  }
+
+  if (titleEl) titleEl.textContent = ath.name;
+  if (subEl) subEl.textContent = [ath.level, ath.goal].filter(Boolean).join(' · ') || 'Panoramica atleta';
+
+  const sess = DB.sessions.filter(s => s.athlete === ath.id);
+  const n = sess.length;
+  const avgRpe = n ? (sess.reduce((a, s) => a + (s.rpe || 0), 0) / n).toFixed(1) : '—';
+  const acwr = calculateACWR(ath.id);
+  const ins = generateWeeklyInsight(ath.id);
+  const risk = getAthleteRiskScore(ath.id);
+  const TONE = { good: { c: 'var(--green)', cls: 'alert-ok', t: 'POSITIVO' }, warn: { c: 'var(--amber)', cls: 'alert-warn', t: 'DA MONITORARE' }, bad: { c: 'var(--coral)', cls: 'alert-bad', t: 'CRITICO' } };
+  const tk = ins ? TONE[ins.tone] : null;
+
+  // Stato sintetico
+  let statusHtml = '';
+  if (ins) {
+    statusHtml = `
+    <div class="alert ${tk.cls}" style="flex-direction:column;align-items:stretch;gap:8px">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <span style="font-size:14px;font-weight:800;color:var(--text)">${escHtml(ins.headline)}</span>
+    <span style="font-size:10px;font-weight:800;font-family:var(--fmono);color:${tk.c};border:1px solid ${tk.c};border-radius:4px;padding:2px 8px;white-space:nowrap">${tk.t}</span>
+    </div>
+    ${ins.findings.length ? `<div style="display:flex;flex-direction:column;gap:5px">${ins.findings.map(f => `<div style="display:flex;gap:8px;align-items:flex-start;font-size:12px;line-height:1.4;color:var(--text2)"><span style="width:6px;height:6px;border-radius:50%;background:${TONE[f.level].c};flex:0 0 6px;margin-top:5px"></span><span>${escHtml(f.text)}</span></div>`).join('')}</div>` : ''}
+    ${ins.rec ? `<div style="font-size:12px;line-height:1.45;color:var(--text)"><b style="color:${tk.c};font-family:var(--fmono);font-size:10px;letter-spacing:.05em">→ </b>${escHtml(ins.rec)}</div>` : ''}
+    </div>`;
+  }
+
+  // KPI
+  const kpiHtml = `
+  <div class="g4" style="margin-bottom:14px">
+  <div class="kpi"><div class="kpi-l">Sessioni totali</div><div class="kpi-v">${n}</div></div>
+  <div class="kpi"><div class="kpi-l">RPE medio</div><div class="kpi-v">${avgRpe}</div></div>
+  <div class="kpi"><div class="kpi-l">ACWR Gym</div><div class="kpi-v" style="color:${acwr ? acwr.gym.color : 'var(--muted)'}">${acwr ? (acwr.gym.value ?? '—') : '—'}</div><div class="kpi-s">${acwr ? acwr.gym.text : ''}</div></div>
+  <div class="kpi"><div class="kpi-l">ACWR Campo</div><div class="kpi-v" style="color:${acwr ? acwr.field.color : 'var(--muted)'}">${acwr ? (acwr.field.value ?? '—') : '—'}</div><div class="kpi-s">${acwr ? acwr.field.text : ''}</div></div>
+  </div>`;
+
+  // Volume ultime 8
+  const last8 = sess.slice(-8);
+  const maxV = Math.max(...last8.map(s => s.vol || 0), 1);
+  const totalVol = last8.reduce((s, x) => s + (x.vol || 0), 0);
+  const volHtml = `
+  <div class="card">
+  <div class="card-t">Volume — ultime 8 sessioni</div>
+  <div class="bc">${
+    (!last8.length || totalVol === 0)
+    ? `<div style="width:100%;text-align:center;color:var(--muted);font-size:12px;padding:24px 0">${last8.length ? 'Volume non registrato' : 'Nessuna sessione registrata'}</div>`
+    : last8.map(s => `<div class="bc-col"><div class="bc-val">${((s.vol || 0) / 1000).toFixed(1)}k</div><div class="bc-bar" style="height:${Math.round((s.vol || 0) / maxV * 143)}px;background:var(--teal)"></div><div class="bc-lbl">${(s.date || '').slice(5)}</div></div>`).join('')
+  }</div>
+  </div>`;
+
+  // Scorciatoie alle altre tab + azioni rapide dell'atleta
+  const quickHtml = `
+  <div class="co-eyebrow"><span>Vai a</span></div>
+  <div class="co-actions">
+  <button class="co-action" onclick="awGo('editor')"><span class="co-action-ic">✎</span><span>Modifica scheda<small>Editor · blocchi · progressione</small></span></button>
+  <button class="co-action" onclick="awGo('progressione')"><span class="co-action-ic">📈</span><span>Progressione<small>Andamento volume settimanale</small></span></button>
+  <button class="co-action" onclick="awGo('analytics')"><span class="co-action-ic">📊</span><span>Analytics<small>Trend biomeccanici · composizione · test</small></span></button>
+  <button class="co-action" onclick="awGo('storico')"><span class="co-action-ic">🕑</span><span>Storico<small>Tutte le sessioni dell'atleta</small></span></button>
+  <button class="co-action" onclick="awGo('messaggi')"><span class="co-action-ic">💬</span><span>Messaggi<small>Chat diretta coach ↔ atleta</small></span></button>
+  <button class="co-action" onclick="exportAthleteReport()"><span class="co-action-ic">📄</span><span>Report PDF<small>Report mensile white-label</small></span></button>
+  </div>`;
+
+  body.innerHTML = statusHtml + kpiHtml + volHtml + quickHtml;
 }
 
 export function getAthleteRiskScore(athId) {
@@ -1840,7 +2063,8 @@ export function renderAthletes() {
   const div = document.createElement('div');
   div.className = 'ac' + (a.id === appState.selAthId ? ' sel' : '');
   div.style.border = borderStyle;
-  div.onclick = () => { appState.selAthId = a.id; renderAthletes(); renderDashboard(); renderStorico(); };
+  // Click sulla card = apri il workspace dell'atleta (contesto persistente).
+  div.onclick = () => { renderAthletes(); openAthlete(a.id); };
   div.innerHTML = `
   <div class="ac-av">${init}</div>
   <div class="ac-n">${escHtml(a.name)}</div>
