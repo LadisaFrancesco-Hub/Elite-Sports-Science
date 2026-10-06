@@ -1,0 +1,42 @@
+[     128ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     128ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     128ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     128ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     143ms] [LOG] Supabase pronto. @ http://localhost:8777/auth.js?v=7.05:34
+[     143ms] [LOG] Avvio dell'app con sistema di protezione Fallback... @ http://localhost:8777/auth.js?v=7.05:540
+[     149ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:8777/index.html:0
+[     150ms] [LOG] Dati locali caricati con successo. @ http://localhost:8777/auth.js?v=7.05:560
+[     150ms] [LOG] Supabase agganciato — verifica sessione... @ http://localhost:8777/auth.js?v=7.05:568
+[     352ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     353ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     353ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     353ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     366ms] [LOG] Supabase pronto. @ http://localhost:8777/auth.js?v=7.05:34
+[     366ms] [LOG] Avvio dell'app con sistema di protezione Fallback... @ http://localhost:8777/auth.js?v=7.05:540
+[     367ms] [LOG] Dati locali caricati con successo. @ http://localhost:8777/auth.js?v=7.05:560
+[     367ms] [LOG] Supabase agganciato — verifica sessione... @ http://localhost:8777/auth.js?v=7.05:568
+[     369ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:8777/index.html:0
+[   71993ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   71994ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   72666ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   72666ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   73230ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   73230ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   73756ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   73756ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   74127ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   74127ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   74342ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   74343ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   74489ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   74489ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   74627ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   74627ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   74834ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   74834ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   74977ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   74978ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   75145ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   75145ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0
+[   75373ms] [ERROR] Access to fetch at 'https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session' from origin 'http://localhost:8777' has been blocked by CORS policy: Response to preflight request doesn't pass access control check: It does not have HTTP ok status. @ http://localhost:8777/index.html:0
+[   75374ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://ncvmnoaelzdmuiqrvcjl.supabase.co/functions/v1/create-checkout-session:0

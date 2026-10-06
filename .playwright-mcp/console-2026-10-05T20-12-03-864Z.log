@@ -1,0 +1,29 @@
+[     160ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     160ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     160ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     160ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     175ms] [LOG] Supabase pronto. @ http://localhost:8777/auth.js?v=7.04:34
+[     176ms] [LOG] Avvio dell'app con sistema di protezione Fallback... @ http://localhost:8777/auth.js?v=7.04:540
+[     179ms] [LOG] Dati locali caricati con successo. @ http://localhost:8777/auth.js?v=7.04:560
+[     179ms] [LOG] Supabase agganciato — verifica sessione... @ http://localhost:8777/auth.js?v=7.04:568
+[     181ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:8777/index.html:0
+[     256ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     256ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     256ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     256ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[     269ms] [LOG] Supabase pronto. @ http://localhost:8777/auth.js?v=7.04:34
+[     269ms] [LOG] Avvio dell'app con sistema di protezione Fallback... @ http://localhost:8777/auth.js?v=7.04:540
+[     271ms] [LOG] Dati locali caricati con successo. @ http://localhost:8777/auth.js?v=7.04:560
+[     271ms] [LOG] Supabase agganciato — verifica sessione... @ http://localhost:8777/auth.js?v=7.04:568
+[     273ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:8777/index.html:0
+[  345190ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[  345190ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[  345190ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[  345190ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[  345202ms] [LOG] Supabase pronto. @ http://localhost:8777/auth.js?v=7.04:34
+[  345203ms] [LOG] Avvio dell'app con sistema di protezione Fallback... @ http://localhost:8777/auth.js?v=7.04:540
+[  345204ms] [ERROR] An unknown error occurred when fetching the script. @ :0
+[  345206ms] [LOG] SW Error: TypeError: Failed to register a ServiceWorker for scope ('http://localhost:8777/') with script ('http://localhost:8777/sw.js'): An unknown error occurred when fetching the script. @ http://localhost:8777/auth.js?v=7.04:1319
+[  345208ms] [LOG] Dati locali caricati con successo. @ http://localhost:8777/auth.js?v=7.04:560
+[  345208ms] [LOG] Supabase agganciato — verifica sessione... @ http://localhost:8777/auth.js?v=7.04:568
+[  345210ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:8777/index.html:0

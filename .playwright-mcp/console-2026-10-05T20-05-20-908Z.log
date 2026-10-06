@@ -1,0 +1,15 @@
+[    1475ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[    1475ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[    1475ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[    1475ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[    1492ms] [LOG] Supabase pronto. @ http://localhost:8777/auth.js?v=7.03:34
+[    1492ms] [LOG] Avvio dell'app con sistema di protezione Fallback... @ http://localhost:8777/auth.js?v=7.03:540
+[    1501ms] [LOG] Supabase agganciato — verifica sessione... @ http://localhost:8777/auth.js?v=7.03:568
+[    1575ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[    1575ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[    1575ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[    1575ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[    1586ms] [LOG] Supabase pronto. @ http://localhost:8777/auth.js?v=7.03:34
+[    1587ms] [LOG] Avvio dell'app con sistema di protezione Fallback... @ http://localhost:8777/auth.js?v=7.03:540
+[    1587ms] [LOG] Supabase agganciato — verifica sessione... @ http://localhost:8777/auth.js?v=7.03:568
+[    1671ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:8777/index.html:0

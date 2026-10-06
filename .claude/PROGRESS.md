@@ -164,6 +164,15 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Prossimo passo — roadmap
 
+### ⚖️ Follow-up legali/compliance (DA FARE PRIMA DI RIATTIVARE LA VENDITA)
+> Contesto: audit legale 2026-10-05 → prima fase fix **deployata in prod (v7.06)**. Queste sono le voci **non-tecniche** rimaste, fuori dal controllo del codice. Finché non sono chiuse, i piani a pagamento restano "IN ARRIVO" e il checkout Stripe è disabilitato.
+1. **P.IVA + dati fiscali** (BLOCCANTE per vendere): aprire P.IVA, poi pubblicare denominazione, indirizzo/sede, P.IVA ed eventuale REA nei footer + in `terms.html` (c'è già un placeholder "dati fiscali da inserire"). Senza, vietato vendere con continuità (D.Lgs. 70/2003 art. 7; D.P.R. 633/1972).
+2. **Riattivazione vendita** (dopo P.IVA): creare i prodotti su **Stripe** e sostituire i price ID placeholder `price_XXX` in `billing.js`; riattivare i CTA (landing + modal upgrade); rimuovere i badge "IN ARRIVO"; aggiungere al checkout "rinnovo automatico, IVA inclusa, recesso 14gg".
+3. **Validazione legale** (consigliata prima del go-live): far rivedere a un legale/consulente privacy `terms.html`, `privacy.html` e l'impianto **consenso art. 9** (dati salute); far validare la parte fiscale da un commercialista.
+4. **Claim marketing** (continuo): mantenere la tabella comparativa landing **generica** (niente brand/prezzi di terzi non verificabili); se un domani si cita un concorrente, serve dato datato e verificabile (D.Lgs. 145/2007).
+5. **Recensioni** (quando arriveranno): pubblicare solo recensioni reali e verificabili (obbligo autenticità, D.Lgs. 26/2023 — Omnibus).
+6. **Accessibilità** (se cresci / EAA): rientrano i ~200 low-contrast preesistenti di `index.html` e la navigazione da tastiera (controlli `div onclick` → `button`). Non bloccante ora, obbligatorio oltre certe soglie (Dir. UE 2019/882, WCAG 2.1 AA).
+
 Priorità per arrivare ai primi 10 coach beta (billing escluso, no P.IVA).
 
 **Blocker (impediscono uso/vendita):**

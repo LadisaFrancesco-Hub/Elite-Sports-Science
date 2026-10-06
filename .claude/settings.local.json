@@ -75,7 +75,24 @@
       "WebFetch(domain:www.youtube.com)",
       "Bash(grep -rln \"link_athlete_auth\\\\|lookup_athlete_by_code\" . --include=\"*.sql\")",
       "Bash(ls -la supabase/migrations/)",
-      "Bash(ls *.sql)"
+      "Bash(ls *.sql)",
+      "Bash(ls node_modules/@supabase/supabase-js/package.json)",
+      "Bash(supabase projects *)",
+      "Bash(sed -n '425,445p' auth.js)",
+      "Bash(sed -n '400,430p' state.js)",
+      "Bash(ls supabase/migrations/)",
+      "Bash(grep -rln \"formcheck-retention\\\\|cleanup-form-checks\\\\|cron.schedule\\\\|net.http_post\" supabase/)",
+      "mcp__claude_ai_Notion__notion-fetch",
+      "mcp__claude_ai_Notion__notion-list-recent-pages",
+      "mcp__claude_ai_Notion__notion-get-teams",
+      "Bash(wc -l index.html app.js analytics.js team.js branding.js main.js workout.js auth.js state.js utils.js app.css)",
+      "Bash(ls -la *.css)",
+      "Bash(ls -la *.js *.css *.html)",
+      "Bash(cp .claude/PROGRESS.md /tmp/PROGRESS.bak)",
+      "Bash(cp .claude/PROGRESS_ARCHIVE.md /tmp/PROGRESS_ARCHIVE.bak)",
+      "Bash(xcodebuild -version)",
+      "Bash(pod --version)",
+      "Bash(ruby --version)"
     ]
   }
 }

@@ -1,0 +1,18 @@
+[      35ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[      35ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[      35ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[      35ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[      39ms] [LOG] Supabase pronto. @ http://localhost:8777/auth.js?v=7.05:34
+[      39ms] [LOG] Avvio dell'app con sistema di protezione Fallback... @ http://localhost:8777/auth.js?v=7.05:540
+[      40ms] [LOG] Dati locali caricati con successo. @ http://localhost:8777/auth.js?v=7.05:560
+[      41ms] [LOG] Supabase agganciato — verifica sessione... @ http://localhost:8777/auth.js?v=7.05:568
+[      42ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:8777/index.html:0
+[      75ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[      75ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[      75ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[      75ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ http://localhost:8777/index.html:0
+[      90ms] [LOG] Supabase pronto. @ http://localhost:8777/auth.js?v=7.05:34
+[      90ms] [LOG] Avvio dell'app con sistema di protezione Fallback... @ http://localhost:8777/auth.js?v=7.05:540
+[      92ms] [LOG] Dati locali caricati con successo. @ http://localhost:8777/auth.js?v=7.05:560
+[      92ms] [LOG] Supabase agganciato — verifica sessione... @ http://localhost:8777/auth.js?v=7.05:568
+[      94ms] [INFO] Banner not shown: beforeinstallpromptevent.preventDefault() called. The page must call beforeinstallpromptevent.prompt() to show the banner. @ http://localhost:8777/index.html:0

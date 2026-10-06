@@ -1,0 +1,73 @@
+- generic [active] [ref=f7e1]:
+  - generic:
+    - generic: ELITE SPORTS SCIENCE
+    - generic: Caricamento dati in corso...
+  - button "☰ Menu" [ref=f7e2] [cursor=pointer]
+  - generic [ref=f7e3]:
+    - generic [ref=f7e4]:
+      - img "Elite Sports Science" [ref=f7e5]
+      - generic [ref=f7e6]: Elite Sports Science
+    - generic [ref=f7e7]:
+      - generic [ref=f7e8]:
+        - generic [ref=f7e9] [cursor=pointer]: IT
+        - generic [ref=f7e10]: "|"
+        - generic [ref=f7e11] [cursor=pointer]: EN
+      - generic [ref=f7e12]: Performance & Injury Prevention
+      - generic [ref=f7e13]: Accedi per continuare
+      - generic [ref=f7e14]:
+        - generic [ref=f7e15]: Codice Accesso Atleta
+        - textbox "Inserisci il tuo codice" [ref=f7e16]
+        - button "Accedi" [ref=f7e17] [cursor=pointer]
+        - generic [ref=f7e18]: Accesso Coach
+        - generic [ref=f7e19]: Developed by Francesco Ladisa
+    - link "Privacy Policy" [ref=f7e20] [cursor=pointer]:
+      - /url: /privacy.html
+  - status [ref=f7e21]:
+    - generic [ref=f7e22]: Aggiornamento disponibile
+    - button "Ricarica" [ref=f7e23] [cursor=pointer]
+    - button "Ignora" [ref=f7e24] [cursor=pointer]: ✕
+  - generic [ref=f7e25]:
+    - banner [ref=f7e26]:
+      - generic [ref=f7e27]:
+        - generic [ref=f7e28]: ES
+        - generic [ref=f7e29]: COACH
+      - generic [ref=f7e30] [cursor=pointer]:
+        - generic [ref=f7e31]: "Atleta:"
+        - combobox [ref=f7e32]
+    - navigation [ref=f7e35]:
+      - button [ref=f7e37] [cursor=pointer]
+      - generic [ref=f7e41]:
+        - generic [ref=f7e42]: Chi alleno
+        - button "Atleti 0" [ref=f7e43] [cursor=pointer]:
+          - text: Atleti
+          - generic [ref=f7e47]: "0"
+        - button "Storico 0" [ref=f7e48] [cursor=pointer]:
+          - text: Storico
+          - generic [ref=f7e52]: "0"
+        - button [ref=f7e53] [cursor=pointer]
+        - button [ref=f7e57] [cursor=pointer]
+      - generic [ref=f7e61]:
+        - generic [ref=f7e62]: Cosa programmo
+        - button [ref=f7e63] [cursor=pointer]
+        - button [ref=f7e67] [cursor=pointer]
+        - button [ref=f7e71] [cursor=pointer]
+        - button [ref=f7e75] [cursor=pointer]
+      - generic [ref=f7e79]:
+        - generic [ref=f7e80]: Come va
+        - button [ref=f7e81] [cursor=pointer]
+      - generic [ref=f7e85]:
+        - generic [ref=f7e86]: Strumenti
+        - button [ref=f7e87] [cursor=pointer]
+      - generic [ref=f7e91]:
+        - generic [ref=f7e92] [cursor=pointer]: FREE
+        - button "Esporta i miei dati" [ref=f7e94] [cursor=pointer]
+        - button "Privacy Policy" [ref=f7e95] [cursor=pointer]
+        - button "Reset dati" [ref=f7e96] [cursor=pointer]
+    - main [ref=f7e97]
+  - generic [ref=f7e98]:
+    - generic [ref=f7e99]: ES
+    - generic [ref=f7e100]:
+      - generic [ref=f7e101]: Installa l'app
+      - generic [ref=f7e102]: Accesso rapido dalla schermata Home
+    - button "Installa" [ref=f7e103] [cursor=pointer]
+    - button "Chiudi" [ref=f7e104] [cursor=pointer]: ✕
