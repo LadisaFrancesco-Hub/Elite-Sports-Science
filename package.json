@@ -4,6 +4,7 @@
   "description": "Elite Sports Science — piattaforma coaching per atleti e coach",
   "private": true,
   "scripts": {
+    "build:web": "node scripts/build-web.mjs",
     "cap:sync": "npx cap sync",
     "cap:ios": "npx cap open ios",
     "cap:android": "npx cap open android",

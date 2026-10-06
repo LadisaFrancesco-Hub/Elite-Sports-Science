@@ -1,17 +1,14 @@
 {
   "appId": "com.elitesportsscience.coachos",
   "appName": "CoachOS",
-  "webDir": ".",
+  "webDir": "www",
   "bundledWebRuntime": false,
   "server": {
     "allowNavigation": [
       "ncvmnoaelzdmuiqrvcjl.supabase.co",
       "*.supabase.co",
-      "fonts.googleapis.com",
       "cdnjs.cloudflare.com",
-      "cdn.jsdelivr.net",
-      "www.youtube.com",
-      "youtu.be"
+      "cdn.jsdelivr.net"
     ]
   },
   "plugins": {

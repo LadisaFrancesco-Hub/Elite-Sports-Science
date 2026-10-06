@@ -147,7 +147,60 @@ runtime dal browser), aggiungendo il pacchetto a `package.json`.
 **Da verificare su dispositivo** (autorizzazione e lettura dati salute su iPhone).
 
 ### 4. `webDir: "."` + script `www/`
-Come deciso (Opzione A), `webDir` è rimasto `"."`. Per la generazione delle cartelle native
-servirà un `webDir` valido: predisporre una cartella/step **`www/`** con gli asset web e puntare
-`webDir` lì (vedi sezione "webDir" sopra).
+Come deciso (Opzione A), su `chore/capacitor-8` `webDir` era rimasto `"."`.
+**Risolto su `feat/ios-native-shell`** (Fase 6, punto 3): aggiunto `scripts/build-web.mjs`
+(allowlist di 38 asset → copia in `www/`, fallisce se un file manca), script npm `build:web`,
+`www/` in `.gitignore` e `webDir: "www"` nel config. `www/` NON è committato (rigenerato da
+`npm run build:web`) e non è servito da Vercel (nessun `vercel.json`, serve dalla root tracciata).
 **Da verificare su dispositivo** (che l'app nativa carichi correttamente gli asset da `www/`).
+
+---
+
+## Prima della sottomissione (App Store / Play Store)
+
+> Punti da chiudere **prima** di sottomettere l'app agli store. Non implementati ora.
+> Oggi `index.html` carica 3 `<script>` da CDN (supabase-js, localforage, chart.js): è
+> accettabile per sviluppo/simulatore, ma per una build di produzione va irrobustito.
+
+- **Vendoring in `www/vendor/` con versioni pinnate** — scaricare localmente, con versione
+  esatta (no range), le 3 librerie oggi da CDN e servirle da `www/vendor/`:
+  - `@supabase/supabase-js` → pinnare la versione esatta (es. `supabase-js@2.x.y`), oggi è
+    `@supabase/supabase-js@2` (range mobile: rischio build non riproducibili).
+  - `localforage@1.10.0` (già pinnata nell'URL CDN) → copiare in `vendor/`.
+  - `chart.js` → oggi `cdn.jsdelivr.net/npm/chart.js` senza versione: pinnare esatta.
+  - Richiede di aggiornare i `<script src>` in `index.html` (fuori dallo scope attuale: in questa
+    fase lo script `build-web.mjs` NON riscrive `index.html`) e di aggiungere i file alla
+    allowlist di `build-web.mjs`.
+- **Avvio offline** — avendo escluso `sw.js` dal bundle nativo, non c'è cache offline e i 3
+  `<script>` CDN sono blocking in `<head>`: **senza rete l'app nativa non parte**. Il vendoring
+  sopra rende l'avvio indipendente dalla rete (resta online solo la chiamata API a Supabase).
+- **Lazy-load di `chart.js`** — non serve al boot (solo per i grafici di Analytics/Nutrition):
+  caricarlo on-demand (import dinamico quando si apre una vista con grafici) riduce il costo
+  d'avvio e una dipendenza di rete dal percorso critico login→dashboard.
+- **CSP** — l'app non ha oggi alcuna Content-Security-Policy. Dopo il vendoring (niente più
+  script da terze parti) si può aggiungere una CSP restrittiva via `<meta http-equiv>` o header,
+  consentendo `self` + `capacitor:`/`https:` solo per gli endpoint realmente usati
+  (`*.supabase.co`, eventuali embed YouTube). Da validare per non rompere gli `<iframe>` video.
+
+- **Retry / coda per gli upsert Supabase falliti** — oggi le scritture verso Supabase sono
+  best-effort e in caso di errore il locale (`coachOS_v3`) resta avanti al cloud senza recupero
+  automatico (`updateCloudStatus('error')`). Introdurre un meccanismo di **retry** o una **coda di
+  mutazioni pendenti** (persistita) che venga drenata al ritorno della connettività, così i dati
+  di allenamento non restino bloccati solo sul dispositivo.
+- **Lo storage della WebView non migra dalla PWA e può essere eliminato dal sistema** — su iOS la
+  WebView ha origine `capacitor://localhost`, diversa da `https://coach-os-lime.vercel.app`:
+  localStorage/localforage/IndexedDB **non** si trasferiscono dalla PWA all'app nativa. Inoltre lo
+  storage della WebView **può essere eliminato dal sistema** (pulizia spazio/OS). Non va trattato
+  come persistenza durevole: la fonte di verità deve restare Supabase (con la coda del punto
+  precedente a coprire i dati non ancora sincronizzati).
+- **`coachOS_v3` contiene dati degli atleti → citarlo nella revisione privacy** — la chiave
+  localforage `coachOS_v3` è un mirror locale completo del DB (anagrafiche atleti, schede,
+  sessioni, messaggi, inclusi dati salute art. 9). Da **citare esplicitamente nella revisione
+  privacy** (dove risiedono i dati sul dispositivo, cancellazione al logout/reset, assenza di
+  cifratura a riposo oltre a quella del sistema).
+- **Valutare `android.allowMixedContent: false`** — oggi è `true`. Con tutti gli asset e le API in
+  HTTPS (verificato: 0 occorrenze di `http://` nei 38 file), il contenuto misto non dovrebbe
+  servire. Valutare di impostarlo a `false` per non permettere richieste in chiaro nell'app
+  Android (non toccato ora per non alterare il comportamento runtime senza verifica su device).
+
+Ciascun punto è **da verificare su dispositivo** dopo l'implementazione.
