@@ -5795,15 +5795,9 @@ export function exportProgramPDF() {
     { bg:'#f5f3ff', bd:'#ddd6fe', tx:'#5b21b6' },
     { bg:'#f0f9ff', bd:'#bae6fd', tx:'#075985' }
   ];
-  const ssMap = new Map();          // groupId → {color, letter}
-  const legendGroups = [];          // raccolta per la legenda
-  const ssMeta = (gid) => {
-    if (!ssMap.has(gid)) {
-      const idx = ssMap.size;
-      const meta = { color: SS_PALETTE[idx % SS_PALETTE.length], letter: String.fromCharCode(65 + (idx % 26)) };
-      ssMap.set(gid, meta);
-      legendGroups.push(meta);
-    }
+  const ssMap = new Map();          // groupId → color (un colore stabile per gruppo)
+  const ssColor = (gid) => {
+    if (!ssMap.has(gid)) ssMap.set(gid, SS_PALETTE[ssMap.size % SS_PALETTE.length]);
     return ssMap.get(gid);
   };
 
@@ -5815,7 +5809,7 @@ export function exportProgramPDF() {
     return Number.isFinite(n) ? String(Math.max(0, 10 - n)) : escHtml(s);
   };
   const loadCell = (kg) => {
-    if (kg === 0 || kg === '0' || kg == null || kg === '') return '<span class="muted">auto</span>';
+    if (kg === 0 || kg === '0' || kg == null || kg === '') return '<span class="muted">—</span>';
     const s = String(kg);
     return /^\d+(\.\d+)?$/.test(s) ? `${escHtml(s)}<span class="unit"> kg</span>` : escHtml(s);
   };
@@ -5845,12 +5839,11 @@ export function exportProgramPDF() {
   // Riga esercizio: cella nome (nome + video + nota + onda) + 7 colonne numeriche.
   const exRow = (ex, block, tintBg) => {
     const trStyle = tintBg ? ` style="background:${tintBg}"` : '';
-    const serie = (ex.wset && +ex.wset > 0)
-      ? `<span class="muted">${escHtml(String(ex.wset))}+</span>${escHtml(String(ex.set ?? ''))}`
-      : dash(ex.set);
+    const wup = (ex.wset && +ex.wset > 0) ? escHtml(String(ex.wset)) : '—';
     return `<tr${trStyle}>
       <td class="exn"><span class="nm">${escHtml(ex.name || '')}</span>${vLink(ex.ytUrl)}${ex.note ? `<span class="note">${escHtml(ex.note)}</span>` : ''}${progHTML(ex, block)}</td>
-      <td class="num">${serie}</td>
+      <td class="num">${wup}</td>
+      <td class="num">${dash(ex.set)}</td>
       <td class="num">${dash(ex.rep)}</td>
       <td class="num">${loadCell(ex.kg)}</td>
       <td class="num">${dash(ex.rir)}</td>
@@ -5862,12 +5855,12 @@ export function exportProgramPDF() {
 
   const circuitBody = (ex) => {
     const m = ex.circuitMeta;
-    const meta = m ? `${m.rounds} round · ${m.workTime}s lavoro · ${m.restBetweenEx}s recupero` : '';
+    const meta = m ? `${m.rounds} rounds · ${m.workTime}s work · ${m.restBetweenEx}s rest` : '';
     const items = (ex.circuitExercises || []).map(ce =>
-      `<tr><td class="exn ci"><span class="nm">${escHtml(ce.name || '')}</span>${vLink(ce.video)}${ce.note ? `<span class="note">${escHtml(ce.note)}</span>` : ''}</td><td class="num" colspan="7"></td></tr>`
+      `<tr><td class="exn ci"><span class="nm">${escHtml(ce.name || '')}</span>${vLink(ce.video)}${ce.note ? `<span class="note">${escHtml(ce.note)}</span>` : ''}</td><td class="num" colspan="8"></td></tr>`
     ).join('');
     return `<tbody class="grp">
-      <tr class="grp-h" style="background:#f1f5f9"><td colspan="8"><span class="chip circ-chip">CIRCUITO</span> <b>${escHtml(ex.name || '')}</b>${meta ? ` <span class="muted">· ${escHtml(meta)}</span>` : ''}</td></tr>
+      <tr class="grp-h" style="background:#f1f5f9"><td colspan="9"><span class="chip circ-chip">CIRCUIT</span> <b>${escHtml(ex.name || '')}</b>${meta ? ` <span class="muted">· ${escHtml(meta)}</span>` : ''}</td></tr>
       ${items}
     </tbody>`;
   };
@@ -5884,9 +5877,9 @@ export function exportProgramPDF() {
         let j = i;
         while (j < exs.length && exs[j].groupId === gid && exs[j].type !== 'circuit') { members.push(exs[j]); j++; }
         if (members.length > 1) {
-          const { color, letter } = ssMeta(gid);
+          const color = ssColor(gid);
           html += `<tbody class="grp">
-            <tr class="grp-h" style="background:${color.bg}"><td colspan="8"><span class="chip" style="background:${color.tx};color:#fff">SUPERSET ${letter}</span> <span class="muted">esegui gli esercizi in serie, recupero a fine giro</span></td></tr>
+            <tr class="grp-h" style="background:${color.bg}"><td colspan="9"><span class="chip" style="background:${color.tx};color:#fff">SUPERSET</span> <span class="muted">back-to-back, rest after the round</span></td></tr>
             ${members.map(mm => exRow(mm, block, color.bg)).join('')}
           </tbody>`;
           i = j; continue;
@@ -5899,9 +5892,9 @@ export function exportProgramPDF() {
   };
 
   const SECTIONS = [
-    { label: 'Riscaldamento', match: (e) => e.section === 'warmup' },
-    { label: 'Allenamento',   match: (e) => !e.section || e.section === 'centrale' || e.section === 'central' },
-    { label: 'Defaticamento', match: (e) => e.section === 'cooldown' }
+    { label: 'Warm-up',   match: (e) => e.section === 'warmup' },
+    { label: 'Workout',   match: (e) => !e.section || e.section === 'centrale' || e.section === 'central' },
+    { label: 'Cool-down', match: (e) => e.section === 'cooldown' }
   ];
 
   const sessionHTML = (s, block) => {
@@ -5913,7 +5906,7 @@ export function exportProgramPDF() {
         <div class="sub-h">${sec.label}</div>
         <table class="ex">
           <thead><tr>
-            <th class="exn">Esercizio</th><th>Serie</th><th>Reps</th><th>Carico</th><th>RIR</th><th>RPE</th><th>TUT</th><th>Rest</th>
+            <th class="exn">Exercise</th><th>W-up</th><th>Sets</th><th>Reps</th><th>Load</th><th>RIR</th><th>RPE</th><th>TUT</th><th>Rest</th>
           </tr></thead>
           ${renderGroups(list, block)}
         </table>
@@ -5922,7 +5915,7 @@ export function exportProgramPDF() {
     const type = (s.sessType && s.sessType !== 'Palestra') ? ` <span class="st">${escHtml(s.sessType)}</span>` : '';
     return `<section class="sess">
       <h2 class="sess-h">${escHtml(s.name || '')}${type}</h2>
-      ${subs || '<p class="empty">Nessun esercizio.</p>'}
+      ${subs || '<p class="empty">No exercises.</p>'}
     </section>`;
   };
 
@@ -5934,19 +5927,15 @@ export function exportProgramPDF() {
     const sess = block ? (sch.sessions || []).filter(s => s.blockId === block.id) : (sch.sessions || []);
     if (!sess.length) return '';
     const band = (multi && block)
-      ? `<div class="block"><span class="block-n">${escHtml(block.name || 'Blocco')}</span><span class="block-w">Settimane ${block.weekStart}–${block.weekEnd}</span></div>`
+      ? `<div class="block"><span class="block-n">${escHtml(block.name || 'Block')}</span><span class="block-w">Weeks ${block.weekStart}–${block.weekEnd}</span></div>`
       : '';
     return band + sess.map(s => sessionHTML(s, block)).join('');
   }).join('');
 
-  const legendHTML = legendGroups.length
-    ? `<div class="lg-ss">${legendGroups.map(g => `<span class="lg-chip"><i style="background:${g.color.tx}"></i>Superset ${g.letter}</span>`).join('')}</div>`
-    : '';
-
   const w = window.open('', '_blank');
   if (!w) { toast('Popup bloccato — abilita i popup per esportare il PDF.'); return; }
-  w.document.write(`<!DOCTYPE html><html lang="it"><head>
-  <meta charset="UTF-8"><title>Scheda — ${escHtml(ath.name)}</title>
+  w.document.write(`<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8"><title>Program — ${escHtml(ath.name)}</title>
   <link rel="stylesheet" href="${location.origin}/fonts/fonts.css">
   <style>
   *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -5969,9 +5958,9 @@ export function exportProgramPDF() {
   .block{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:22px 0 10px;padding:9px 14px;background:#0f172a;color:#fff;border-radius:8px;page-break-after:avoid}
   .block-n{font-size:14px;font-weight:800;letter-spacing:.01em}
   .block-w{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#cbd5e1;letter-spacing:.04em}
-  .sess{margin-bottom:18px;page-break-inside:avoid}
-  .sess-h{font-size:15px;font-weight:800;color:#0f172a;margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid #e2e8f0}
-  .sess-h .st{font-size:10px;font-weight:700;color:${accent};border:1px solid ${accent};border-radius:20px;padding:1px 8px;margin-left:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:.04em}
+  .sess{margin:22px 0 14px;page-break-inside:avoid}
+  .sess-h{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:800;color:#fff;background:${accent};margin:0 0 9px;padding:7px 14px;border-radius:7px;letter-spacing:.01em}
+  .sess-h .st{font-size:10px;font-weight:700;color:#fff;border:1px solid rgba(255,255,255,.65);border-radius:20px;padding:1px 8px;text-transform:uppercase;letter-spacing:.04em}
   .sub{margin-bottom:10px}
   .sub-h{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#64748b;margin:0 0 4px}
   table.ex{width:100%;border-collapse:collapse}
@@ -5979,7 +5968,7 @@ export function exportProgramPDF() {
   table.ex thead th.exn{text-align:left}
   tbody.grp{page-break-inside:avoid}
   tbody.grp td{padding:6px;border-bottom:1px solid #f1f5f9;vertical-align:top}
-  td.exn{text-align:left;width:40%}
+  td.exn{text-align:left;width:34%}
   td.num{text-align:center;white-space:nowrap}
   .nm{font-weight:600}
   td.exn.ci .nm{font-weight:500}
@@ -5995,9 +5984,6 @@ export function exportProgramPDF() {
   footer{margin-top:26px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:10px;color:#94a3b8}
   .legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
   .legend b{color:#475569}
-  .lg-ss{display:flex;gap:8px;flex-wrap:wrap}
-  .lg-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#475569}
-  .lg-chip i{width:9px;height:9px;border-radius:2px;display:inline-block}
   .toolbar{position:fixed;bottom:18px;left:0;right:0;text-align:center}
   .toolbar button{font-family:inherit;padding:11px 30px;background:${accent};color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(15,23,42,.18)}
   @media print{body{padding:0}.toolbar{display:none}}
@@ -6011,22 +5997,21 @@ export function exportProgramPDF() {
     <div class="hd-r">${logo}</div>
   </header>
   <div class="meta">
-    <div><dt>Mesociclo</dt><dd>${escHtml(sch.meso || '—')}</dd></div>
-    <div><dt>Fase</dt><dd>${escHtml(sch.phase || '—')}</dd></div>
-    <div><dt>Durata</dt><dd>${sch.duration || 4} sett.</dd></div>
-    ${sch.objective ? `<div><dt>Obiettivo</dt><dd>${escHtml(sch.objective)}</dd></div>` : ''}
+    <div><dt>Mesocycle</dt><dd>${escHtml(sch.meso || '—')}</dd></div>
+    <div><dt>Phase</dt><dd>${escHtml(sch.phase || '—')}</dd></div>
+    <div><dt>Duration</dt><dd>${sch.duration || 4} weeks</dd></div>
+    ${sch.objective ? `<div><dt>Goal</dt><dd>${escHtml(sch.objective)}</dd></div>` : ''}
   </div>
-  ${sch.coachNote ? `<p class="cnote"><b>Note coach:</b> ${escHtml(sch.coachNote)}</p>` : ''}
-  ${body || '<p class="empty">Nessuna seduta in questa scheda.</p>'}
+  ${sch.coachNote ? `<p class="cnote"><b>Coach notes:</b> ${escHtml(sch.coachNote)}</p>` : ''}
+  ${body || '<p class="empty">No sessions in this program.</p>'}
   <footer>
     <div class="legend">
-      <span>Carico <b>auto</b> = autoregolato</span>
-      <span>RIR = ripetizioni in riserva · RPE = 10 − RIR · TUT = tempo sotto tensione</span>
-      ${legendHTML}
+      <span>RIR = reps in reserve · RPE = 10 − RIR · TUT = time under tension</span>
+      <span>Load <b>—</b> = autoregulated / not set</span>
     </div>
-    <span>${escHtml(brandName)} · ${new Date().toLocaleDateString('it-IT')}</span>
+    <span>${escHtml(brandName)} · ${new Date().toLocaleDateString('en-GB')}</span>
   </footer>
-  <div class="toolbar"><button onclick="window.print()">Stampa / Salva PDF</button></div>
+  <div class="toolbar"><button onclick="window.print()">Print / Save PDF</button></div>
   </body></html>`);
   w.document.close();
   w.focus();

@@ -79,6 +79,17 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**Esporta scheda PDF — round 2 rifiniture + v7.08 (2026-10-07)**
+- Contesto: il coach ha visto il redesign (round 1, v7.07 live) e ha chiesto una seconda passata d'uso/estetica. Modifiche (sola `exportProgramPDF()` in `app.js`, scelte confermate via AskUserQuestion):
+  - **Superset senza lettera**: chip solo "SUPERSET" (niente A/B/C); colore stabile per `groupId` mantenuto; rimossa la legenda a lettere (`ssMeta`→`ssColor`).
+  - **Divisione split più chiara**: titolo seduta su **barra piena colore accento** (`background:${accent}`, testo bianco) + più spazio tra sedute → gerarchia Blocco (scuro) › Seduta (accento) › sezione (muted).
+  - **Nuova colonna "W-up"** (serie di avvicinamento = `wset`): la colonna **Sets** ora mostra un solo numero (basta "2+4").
+  - **Carico autoregolato = "—"** (non più "auto"); legenda footer aggiornata (`"—" = autoregulated`).
+  - **UI del documento tradotta in inglese** (W-up/Sets/Reps/Load/RIR/RPE/TUT/Rest, Warm-up/Workout/Cool-down, Weeks, Mesocycle/Phase/Duration/Goal, Coach notes, Print / Save PDF, CIRCUIT, superset "back-to-back, rest after the round", `lang="en"`, title "Program — "); **restano in italiano** le `note` esercizio, i valori-dato (`sessType`, nomi blocco/meso) e i `toast` dell'app.
+- Estetica rifinita con skill **`impeccable`** (barra-seduta, ritmo verticale, 9 colonne su A4). Detector: i soli findings sono white-on-orange delle barre-seduta (linguaggio CTA brand, scelta confermata dal coach) + 10-10.5px caption print (come round 1) → lasciati.
+- Verifica: `node --check` OK; harness Node sulla funzione reale + dati reali di Ernest + screenshot Playwright: SUPERSET senza lettera, 9 colonne EN, Sets a numero singolo (hip thrust: W-up 2 / Sets 4), Load "—", barre-seduta accento, note IT intatte, onda/filtro-blocco ancora corretti.
+- **DEPLOYATO**: bump **7.07→7.08** (sw/asset/package) + build:web (`www/`), commit su `main` (+ branch `feat/ios-native-shell`), `vercel --prod`, verifica live su `coach-os-lime.vercel.app`.
+
 **Redesign "Esporta scheda PDF" — `exportProgramPDF()` (2026-10-07)**
 - Contesto: provata su Ernest, la vecchia export produceva un documento confuso. Diagnosi verificata sui dati reali del DB: la funzione iterava `sch.sessions` come **lista piatta** ignorando `sch.blocks`/`blockId` → i 2 blocchi di Ernest (`Forza→Potenza` w1-2, `Potenza/RFD` w3-8) si fondevano (ed entrambi hanno una seduta "POTENZA" e una "RINFORZO" → sembravano duplicati mescolati); nessuna divisione warmup/allenamento (benché `section:"warmup"` esista); mancava la colonna **TUT** (il campo `tut` esiste e in alcune sedute ha valori reali tipo `4-2-x-1`); l'intensità è memorizzata come **`rir`** non `rpe`; i **superset** (`type:"superset"`+`groupId`) uscivano come righe slegate; la `progression` veniva stampata come stringa compressa `W1: 4x5@0kg` (con `kg:0` → `@0kg`, sembra un bug); i bottoni video usavano `onclick="openVideoModal()"` **rotto nel popup**.
 - **Decisioni col coach (AskUserQuestion)**: intensità = **RIR + RPE (10−RIR) + TUT** (3 colonne); onda = **mini-tabella per settimana**; motore estetico = **skill `impeccable`**.

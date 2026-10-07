@@ -1849,7 +1849,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.07'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.08'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });
