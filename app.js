@@ -5779,85 +5779,254 @@ export function exportProgramPDF() {
   const sch = DB.schedules[athId];
   if (!ath || !sch) { toast('Seleziona un atleta con una scheda attiva.'); return; }
 
-  const sessionsHTML = (sch.sessions || []).map(s => {
-  const exRows = (s.exercises || []).map(ex => {
-  if (ex.type === 'circuit') {
-  const circEx = (ex.circuitExercises || []).map(ce => {
-  const vLink = ce.video ? `<button onclick="openVideoModal('${ce.video}','${(ce.name||'').replace(/'/g,"\\'")}')" style="background:none;border:none;padding:0;margin-left:6px;cursor:pointer;color:#f97316;font-size:10px;font-weight:700;">▶ Video</button>` : '';
-  return `<tr><td style="padding:4px 8px;color:#555">${escHtml(ce.name)}${vLink}</td><td colspan="7" style="padding:4px 8px;color:#888;font-size:11px">${escHtml(ce.note || '')}</td></tr>`;
+  // Brand white-label (come exportAthleteReport)
+  const accent    = appState.brandColor || '#f97316';
+  const brandName = appState.brandName  || 'Elite Sports Science';
+  const logo = appState.brandLogoUrl
+    ? `<img src="${escHtml(appState.brandLogoUrl)}" alt="" style="height:30px;max-width:150px;object-fit:contain;display:block;margin-left:auto">`
+    : `<span class="brand">${escHtml(brandName)}</span>`;
+
+  // Palette superset stabile e print-safe: un colore per groupId, assegnato al primo incontro.
+  const SS_PALETTE = [
+    { bg:'#eef2ff', bd:'#c7d2fe', tx:'#3730a3' },
+    { bg:'#ecfdf5', bd:'#a7f3d0', tx:'#0f766e' },
+    { bg:'#fff7ed', bd:'#fed7aa', tx:'#9a3412' },
+    { bg:'#fff1f2', bd:'#fecdd3', tx:'#9f1239' },
+    { bg:'#f5f3ff', bd:'#ddd6fe', tx:'#5b21b6' },
+    { bg:'#f0f9ff', bd:'#bae6fd', tx:'#075985' }
+  ];
+  const ssMap = new Map();          // groupId → {color, letter}
+  const legendGroups = [];          // raccolta per la legenda
+  const ssMeta = (gid) => {
+    if (!ssMap.has(gid)) {
+      const idx = ssMap.size;
+      const meta = { color: SS_PALETTE[idx % SS_PALETTE.length], letter: String.fromCharCode(65 + (idx % 26)) };
+      ssMap.set(gid, meta);
+      legendGroups.push(meta);
+    }
+    return ssMap.get(gid);
+  };
+
+  const dash = (v) => { const s = String(v ?? '').trim(); return (s === '' || s === '-') ? '—' : escHtml(s); };
+  const rpeFromRir = (rir) => {
+    const s = String(rir ?? '').trim();
+    if (s === '' || s === '-' || s === '—') return '—';
+    const n = Number(s);
+    return Number.isFinite(n) ? String(Math.max(0, 10 - n)) : escHtml(s);
+  };
+  const loadCell = (kg) => {
+    if (kg === 0 || kg === '0' || kg == null || kg === '') return '<span class="muted">auto</span>';
+    const s = String(kg);
+    return /^\d+(\.\d+)?$/.test(s) ? `${escHtml(s)}<span class="unit"> kg</span>` : escHtml(s);
+  };
+  const vLink = (url) => url
+    ? ` <a class="vid" href="${escHtml(url)}" target="_blank" rel="noopener"><svg viewBox="0 0 10 10" width="8" height="8" aria-hidden="true"><path d="M2 1.5v7l6-3.5z" fill="currentColor"/></svg>Video</a>`
+    : '';
+
+  // Mini-tabella onda settimanale, limitata alle settimane assolute del blocco.
+  const progHTML = (ex, block) => {
+    const p = ex.progression;
+    if (!p || !Object.keys(p).length) return '';
+    const ws = block ? (block.weekStart || 1) : 1;
+    const we = block ? (block.weekEnd || sch.duration || 4) : (sch.duration || 4);
+    const rows = Object.entries(p)
+      .map(([k, v]) => [parseInt(String(k).replace(/\D/g, ''), 10), v])
+      .filter(([n]) => Number.isFinite(n) && n >= ws && n <= we)
+      .sort((a, b) => a[0] - b[0]);
+    if (!rows.length) return '';
+    const cells = rows.map(([n, v]) => {
+      const load = (v.kg && v.kg !== 0 && v.kg !== '0') ? ` · ${escHtml(String(v.kg))}kg` : '';
+      const rir = (v.rir != null && String(v.rir).trim() !== '') ? ` · RIR ${escHtml(String(v.rir))}` : '';
+      return `<span class="pw"><b>W${n}</b> ${escHtml(String(v.set ?? ''))}×${escHtml(String(v.rep ?? ''))}${rir}${load}</span>`;
+    }).join('');
+    return `<div class="prog">${cells}</div>`;
+  };
+
+  // Riga esercizio: cella nome (nome + video + nota + onda) + 7 colonne numeriche.
+  const exRow = (ex, block, tintBg) => {
+    const trStyle = tintBg ? ` style="background:${tintBg}"` : '';
+    const serie = (ex.wset && +ex.wset > 0)
+      ? `<span class="muted">${escHtml(String(ex.wset))}+</span>${escHtml(String(ex.set ?? ''))}`
+      : dash(ex.set);
+    return `<tr${trStyle}>
+      <td class="exn"><span class="nm">${escHtml(ex.name || '')}</span>${vLink(ex.ytUrl)}${ex.note ? `<span class="note">${escHtml(ex.note)}</span>` : ''}${progHTML(ex, block)}</td>
+      <td class="num">${serie}</td>
+      <td class="num">${dash(ex.rep)}</td>
+      <td class="num">${loadCell(ex.kg)}</td>
+      <td class="num">${dash(ex.rir)}</td>
+      <td class="num">${rpeFromRir(ex.rir)}</td>
+      <td class="num">${dash(ex.tut)}</td>
+      <td class="num">${dash(ex.rest)}</td>
+    </tr>`;
+  };
+
+  const circuitBody = (ex) => {
+    const m = ex.circuitMeta;
+    const meta = m ? `${m.rounds} round · ${m.workTime}s lavoro · ${m.restBetweenEx}s recupero` : '';
+    const items = (ex.circuitExercises || []).map(ce =>
+      `<tr><td class="exn ci"><span class="nm">${escHtml(ce.name || '')}</span>${vLink(ce.video)}${ce.note ? `<span class="note">${escHtml(ce.note)}</span>` : ''}</td><td class="num" colspan="7"></td></tr>`
+    ).join('');
+    return `<tbody class="grp">
+      <tr class="grp-h" style="background:#f1f5f9"><td colspan="8"><span class="chip circ-chip">CIRCUITO</span> <b>${escHtml(ex.name || '')}</b>${meta ? ` <span class="muted">· ${escHtml(meta)}</span>` : ''}</td></tr>
+      ${items}
+    </tbody>`;
+  };
+
+  // Raggruppa esercizi consecutivi con lo stesso groupId in un superset.
+  const renderGroups = (exs, block) => {
+    let html = '', i = 0;
+    while (i < exs.length) {
+      const ex = exs[i];
+      if (ex.type === 'circuit') { html += circuitBody(ex); i++; continue; }
+      const gid = ex.groupId;
+      if (gid) {
+        const members = [];
+        let j = i;
+        while (j < exs.length && exs[j].groupId === gid && exs[j].type !== 'circuit') { members.push(exs[j]); j++; }
+        if (members.length > 1) {
+          const { color, letter } = ssMeta(gid);
+          html += `<tbody class="grp">
+            <tr class="grp-h" style="background:${color.bg}"><td colspan="8"><span class="chip" style="background:${color.tx};color:#fff">SUPERSET ${letter}</span> <span class="muted">esegui gli esercizi in serie, recupero a fine giro</span></td></tr>
+            ${members.map(mm => exRow(mm, block, color.bg)).join('')}
+          </tbody>`;
+          i = j; continue;
+        }
+      }
+      html += `<tbody class="grp">${exRow(ex, block)}</tbody>`;
+      i++;
+    }
+    return html;
+  };
+
+  const SECTIONS = [
+    { label: 'Riscaldamento', match: (e) => e.section === 'warmup' },
+    { label: 'Allenamento',   match: (e) => !e.section || e.section === 'centrale' || e.section === 'central' },
+    { label: 'Defaticamento', match: (e) => e.section === 'cooldown' }
+  ];
+
+  const sessionHTML = (s, block) => {
+    const exs = s.exercises || [];
+    const subs = SECTIONS.map(sec => {
+      const list = exs.filter(sec.match);
+      if (!list.length) return '';
+      return `<div class="sub">
+        <div class="sub-h">${sec.label}</div>
+        <table class="ex">
+          <thead><tr>
+            <th class="exn">Esercizio</th><th>Serie</th><th>Reps</th><th>Carico</th><th>RIR</th><th>RPE</th><th>TUT</th><th>Rest</th>
+          </tr></thead>
+          ${renderGroups(list, block)}
+        </table>
+      </div>`;
+    }).join('');
+    const type = (s.sessType && s.sessType !== 'Palestra') ? ` <span class="st">${escHtml(s.sessType)}</span>` : '';
+    return `<section class="sess">
+      <h2 class="sess-h">${escHtml(s.name || '')}${type}</h2>
+      ${subs || '<p class="empty">Nessun esercizio.</p>'}
+    </section>`;
+  };
+
+  const blocks = (sch.blocks && sch.blocks.length)
+    ? [...sch.blocks].sort((a, b) => (a.weekStart || 0) - (b.weekStart || 0))
+    : [null];
+  const multi = blocks.length > 1;
+  const body = blocks.map(block => {
+    const sess = block ? (sch.sessions || []).filter(s => s.blockId === block.id) : (sch.sessions || []);
+    if (!sess.length) return '';
+    const band = (multi && block)
+      ? `<div class="block"><span class="block-n">${escHtml(block.name || 'Blocco')}</span><span class="block-w">Settimane ${block.weekStart}–${block.weekEnd}</span></div>`
+      : '';
+    return band + sess.map(s => sessionHTML(s, block)).join('');
   }).join('');
-  return `<tr style="background:#fff7ed"><td colspan="8" style="padding:6px 8px;font-weight:700;color:#9a3412"> Circuito: ${escHtml(ex.name)} — ${ex.circuitMeta ? `${ex.circuitMeta.rounds} round · ${ex.circuitMeta.workTime}s lavoro · ${ex.circuitMeta.restBetweenEx}s riposo` : ''}</td></tr>${circEx}`;
-  }
-  const progStr = ex.progression && Object.keys(ex.progression).length
-  ? Object.entries(ex.progression).sort(([a],[b]) => a.localeCompare(b, undefined, { numeric: true })).map(([w, v]) => `${w.toUpperCase()}: ${v.set}x${v.rep}@${v.kg}kg`).join(' | ')
-  : '';
-  const vLink = ex.ytUrl ? `<button onclick="openVideoModal('${ex.ytUrl}','${(ex.name||'').replace(/'/g,"\\'")}')" style="background:none;border:none;padding:0;margin-left:6px;cursor:pointer;color:#f97316;font-size:10px;font-weight:700;">▶ Video</button>` : '';
-  return `<tr>
-  <td style="padding:5px 8px">${escHtml(ex.name || '')}${vLink}</td>
-  <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.wset ?? ''))}</td>
-  <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.set ?? ''))}</td>
-  <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.rep ?? ''))}</td>
-  <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.kg ?? ''))}</td>
-  <td style="padding:5px 8px;text-align:center">${escHtml(String(ex.rir ?? ''))}</td>
-  <td style="padding:5px 8px;text-align:center">${escHtml(ex.rest || '')}</td>
-  <td style="padding:5px 8px;font-size:11px;color:#555">${escHtml(ex.note || '')}${progStr ? `<br><em style="color:#888">${progStr}</em>` : ''}</td>
-  </tr>`;
-  }).join('');
-  return `<div style="margin-bottom:28px;page-break-inside:avoid">
-  <h3 style="background:#431407;color:#fff;padding:10px 14px;border-radius:6px;margin-bottom:0;font-size:14px">${escHtml(s.name)}</h3>
-  <table style="width:100%;border-collapse:collapse;font-size:13px">
-  <thead><tr style="background:#f1f5f9">
-  <th style="padding:6px 8px;text-align:left;border-bottom:1px solid #e2e8f0">Esercizio</th>
-  <th style="padding:6px 8px">W-Set</th><th style="padding:6px 8px">Set</th>
-  <th style="padding:6px 8px">Rep</th><th style="padding:6px 8px">Kg</th>
-  <th style="padding:6px 8px">RIR</th><th style="padding:6px 8px">Rest</th>
-  <th style="padding:6px 8px;text-align:left">Note</th>
-  </tr></thead>
-  <tbody>${exRows || '<tr><td colspan="8" style="padding:8px;color:#888;font-style:italic">Nessun esercizio</td></tr>'}</tbody>
-  </table>
-  </div>`;
-  }).join('');
+
+  const legendHTML = legendGroups.length
+    ? `<div class="lg-ss">${legendGroups.map(g => `<span class="lg-chip"><i style="background:${g.color.tx}"></i>Superset ${g.letter}</span>`).join('')}</div>`
+    : '';
 
   const w = window.open('', '_blank');
   if (!w) { toast('Popup bloccato — abilita i popup per esportare il PDF.'); return; }
   w.document.write(`<!DOCTYPE html><html lang="it"><head>
   <meta charset="UTF-8"><title>Scheda — ${escHtml(ath.name)}</title>
+  <link rel="stylesheet" href="${location.origin}/fonts/fonts.css">
   <style>
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;margin:0;padding:28px;color:#1e293b;background:#fff}
-  h1{font-size:22px;font-weight:800;margin-bottom:4px}
-  h2{font-size:14px;color:#475569;font-weight:400;margin-top:0;margin-bottom:18px}
-  .header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;padding-bottom:16px;border-bottom:2px solid #f97316}
-  .brand{font-size:11px;font-weight:800;color:#f97316;letter-spacing:.15em;text-transform:uppercase}
-  .meta{display:flex;gap:16px;flex-wrap:wrap;background:#fff7ed;border:1px solid #fed7aa;border-radius:8px;padding:14px 18px;margin-bottom:24px;font-size:13px}
-  .meta div{display:flex;flex-direction:column;gap:2px}
-  .meta strong{font-size:11px;text-transform:uppercase;color:#ea580c;letter-spacing:.04em}
-  table th,table td{border-bottom:1px solid #e2e8f0}
-  @media print{body{padding:10px}button{display:none!important}.no-print{display:none!important}}
+  *{box-sizing:border-box;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  @page{size:A4;margin:14mm}
+  html{font-family:'Archivo',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif}
+  body{margin:0;padding:28px;color:#0f172a;background:#fff;font-size:12.5px;line-height:1.45}
+  .num{font-family:'IBM Plex Mono',ui-monospace,monospace;font-variant-numeric:tabular-nums}
+  .muted{color:#94a3b8} .unit{color:#94a3b8;font-size:.82em}
+  header{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;padding-bottom:14px;border-bottom:2px solid ${accent};margin-bottom:16px}
+  header h1{font-size:23px;font-weight:800;letter-spacing:-0.02em;margin:0 0 2px}
+  header .sub{font-size:12.5px;color:#475569;margin:0}
+  .brand{font-size:11px;font-weight:800;color:${accent};letter-spacing:.14em;text-transform:uppercase}
+  .hd-r{text-align:right;flex-shrink:0}
+  .meta{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+  .meta div{background:#f8fafc;border:1px solid #e2e8f0;border-radius:7px;padding:8px 12px;min-width:90px}
+  .meta dt{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:#64748b;font-weight:700;margin:0 0 2px}
+  .meta dd{margin:0;font-size:13px;font-weight:600}
+  .cnote{margin:0 0 18px;padding:10px 14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:8px;font-size:12.5px;color:#334155}
+  .cnote b{color:#0f172a}
+  .block{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin:22px 0 10px;padding:9px 14px;background:#0f172a;color:#fff;border-radius:8px;page-break-after:avoid}
+  .block-n{font-size:14px;font-weight:800;letter-spacing:.01em}
+  .block-w{font-family:'IBM Plex Mono',monospace;font-size:11px;color:#cbd5e1;letter-spacing:.04em}
+  .sess{margin-bottom:18px;page-break-inside:avoid}
+  .sess-h{font-size:15px;font-weight:800;color:#0f172a;margin:0 0 8px;padding-bottom:5px;border-bottom:1px solid #e2e8f0}
+  .sess-h .st{font-size:10px;font-weight:700;color:${accent};border:1px solid ${accent};border-radius:20px;padding:1px 8px;margin-left:6px;vertical-align:middle;text-transform:uppercase;letter-spacing:.04em}
+  .sub{margin-bottom:10px}
+  .sub-h{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.09em;color:#64748b;margin:0 0 4px}
+  table.ex{width:100%;border-collapse:collapse}
+  table.ex thead th{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#475569;text-align:center;padding:4px 6px;border-bottom:1.5px solid #e2e8f0}
+  table.ex thead th.exn{text-align:left}
+  tbody.grp{page-break-inside:avoid}
+  tbody.grp td{padding:6px;border-bottom:1px solid #f1f5f9;vertical-align:top}
+  td.exn{text-align:left;width:40%}
+  td.num{text-align:center;white-space:nowrap}
+  .nm{font-weight:600}
+  td.exn.ci .nm{font-weight:500}
+  .note{display:block;font-size:10.5px;color:#64748b;margin-top:1px}
+  .vid{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:700;color:${accent};text-decoration:none;margin-left:6px;vertical-align:middle}
+  .prog{display:flex;flex-wrap:wrap;gap:3px 5px;margin-top:4px}
+  .pw{font-family:'IBM Plex Mono',monospace;font-size:10px;background:#f1f5f9;color:#475569;border-radius:4px;padding:1px 5px;white-space:nowrap}
+  .pw b{color:#0f172a}
+  tr.grp-h td{padding:4px 8px;border-bottom:1px solid #f1f5f9;font-size:11px}
+  .chip{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.06em;border-radius:4px;padding:1px 7px;vertical-align:middle}
+  .circ-chip{background:#0f172a;color:#fff}
+  .empty{color:#94a3b8;font-style:italic;font-size:12px;margin:4px 0}
+  footer{margin-top:26px;padding-top:14px;border-top:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:10px;color:#94a3b8}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .legend b{color:#475569}
+  .lg-ss{display:flex;gap:8px;flex-wrap:wrap}
+  .lg-chip{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:#475569}
+  .lg-chip i{width:9px;height:9px;border-radius:2px;display:inline-block}
+  .toolbar{position:fixed;bottom:18px;left:0;right:0;text-align:center}
+  .toolbar button{font-family:inherit;padding:11px 30px;background:${accent};color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:0 6px 18px rgba(15,23,42,.18)}
+  @media print{body{padding:0}.toolbar{display:none}}
   </style>
   </head><body>
-  <div class="header">
-  <div>
-  <h1 style="margin:0">${escHtml(ath.name)}</h1>
-  <h2 style="margin:4px 0 0">${escHtml(ath.level || '')}${ath.goal ? ' · ' + escHtml(ath.goal) : ''}</h2>
-  </div>
-  <div class="brand">Elite Sports Science</div>
-  </div>
+  <header>
+    <div>
+      <h1>${escHtml(ath.name)}</h1>
+      <p class="sub">${escHtml([ath.level, ath.goal].filter(Boolean).join(' · ')) || '&nbsp;'}</p>
+    </div>
+    <div class="hd-r">${logo}</div>
+  </header>
   <div class="meta">
-  <div><strong>Mesociclo</strong>${escHtml(sch.meso || '—')}</div>
-  <div><strong>Fase</strong>${escHtml(sch.phase || '—')}</div>
-  <div><strong>Durata</strong>${sch.duration || 4} settimane</div>
-  ${sch.objective ? `<div><strong>Obiettivo</strong>${escHtml(sch.objective)}</div>` : ''}
+    <div><dt>Mesociclo</dt><dd>${escHtml(sch.meso || '—')}</dd></div>
+    <div><dt>Fase</dt><dd>${escHtml(sch.phase || '—')}</dd></div>
+    <div><dt>Durata</dt><dd>${sch.duration || 4} sett.</dd></div>
+    ${sch.objective ? `<div><dt>Obiettivo</dt><dd>${escHtml(sch.objective)}</dd></div>` : ''}
   </div>
-  ${sch.coachNote ? `<div style="margin-bottom:20px;padding:10px 14px;background:#fff7ed;border-left:3px solid #f97316;border-radius:0 6px 6px 0;font-size:13px;color:#9a3412"><strong>Note Coach:</strong> ${escHtml(sch.coachNote)}</div>` : ''}
-  ${sessionsHTML}
-  <div style="margin-top:40px;text-align:center;padding-top:20px;border-top:1px solid #e2e8f0;font-size:11px;color:#94a3b8">
-  Generato da Elite Sports Science · ${new Date().toLocaleDateString('it-IT')}
-  </div>
-  <div class="no-print" style="margin-top:20px;text-align:center">
-  <button onclick="window.print()" style="padding:12px 32px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;box-shadow:0 4px 12px rgba(249,115,22,0.3)">
-  Stampa / Salva PDF
-  </button>
-  </div>
+  ${sch.coachNote ? `<p class="cnote"><b>Note coach:</b> ${escHtml(sch.coachNote)}</p>` : ''}
+  ${body || '<p class="empty">Nessuna seduta in questa scheda.</p>'}
+  <footer>
+    <div class="legend">
+      <span>Carico <b>auto</b> = autoregolato</span>
+      <span>RIR = ripetizioni in riserva · RPE = 10 − RIR · TUT = tempo sotto tensione</span>
+      ${legendHTML}
+    </div>
+    <span>${escHtml(brandName)} · ${new Date().toLocaleDateString('it-IT')}</span>
+  </footer>
+  <div class="toolbar"><button onclick="window.print()">Stampa / Salva PDF</button></div>
   </body></html>`);
   w.document.close();
   w.focus();
