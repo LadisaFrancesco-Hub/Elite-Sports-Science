@@ -88,7 +88,19 @@ with sync_playwright() as p:
     check("4 · bordo basso video NON coperto dalla nav", covered["inVideo"],
           f"hit={covered['hit']} videoBottom={covered['bottom']}")
 
-    check("5 · zero errori console", len(errors) == 0, "; ".join(errors[:3]))
+    geom = page.evaluate("""() => {
+      const box = document.querySelector('#mo-video .mo-box');
+      const r = box.getBoundingClientRect();
+      const cy = r.top + r.height/2;       // centro verticale del box
+      return { top: Math.round(r.top), bottom: Math.round(r.bottom),
+               cy: Math.round(cy), vh: innerHeight };
+    }""")
+    # centrato = centro del box entro il terzo centrale del viewport (281..563 su 844)
+    centered = geom["vh"]*0.30 < geom["cy"] < geom["vh"]*0.70
+    check("5 · player centrato (non più in basso)", centered,
+          f"top={geom['top']} cy={geom['cy']} vh={geom['vh']}")
+
+    check("6 · zero errori console", len(errors) == 0, "; ".join(errors[:3]))
 
     page.screenshot(path="tests/video_modal_iphone.png")
     browser.close()

@@ -1425,13 +1425,22 @@ html body select:focus {
     animation: bottom-sheet-up 0.38s var(--transition-snap) both;
   }
 
-  /* Player video: deve stare SOPRA la bottom-bar (z-index 99999), altrimenti
-     la barra di navigazione atleta copre la parte bassa del video e lo sheet
-     sembra aprirsi "a metà". Video edge-to-edge, senza drag-handle né padding
-     laterale/basso extra (solo safe-area). */
-  #mo-video { z-index: 100000 !important; }
+  /* Player video: NON bottom-sheet. Gli altri .mo sono ancorati in basso
+     (align-items:flex-end) e restano schiacciati sul fondo; il video invece
+     va CENTRATO verticalmente e sopra la bottom-bar (z-index 99999), così
+     "si alza" al centro dello schermo. Edge-to-edge, senza drag-handle. */
+  #mo-video {
+    z-index: 100000 !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 12px !important;
+  }
   #mo-video .mo-box {
-    padding: 0 0 env(safe-area-inset-bottom, 0px) !important;
+    width: 100% !important;
+    max-width: 560px !important;
+    max-height: 86dvh !important;
+    padding: 0 !important;
+    border-radius: 16px !important;
     overflow: hidden;
   }
   #mo-video .mo-box::before { display: none !important; }
