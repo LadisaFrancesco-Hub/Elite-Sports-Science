@@ -681,6 +681,11 @@ tr:last-child td { border-bottom: none; }
 @media (hover:hover) and (pointer:fine){ .dot:hover        { border-color: var(--teal); } }
 .dot.warm         { border-color: var(--teal); color: var(--teal); background: var(--teal-d); }
 .dot.done         { background: var(--teal); border-color: var(--teal); color: var(--bg); animation: pop-bounce 0.3s forwards; box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3); }
+/* Serie a tempo: pallino-timer tap-to-start */
+.dot.timed        { border-color: var(--accent); color: var(--accent); }
+.dot.timed.running { border-color: var(--accent); color: var(--accent); background: transparent; font-variant-numeric: tabular-nums; }
+@keyframes dot-ring-pulse { 0%,100% { box-shadow: 0 0 0 0 oklch(0.76 0.16 52 / .45); } 50% { box-shadow: 0 0 0 5px oklch(0.76 0.16 52 / 0); } }
+@media (prefers-reduced-motion: no-preference) { .dot.timed.running { animation: dot-ring-pulse 1s ease-in-out infinite; } }
 .set-completed    { background-color: var(--teal-d) !important; border-left: 4px solid var(--teal) !important; }
 
 /* ══════════════════════════════════════════════════════════════
@@ -1841,6 +1846,10 @@ html body.is-athlete input.ax-next-in:not([type="range"]):not([type="hidden"]) {
   padding: 2px 4px; border-radius: 6px; border: 1.5px solid var(--bg);
   white-space: nowrap; pointer-events: none;
 }
+
+/* Serie a tempo lato atleta: pallino-timer */
+.is-athlete .dot.timed { background: var(--e2); border-color: var(--accent); color: var(--accent); }
+.is-athlete .dot.timed.running { background: var(--e2); border-color: var(--accent); color: var(--accent); box-shadow: 0 0 0 2px var(--accent); font-variant-numeric: tabular-nums; }
 
 /* KPI live */
 .is-athlete #p-sessione .g4 .kpi-v { font-size: 24px; }

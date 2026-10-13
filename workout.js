@@ -229,6 +229,28 @@ function _compactRep(rep) {
     return { meta, detail: full };
 }
 
+// Riconosce una serie "a tempo" (es. 45", 45'', 1', 1'30", 45s) e la converte in secondi.
+// Ritorna 0 se NON è un tempo (es. "10" reps, range "8-10") → il pallino resta un set normale.
+function _setTimeSeconds(raw) {
+    if (raw == null) return 0;
+    let s = String(raw).trim()
+        .replace(/[’′]/g, "'")   // normalizza apici tipografici
+        .replace(/[”″]/g, '"');
+    if (!s || !/['"s]/i.test(s)) return 0; // serve un marcatore di tempo
+    // Schemi compositi/a intervalli (es. "30''/lato + 12/lato", "5x(1'+4')") → NON un singolo timer
+    if (/[+(]/.test(s) || /\d\s*x/i.test(s)) return 0;
+    // 1'30" / 1'30'' / 1'30 → minuti + secondi
+    let m = s.match(/^(\d+)\s*'\s*(\d+)/);
+    if (m) return parseInt(m[1]) * 60 + parseInt(m[2]);
+    // 1' → minuti interi
+    m = s.match(/^(\d+)\s*'\s*$/);
+    if (m) return parseInt(m[1]) * 60;
+    // 45" / 45'' / 45s / 45 sec → secondi
+    m = s.match(/^(\d+)\s*(?:''|"|s)/i);
+    if (m) return parseInt(m[1]);
+    return 0;
+}
+
 // ─────────────────────────────────────────────────────────────
 // 2. loadLive()
 //    Carica e renderizza la scheda della sessione selezionata.
@@ -633,26 +655,32 @@ const techAbbr    = activeTech ? (_stLabels[activeTech] || activeTech.toUpperCas
 for (let l = 0; l < actualSet; l++) {
     const logKey = `${sessId}-w${currentWeek}-${i}-${l}`;
 
-    let defaultLabel;
+    let defaultLabel, rawRepForSet;
     if (isRepRange) {
         defaultLabel = repCompact.meta; // range uguale su tutti i pallini (compattato, no overflow)
+        rawRepForSet = targetRep;
     } else if (repParts.length > 1 && repParts[l]) {
         defaultLabel = repParts[l].trim(); // piramidale: rep specifica per serie
+        rawRepForSet = repParts[l];
     } else {
         defaultLabel = l + 1;
+        rawRepForSet = l + 1;
     }
 
     let label  = defaultLabel;
     let cls    = 'dot';
-    
+
     if (window.realLog && window.realLog[logKey]) {
         const logged = window.realLog[logKey];
         label = logged.rep;
         const isPr = _checkSetPR(ex, logged.rep, logged.kg, appState.selAthId);
         cls += isPr ? ' done is-pr' : ' done is-log';
     }
-    let dataAttr = '';
-    if (techFlagged && techFlagged.has(l)) { cls += ' tech'; dataAttr = ` data-tech="${techAbbr}"`; }
+    // Serie "a tempo" → il pallino diventa un timer tap-to-start
+    const dotSecs = _setTimeSeconds(rawRepForSet);
+    let dataAttr = ` data-label="${escHtml(String(defaultLabel))}"`;
+    if (dotSecs > 0) { cls += ' timed'; dataAttr += ` data-secs="${dotSecs}"`; }
+    if (techFlagged && techFlagged.has(l)) { cls += ' tech'; dataAttr += ` data-tech="${techAbbr}"`; }
     dots += `<div class="${cls}" id="ld-${i}-${l}"${dataAttr}>${label}</div>`;
 }
 
@@ -1186,7 +1214,12 @@ export function attachDotSwipe() {
 
             // Valida TAP (< 10px) o SWIPE destra (> 40px orizzontale, < 20px verticale)
             if ((Math.abs(dx) < 10 && dy < 10) || (dx > 40 && dy < 20)) {
-                toggleDot(dot);
+                // Serie a tempo non ancora completata → avvia/annulla il countdown
+                if (dot.classList.contains('timed') && !dot.classList.contains('done')) {
+                    startSetTimer(dot);
+                } else {
+                    toggleDot(dot);
+                }
             }
         });
 
@@ -1216,7 +1249,8 @@ export function toggleDot(dot) {
         // Cancella il log reale per questo set
         if (dot.id.startsWith('ld-')) {
             const parts       = dot.id.split('-');
-            dot.textContent   = parseInt(parts[2]) + 1; // Ripristina il numero originale
+            // Ripristina l'etichetta originale (tempo/piramidale) o il numero del set
+            dot.textContent   = dot.dataset.label || (parseInt(parts[2]) + 1);
 
             const activeSessId  = document.getElementById('lv-sess').value;
             const currentWeek   = document.getElementById('lv-week').value || '1';
@@ -1236,6 +1270,59 @@ export function toggleDot(dot) {
 
     // Micro-delay necessario per far aggiornare la UI grafica prima del calcolo su iOS
     setTimeout(() => updateLiveTotals(window.getEdExercises()), 10);
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// 5-bis. startSetTimer(dot)
+//    Trasforma una serie "a tempo" (pallino con classe .timed) in un
+//    countdown vero e proprio direttamente sul pallino:
+//      - 1° tap  → parte il conto alla rovescia (es. 45 → 0) sul pallino
+//      - a 0     → suono + vibrazione (playTimerEndSound), set completato
+//                  e avvio automatico del timer REST
+//      - tap durante il countdown → annulla e ripristina l'etichetta
+//    Il long-press resta disponibile per registrare rep/kg reali.
+// ─────────────────────────────────────────────────────────────
+export function startSetTimer(dot) {
+    unlockAudio(); // sblocca l'audio iOS sul primo gesto utente
+
+    // Countdown già in corso → annulla e ripristina
+    if (dot._setTimerInt) {
+        clearInterval(dot._setTimerInt);
+        dot._setTimerInt = null;
+        dot.classList.remove('running');
+        dot.textContent = dot.dataset.label || dot.textContent;
+        return;
+    }
+
+    const secs = parseInt(dot.dataset.secs) || 0;
+    if (secs <= 0) { toggleDot(dot); return; } // fallback di sicurezza
+
+    const fmt = (n) => n >= 60 ? formatTime(n) : String(n); // <60s → "45"; ≥60s → "1:30"
+    const endTime = Date.now() + secs * 1000;
+    dot.classList.add('running');
+    dot.textContent = fmt(secs);
+    if (navigator.vibrate) navigator.vibrate(30);
+
+    dot._setTimerInt = setInterval(() => {
+        const left = Math.round((endTime - Date.now()) / 1000);
+        if (left <= 0) {
+            clearInterval(dot._setTimerInt);
+            dot._setTimerInt = null;
+            dot.classList.remove('running');
+            dot.classList.add('done');
+            dot.textContent = dot.dataset.label || '✓';
+            playTimerEndSound(); // beep 880Hz + vibrazione
+
+            // Avvio automatico del recupero, come per un set normale completato
+            if (dot.id.startsWith('ld-')) {
+                _autoStartRestTimer(parseInt(dot.id.split('-')[1]));
+            }
+            setTimeout(() => updateLiveTotals(window.getEdExercises()), 10);
+        } else {
+            dot.textContent = fmt(left);
+        }
+    }, 250);
 }
 
 

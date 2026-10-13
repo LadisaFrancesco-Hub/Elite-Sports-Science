@@ -70,6 +70,7 @@ Chiavi standard di un oggetto esercizio:
 | `note` | string | stretto necessario; `""` se nulla |
 | `set` | int | n° serie |
 | `rep` | string | `"8"`, range `"8-10"`, per lato `"6 ea"` / `"6 el"`, tempo `"45''"` / `"30''"`, distanza `"10m"` / `"12-15m"` |
+| | | **Serie a tempo = timer live**: se `rep` è un tempo "puro" (`45"`, `45''`, `30''`, `1'`, `2'`, anche con suffisso `/gamba`·`/lato`), lato atleta il pallino diventa un **timer**: tap → countdown → suono a 0. Gli schemi compositi/intervalli (con `+`, `(`, o `5x…`, es. `30''/lato + 12/lato`) restano pallini normali, NON timer. |
 | `rir` | string | numero (`"2"`,`"1"`,`"0"`) o `"—"` per mobilità/plio/warmup |
 | `kg` | int/string | `0` se autoregolato o a corpo libero; numero se carico fisso; può ospitare il tempo di un iso (`"45''"`) o note tipo `"el + leggero"` |
 | `rest` | string | secondi con apici: `"120''"`, `"90''"`, `"0''"` (dentro superset) |
