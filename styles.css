@@ -1425,6 +1425,17 @@ html body select:focus {
     animation: bottom-sheet-up 0.38s var(--transition-snap) both;
   }
 
+  /* Player video: deve stare SOPRA la bottom-bar (z-index 99999), altrimenti
+     la barra di navigazione atleta copre la parte bassa del video e lo sheet
+     sembra aprirsi "a metà". Video edge-to-edge, senza drag-handle né padding
+     laterale/basso extra (solo safe-area). */
+  #mo-video { z-index: 100000 !important; }
+  #mo-video .mo-box {
+    padding: 0 0 env(safe-area-inset-bottom, 0px) !important;
+    overflow: hidden;
+  }
+  #mo-video .mo-box::before { display: none !important; }
+
   /* Topbar safe area */
   .topbar {
     padding-top: env(safe-area-inset-top, 0px) !important;
