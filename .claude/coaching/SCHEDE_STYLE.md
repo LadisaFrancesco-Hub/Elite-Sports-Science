@@ -91,7 +91,12 @@ Chiavi standard di un oggetto esercizio:
   "w2": {"set": 4, "rep": "4", "kg": 110.5, "rir": "2"}
 }
 ```
-Chiavi `w{N}` con N = settimana assoluta del meso. Ogni voce almeno `set`/`rep`/`kg`; opzionali `rir`, `tut`, `tech`. Se il carico è autoregolato, lascia `kg:0` e fai ondeggiare `set`/`rep`/`rir`.
+Chiavi `w{N}` con N = settimana assoluta del meso. Ogni voce almeno `set`/`rep`/`kg`; opzionali `rir`, `tut`, `tech`, `techSet`. Se il carico è autoregolato, lascia `kg:0` e fai ondeggiare `set`/`rep`/`rir`.
+
+**Tecnica d'intensità su una serie specifica** (`tech` + `techSet`):
+- `tech` → codice tecnica (`drop_set`, `rest_pause`, `myo_reps`, `cluster`, `hyper_stretch`, `amrap_top`, `hyper_metabolic`).
+- `techSet` → **a quali serie** applicarla. Valori: `"all"` (default, = assente → tutte), `"last"` (solo l'ultima), `"last2"`/`"last3"` (ultime N), oppure un numero `"3"` (serie specifica, 1-based). Esempio "drop set solo sull'ultima": `{"set":3,"rep":"8","kg":80,"tech":"drop_set","techSet":"last"}`.
+- **Importante — niente schema nelle `rep`**: NON scrivere il dettaglio della tecnica dentro `rep` (es. evita `"16 + 4 + 4 + 4 (15\" rest)"`): su mobile sfora la casella. Tieni `rep` corta/base; il dettaglio numerico (reps dei cluster, drop di carico) viene calcolato e mostrato lato atleta nel riquadro "Come eseguire". Lato atleta la serie bersaglio è evidenziata (anello accento + mini-badge col codice tecnica).
 
 **`circuit`** (atletico/condizionale):
 ```json

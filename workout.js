@@ -160,6 +160,75 @@ const SERIES_TYPE_INSTRUCTIONS = {
     lin_taper:       'Taper lineare: volume decresce progressivamente avvicinandosi alla gara. Mantieni l\'intensità alta, riduci solo le serie.',
 };
 
+// Dettaglio numerico compatto di una tecnica, calcolato da rep/kg base (non salvato nel DB).
+// Serve al riquadro "Come eseguire" lato atleta: tiene i numeri fuori dalla casella reps.
+function describeTechnique(tech, rep, kg) {
+    const r = parseInt(rep) || 0;
+    const k = parseFloat(kg) || 0;
+    const round = v => Math.round(v / 2.5) * 2.5;
+    switch (tech) {
+        case 'drop_set':
+            return k > 0 ? `${k} → ${round(k * 0.75)} → ${round(k * 0.55)} kg · a cedimento`
+                         : 'a cedimento, poi −20/30% kg e continua';
+        case 'rest_pause':
+            return 'a cedimento, rec 15–20″, riparti · 2–3 mini-serie';
+        case 'myo_reps':
+            return `${Math.max(10, r + 2) || 10} + 3 + 3 + 3 · rec 20″`;
+        case 'cluster': {
+            const m = Math.round(r / 3) || 2;
+            return `${m}.${m}.${m} · 15″ intra-serie`;
+        }
+        case 'hyper_stretch':
+            return `${r || ''} + 4/5 parziali in allungamento`.trim();
+        case 'hyper_metabolic': {
+            const act = Math.max(12, r * 2) || 12, cl = Math.round(r / 2) || 3;
+            return `${act} + ${cl} + ${cl} + ${cl} · rec 15″`;
+        }
+        case 'amrap_top':
+            return 'top set a cedimento (AMRAP) + back-off';
+        default:
+            return '';
+    }
+}
+
+// Indici 0-based delle serie bersaglio di una tecnica. 'all' → tutte; 'last' → ultima;
+// 'lastN' → ultime N; numero → quella serie (1-based in input).
+function _resolveTechSets(techSet, total) {
+    const s = new Set();
+    if (!total) return s;
+    const t = String(techSet || 'all');
+    if (t === 'all') { for (let i = 0; i < total; i++) s.add(i); return s; }
+    if (t === 'last') { s.add(total - 1); return s; }
+    const mLast = t.match(/^last(\d+)$/);
+    if (mLast) { const n = Math.min(total, parseInt(mLast[1])); for (let i = total - n; i < total; i++) s.add(i); return s; }
+    const n = parseInt(t);
+    if (n >= 1 && n <= total) s.add(n - 1);
+    return s;
+}
+
+// Etichetta leggibile della serie bersaglio (per il riquadro "Come eseguire").
+function _techSetLabel(techSet, total) {
+    const t = String(techSet || 'all');
+    if (t === 'all' || !t) return '';
+    if (t === 'last') return 'Ultima serie';
+    const m = t.match(/^last(\d+)$/);
+    if (m) return `Ultime ${m[1]} serie`;
+    const n = parseInt(t);
+    return n >= 1 ? `Serie ${n}` : '';
+}
+
+// Separa una stringa rep in { meta: versione corta per la casella, detail: schema completo }.
+// Evita che schemi auto-generati tipo "16 + 4 + 4 + 4 (15\" rest)" sforino su mobile:
+// la casella mostra "16+4+4+4", il resto va nel riquadro "Come eseguire".
+function _compactRep(rep) {
+    const full = (rep == null) ? '' : String(rep);
+    const isCompound = /[+(]/.test(full) || full.length > 10;
+    if (!isCompound) return { meta: full, detail: '' };
+    let meta = full.split('(')[0].replace(/\s*\+\s*/g, '+').replace(/\s*,\s*/g, ',').trim();
+    if (meta.length > 12) meta = meta.split(/[+\s]/)[0] + '…';
+    return { meta, detail: full };
+}
+
 // ─────────────────────────────────────────────────────────────
 // 2. loadLive()
 //    Carica e renderizza la scheda della sessione selezionata.
@@ -420,6 +489,7 @@ export function loadLive() {
             // Tecnica d'intensità attiva: prima quella della settimana (progressione),
             // poi il fallback al series_type fisso dell'esercizio.
             let activeTech = (ex.series_type && ex.series_type !== 'manual') ? ex.series_type : '';
+            let activeTechSet = 'all';
             if (ex.progression && ex.progression[`w${currentWeek}`]) {
                 const pW  = ex.progression[`w${currentWeek}`];
                 targetSet = pW.set;
@@ -430,28 +500,39 @@ export function loadLive() {
                 if (pW.tut != null && pW.tut !== '') targetTut = pW.tut;
                 // Tecnica per-settimana: se presente sovrascrive quella fissa
                 if (pW.tech) activeTech = pW.tech;
+                // Serie bersaglio della tecnica (default: tutte)
+                if (pW.techSet) activeTechSet = pW.techSet;
             }
+            // Reps compatte per la casella meta (schema completo → riquadro "Come eseguire")
+            const repCompact = _compactRep(targetRep);
 
             // ── Tipo esercizio e colore bordo ─────────────────
             const currentType = (ex.type || 'normal').toLowerCase();
             const borderColor = typeColors[currentType] || 'var(--accent)';
             const _stLabels = { myo_reps:'MYO', hyper_block_dup:'BLK', hyper_stretch:'STRCH', hyper_metabolic:'META', block_period:'BLOCK', double_prog:'DBL', overreach:'OVER', lin_taper:'TAPER', step_load:'STEP', wave_contrast:'WAVE', french_contrast:'FC', cluster:'CLST', wave_load:'WL', wup:'WUP', triphasic:'TRI', wendler_531:'531', linear_classic:'LIN', amrap_top:'AMRAP', drop_set:'DROP', rest_pause:'RP' };
-            const seriesTypeBadge = activeTech
+            // Badge tecnica vicino al nome solo se applicata a TUTTE le serie (esercizio-level).
+            // Per le tecniche su serie specifiche l'evidenziazione sta sui pallini.
+            const seriesTypeBadge = (activeTech && activeTechSet === 'all')
                 ? `<span class="tag tn">${_stLabels[activeTech] || activeTech.toUpperCase().slice(0,5)}</span>`
                 : '';
 
             // ── GAP 2: Istruzioni protocollo collassabili ─────
             const stInstr = activeTech && SERIES_TYPE_INSTRUCTIONS[activeTech];
             const stLabel = activeTech ? (_stLabels[activeTech] || activeTech.toUpperCase().slice(0,5)) : '';
+            const techSetLbl = _techSetLabel(activeTechSet, targetSet);
+            const techDetail = activeTech ? (describeTechnique(activeTech, targetRep, targetKg) || repCompact.detail) : '';
+            // Riga titolo: "Come eseguire: DROP" + eventuale serie bersaglio ("· Ultima serie")
+            const stHeadTxt = `Come eseguire: ${stLabel}${techSetLbl ? ` · ${techSetLbl}` : ''}`;
             const seriesTypeInfoHtml = stInstr ? `
               <div style="margin-top:8px;">
                 <div onclick="(function(el){var b=el.nextElementSibling;var a=el.querySelector('.st-arr');b.style.display=b.style.display==='none'?'block':'none';a.textContent=b.style.display==='none'?'▾':'▴';})(this)"
                      style="display:flex;align-items:center;gap:6px;cursor:pointer;min-height:44px;padding:6px 10px;background:var(--e2);border:1px solid var(--line);border-radius:8px;">
                   <span style="font-size:12px;color:var(--text2);">ℹ</span>
-                  <span style="font-size:11px;color:var(--muted);">Come eseguire: ${escHtml(stLabel)}</span>
+                  <span style="font-size:11px;color:var(--muted);">${escHtml(stHeadTxt)}</span>
                   <span class="st-arr" style="font-size:10px;color:var(--muted);margin-left:auto;">▾</span>
                 </div>
                 <div style="display:none;padding:8px 10px;background:var(--e2);border:1px solid var(--line);border-top:none;border-radius:0 0 8px 8px;">
+                  ${techDetail ? `<div style="font-family:var(--fmono);font-size:11.5px;color:var(--accent);font-weight:600;margin-bottom:6px;">${escHtml(techDetail)}</div>` : ''}
                   <span style="font-size:11px;color:var(--muted);line-height:1.6;">${escHtml(stInstr)}</span>
                 </div>
               </div>` : '';
@@ -545,12 +626,16 @@ if (typeof targetRep === 'string') {
 // Se i pezzi sono meno delle serie è un range (es. "8-10" con 3 serie) → mostra il range su ogni dot
 const isRepRange = repParts.length > 0 && repParts.length < actualSet;
 
+// Serie bersaglio della tecnica (solo se NON applicata a tutte) → evidenziazione pallino
+const techFlagged = (activeTech && activeTechSet !== 'all') ? _resolveTechSets(activeTechSet, actualSet) : null;
+const techAbbr    = activeTech ? (_stLabels[activeTech] || activeTech.toUpperCase().slice(0,5)) : '';
+
 for (let l = 0; l < actualSet; l++) {
     const logKey = `${sessId}-w${currentWeek}-${i}-${l}`;
 
     let defaultLabel;
     if (isRepRange) {
-        defaultLabel = targetRep; // range "8-10" uguale su tutti i pallini
+        defaultLabel = repCompact.meta; // range uguale su tutti i pallini (compattato, no overflow)
     } else if (repParts.length > 1 && repParts[l]) {
         defaultLabel = repParts[l].trim(); // piramidale: rep specifica per serie
     } else {
@@ -558,15 +643,17 @@ for (let l = 0; l < actualSet; l++) {
     }
 
     let label  = defaultLabel;
-    let isMod  = 'class="dot"';
+    let cls    = 'dot';
     
     if (window.realLog && window.realLog[logKey]) {
         const logged = window.realLog[logKey];
         label = logged.rep;
         const isPr = _checkSetPR(ex, logged.rep, logged.kg, appState.selAthId);
-        isMod = isPr ? `class="dot done is-pr"` : `class="dot done is-log"`;
+        cls += isPr ? ' done is-pr' : ' done is-log';
     }
-    dots += `<div ${isMod} id="ld-${i}-${l}">${label}</div>`;
+    let dataAttr = '';
+    if (techFlagged && techFlagged.has(l)) { cls += ' tech'; dataAttr = ` data-tech="${techAbbr}"`; }
+    dots += `<div class="${cls}" id="ld-${i}-${l}"${dataAttr}>${label}</div>`;
 }
 
             // ── Label braccio dominante ───────────────────────
@@ -688,7 +775,7 @@ for (let l = 0; l < actualSet; l++) {
                 ${seriesTypeInfoHtml}
 
                 <p class="ax-ex-meta">
-                  ${armLabel}${actualSet}×${targetRep}
+                  ${armLabel}${actualSet}×${repCompact.meta}
                   <span class="ax-sep">•</span>
                   <b style="color:${autoRegBadge ? 'var(--amber)' : 'var(--text)'};">${renderTargetLoad}</b>
                   ${rirLabel}${tutLabel}
@@ -1199,7 +1286,7 @@ export function openRealLog(exIndex, setIndex) {
         document.getElementById('rl-normal-section').style.display = 'none';
         document.getElementById('rl-timer-section').style.display  = 'block';
     } else {
-        document.getElementById('rl-target').textContent = `Target Originale: ${targetRep} rep @ ${targetKg} ${String(targetKg).includes('m/s') ? '' : 'kg'}`;
+        document.getElementById('rl-target').textContent = `Target Originale: ${_compactRep(targetRep).meta} rep @ ${targetKg} ${String(targetKg).includes('m/s') ? '' : 'kg'}`;
         const logKey  = `${activeSessId}-w${w}-${exIndex}-${setIndex}`;
         let actualRep = parseInt(targetRep)  || 0;
         let actualKg  = parseFloat(targetKg) || 0;

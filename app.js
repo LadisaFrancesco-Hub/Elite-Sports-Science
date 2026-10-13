@@ -3700,7 +3700,7 @@ export function renderEdExercises() {
   ${ex.progression && Object.keys(ex.progression).length ? `
   <div style="margin-top:6px;padding:6px 8px;background:rgba(0,229,168,0.05);border:1px solid rgba(0,229,168,0.2);border-radius:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
   <span style="font-size:9px;font-weight:800;color:var(--teal);text-transform:uppercase;letter-spacing:0.5px;flex-shrink:0;">Prog.</span>
-  ${Object.entries(ex.progression).sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).map(([w,v])=>`<span style="font-size:10px;color:var(--text);white-space:nowrap;"><span style="color:var(--teal);font-weight:700;">${w.toUpperCase()}</span> ${v.set}×${v.rep}@${v.kg}kg${v.tech?` <span style="color:var(--purple);font-weight:700;">${_seriesTypeLabel(v.tech)}</span>`:''}</span>`).join('<span style="color:var(--border);font-size:10px;">|</span>')}
+  ${Object.entries(ex.progression).sort(([a],[b])=>a.localeCompare(b,undefined,{numeric:true})).map(([w,v])=>`<span style="font-size:10px;color:var(--text);white-space:nowrap;"><span style="color:var(--teal);font-weight:700;">${w.toUpperCase()}</span> ${v.set}×${v.rep}@${v.kg}kg${v.tech?` <span style="color:var(--purple);font-weight:700;">${_seriesTypeLabel(v.tech)}${(v.techSet && v.techSet!=='all')?` <span style="color:var(--teal);font-weight:600;">${_techSetShort(v.techSet)}</span>`:''}</span>`:''}</span>`).join('<span style="color:var(--border);font-size:10px;">|</span>')}
   </div>` : ''}
   <input type="text" value="${ex.note||''}" placeholder="Note / CUE d'esecuzione" style="width:100%;font-size:11px;margin-top:6px;color:var(--purple)" oninput="updateEx(${i},'note',this.value)">`;
   wrap.appendChild(div);
@@ -3842,6 +3842,13 @@ const _seriesTypeLabels = {
   drop_set:'DROP', rest_pause:'RP'
 };
 function _seriesTypeLabel(t){ return _seriesTypeLabels[t] || t.toUpperCase().slice(0,5); }
+// Etichetta compatta della serie bersaglio di una tecnica (per riepiloghi/PDF).
+function _techSetShort(t){
+  t = String(t || '');
+  if (t === 'last') return 'ultima';
+  const m = t.match(/^last(\d+)$/); if (m) return 'ult.' + m[1];
+  const n = parseInt(t); return n >= 1 ? 'serie ' + n : '';
+}
 
 // Tecniche d'intensità assegnabili per SINGOLA settimana nella progressione.
 // Sottoinsieme curato: solo tecniche da singola seduta (no schemi multi-settimana
@@ -3855,6 +3862,17 @@ const INTENSITY_TECHNIQUES = [
   { code: 'amrap_top',       label: 'Top set / AMRAP' },
   { code: 'hyper_metabolic', label: 'Densità metabolica' },
 ];
+
+// Opzioni del selettore "su quale serie" applicare la tecnica d'intensità.
+// Valori: 'all' (default), 'last', 'last2', 'last3', oppure numero '1'..'N' (serie specifica).
+function _techSetOptions(nSets, sel) {
+  sel = (sel == null || sel === '') ? 'all' : String(sel);
+  const n = parseInt(nSets) || 0;
+  const base = [['all','Tutte le serie'],['last',"Solo l'ultima"],['last2','Ultime 2'],['last3','Ultime 3']];
+  let o = base.map(([v,l]) => `<option value="${v}"${sel === v ? ' selected' : ''}>${l}</option>`).join('');
+  for (let i = 1; i <= n; i++) o += `<option value="${i}"${sel === String(i) ? ' selected' : ''}>Serie ${i}</option>`;
+  return o;
+}
 
 export function openProgressionModal(index) {
   appState.currentProgExIndex = index;
@@ -3883,12 +3901,20 @@ export function openProgressionModal(index) {
   <div><label class="fl">RIR</label><input type="text" id="p-rir-${w}" value="${escHtml(String(p.rir ?? ''))}" placeholder="—"></div>
   <div><label class="fl">TUT</label><input type="text" id="p-tut-${w}" value="${escHtml(String(p.tut ?? ''))}" placeholder="es. 3-1-2-0"></div>
   </div>
-  <div style="margin-top:6px;">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:6px;">
+  <div>
   <label class="fl">Tecnica d'intensità</label>
-  <select id="p-tech-${w}">
+  <select id="p-tech-${w}" onchange="(function(s){var t=document.getElementById('p-techset-${w}');if(t)t.disabled=!s.value;})(this)">
   <option value="">— nessuna —</option>
   ${INTENSITY_TECHNIQUES.map(t => `<option value="${t.code}"${p.tech === t.code ? ' selected' : ''}>${t.label}</option>`).join('')}
   </select>
+  </div>
+  <div>
+  <label class="fl">Su quale serie</label>
+  <select id="p-techset-${w}"${p.tech ? '' : ' disabled'}>
+  ${_techSetOptions(p.set, p.techSet)}
+  </select>
+  </div>
   </div>
   </div>`;
   }
@@ -3919,7 +3945,12 @@ export async function saveProgressionData() {
   if (tutV && tutV !== '-') _pw.tut = tutV;
   // Tecnica d'intensità per-settimana (opzionale: vuoto = nessuna)
   const techV = (document.getElementById(`p-tech-${w}`)?.value || '').trim();
-  if (techV) _pw.tech = techV;
+  if (techV) {
+  _pw.tech = techV;
+  // Serie bersaglio della tecnica (vuoto/'all' = tutte → non salvato, back-compat)
+  const techSetV = (document.getElementById(`p-techset-${w}`)?.value || 'all').trim();
+  if (techSetV && techSetV !== 'all') _pw.techSet = techSetV;
+  }
   ex.progression[`w${w}`] = _pw;
   }
   const selType = document.getElementById('smart-prog-select')?.value;
@@ -4061,6 +4092,7 @@ export function applySmartMicrocycle(type) {
   if (_oldPw && _oldPw.rir != null) ex.progression[`w${absW}`].rir = _oldPw.rir;
   if (_oldPw && _oldPw.tut != null) ex.progression[`w${absW}`].tut = _oldPw.tut;
   if (_oldPw && _oldPw.tech != null) ex.progression[`w${absW}`].tech = _oldPw.tech;
+  if (_oldPw && _oldPw.techSet != null) ex.progression[`w${absW}`].techSet = _oldPw.techSet;
   }
   ex.series_type = type;
   appState.currentSmartProgType = type;
@@ -5831,7 +5863,8 @@ export function exportProgramPDF() {
     const cells = rows.map(([n, v]) => {
       const load = (v.kg && v.kg !== 0 && v.kg !== '0') ? ` · ${escHtml(String(v.kg))}kg` : '';
       const rir = (v.rir != null && String(v.rir).trim() !== '') ? ` · RIR ${escHtml(String(v.rir))}` : '';
-      return `<span class="pw"><b>W${n}</b> ${escHtml(String(v.set ?? ''))}×${escHtml(String(v.rep ?? ''))}${rir}${load}</span>`;
+      const tech = v.tech ? ` · ${_seriesTypeLabel(v.tech)}${(v.techSet && v.techSet !== 'all') ? ` (${_techSetShort(v.techSet)})` : ''}` : '';
+      return `<span class="pw"><b>W${n}</b> ${escHtml(String(v.set ?? ''))}×${escHtml(String(v.rep ?? ''))}${rir}${load}${tech}</span>`;
     }).join('');
     return `<div class="prog">${cells}</div>`;
   };

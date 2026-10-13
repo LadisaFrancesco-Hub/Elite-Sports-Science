@@ -1777,7 +1777,7 @@ html body select:focus {
 }
 .ax-ex-name { font-weight: 700; font-size: 16.5px; letter-spacing: -.01em; color: var(--text); flex: 1 1 auto; word-wrap: break-word; min-width: 0; padding-right: 8px; }
 .ax-ex-vol { position: absolute; top: 16px; right: 16px; font-family: var(--fmono); font-weight: 600; font-size: 14px; color: var(--accent); }
-.ax-ex-meta { margin: 0; font-family: var(--fmono); font-size: 12.5px; color: var(--muted); letter-spacing: .01em; }
+.ax-ex-meta { margin: 0; font-family: var(--fmono); font-size: 12.5px; color: var(--muted); letter-spacing: .01em; overflow-wrap: anywhere; }
 .ax-ex-meta b { color: var(--text); font-weight: 600; }
 .ax-sep { color: var(--dim3); margin: 0 5px; }
 .ax-next-l { font-size: 11.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
@@ -1810,6 +1810,17 @@ html body.is-athlete input.ax-next-in:not([type="range"]):not([type="hidden"]) {
 .is-athlete .dot.done { background: var(--grad-accent); border-color: transparent; color: var(--accent-ink); box-shadow: 0 6px 16px -6px oklch(0.70 0.17 48 / .8); }
 .is-athlete .dot.warm.done { background: oklch(0.76 0.16 52 / .35); color: var(--text); box-shadow: none; }
 .is-athlete .dot.done.is-pr { box-shadow: 0 0 0 3px var(--bg), 0 0 0 5px var(--accent-hi), 0 0 18px 2px oklch(0.76 0.16 52 / .7); }
+/* Serie con tecnica d'intensità: anello accento + mini-badge (es. DROP) in alto a destra */
+.is-athlete .dot.tech { position: relative; overflow: visible; box-shadow: 0 0 0 2px var(--accent); }
+.is-athlete .dot.done.tech { box-shadow: 0 0 0 2px var(--accent), 0 6px 16px -6px oklch(0.70 0.17 48 / .8); }
+.is-athlete .dot.tech::after {
+  content: attr(data-tech);
+  position: absolute; top: -8px; right: -9px;
+  background: var(--accent); color: var(--accent-ink);
+  font-family: var(--fmono); font-size: 8px; font-weight: 700; letter-spacing: .04em; line-height: 1;
+  padding: 2px 4px; border-radius: 6px; border: 1.5px solid var(--bg);
+  white-space: nowrap; pointer-events: none;
+}
 
 /* KPI live */
 .is-athlete #p-sessione .g4 .kpi-v { font-size: 24px; }
