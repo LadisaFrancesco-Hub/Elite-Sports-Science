@@ -79,6 +79,13 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**Fix cambio atleta dal select dell'editor schede (2026-10-14)**
+- Sintomo (foto coach): in "Editor schede" → card "Atleta e contesto", il select **Atleta** non cambiava atleta — restava sempre quello; l'unico modo era il selettore in alto nella topbar.
+- **Causa radice (verificata in `app.js`)**: il select `#ed-ath` è regolarmente popolato con tutti gli atleti (`populateSelects`), ma il suo `onchange` `loadEditorForAthlete()` **non** aggiornava `appState.selAthId`. `renderEditor()` tratta `appState.selAthId` come fonte autoritativa (`app.js:3282`) e **riforza** `#ed-ath.value` su quell'ID (`:3283`) → la selezione veniva subito annullata. Il selettore in alto funzionava perché `onAthChange`/`awSelectAthlete` aggiornano `selAthId`.
+- **Fix (solo `app.js`, in `loadEditorForAthlete`)**: il select dell'editor ora cambia l'atleta attivo del workspace come la barra in alto — imposta `appState.selAthId`, sincronizza `g-ath`/`sf-ath`/`msg-ath-select`, resetta `edBlockId` (riselezione blocco attivo per il nuovo atleta), poi `renderEditor()` + `renderAthleteWorkbar()` (avatar/nome topbar). Nessun tocco a DB/HTML.
+- **Verifica**: `node --check app.js` OK; propagazione in `www/app.js` confermata post-build.
+- **DEPLOYATO v7.14 (2026-10-14)**: bump 7.13→7.14 (`sw.js`+`index.html`+`package.json`), `npm run build:web` (38 file), commit `cda51ec` su `main`, `vercel --prod` → READY, aliasato su `coach-os-lime.vercel.app`. Verifica live: `sw.js`→`v7.14` ✓, `index.html`→`var V='7.14'` ✓, `app.js`→`appState.selAthId = athId` ✓.
+
 **Serie "a tempo" → timer vero sul pallino lato atleta (2026-10-13)**
 - Richiesta coach (foto): per esercizi a tempo (es. `spanish squat 2×45"`) i pallini set mostravano `45"` ma erano solo da spuntare. Voluto: tap sul pallino → parte un countdown da 45" **sul pallino stesso** → a 0 **suona**. I due pallini restano, diventano timer.
 - **Soluzione (solo `workout.js` + `styles.css`, nessun tocco a DB/HTML/backend)**:
