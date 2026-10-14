@@ -517,7 +517,7 @@ textarea { resize: vertical; min-height: 64px; line-height: 1.6; }
 input::placeholder, textarea::placeholder { color: #5a6170; opacity: 1; }
 
 /* Override specificità alta (Apple HIG — fix blindato 0-0-4) */
-html body input,
+html body input:not([type="checkbox"]):not([type="radio"]),
 html body select,
 html body textarea {
   font-size: 16px !important; /* Previene auto-zoom iOS */
@@ -531,7 +531,7 @@ html body textarea {
   appearance: none !important;
 }
 
-html body input:focus,
+html body input:not([type="checkbox"]):not([type="radio"]):focus,
 html body select:focus,
 html body textarea:focus {
   border-color: var(--teal) !important;
@@ -1360,7 +1360,7 @@ button, a, label,
 }
 
 /* ── 7. INPUT DESIGN — sfondo semitrasparente, focus ring modern ── */
-html body input:not([type="range"]):not([type="hidden"]):not([type="color"]),
+html body input:not([type="range"]):not([type="hidden"]):not([type="color"]):not([type="checkbox"]):not([type="radio"]),
 html body select,
 html body textarea {
   background: rgba(24, 30, 42, 0.90) !important;
@@ -1375,7 +1375,7 @@ html body textarea {
   transition: border-color 0.22s ease, box-shadow 0.22s ease,
               background 0.22s ease !important;
 }
-html body input:not([type="range"]):not([type="hidden"]):not([type="color"]):focus,
+html body input:not([type="range"]):not([type="hidden"]):not([type="color"]):not([type="checkbox"]):not([type="radio"]):focus,
 html body select:focus,
 html body textarea:focus {
   border-color: var(--teal) !important;
@@ -1910,3 +1910,44 @@ html body.is-athlete input.ax-next-in:not([type="range"]):not([type="hidden"]) {
   .is-athlete [onclick].ax-card:active, .is-athlete [onclick].card:active { transform: scale(.985); }
 }
 @keyframes ax-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ── Checkbox custom (.cbx) ──────────────────────────────────────────────────
+   Le checkbox native con solo accent-color non rendono chiaro lo stato
+   "spuntato" sul tema scuro. Questa casella si riempie di accento con una
+   spunta ✓ bianca ben visibile quando è :checked. */
+input[type="checkbox"].cbx {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin: 1px 0 0;
+  border: 2px solid var(--muted, #94a3b8);
+  border-radius: 6px;
+  background: var(--s1, #101318);
+  cursor: pointer;
+  display: inline-grid;
+  place-content: center;
+  transition: background .15s var(--ease-out), border-color .15s var(--ease-out);
+}
+input[type="checkbox"].cbx::before {
+  content: "";
+  width: 12px;
+  height: 12px;
+  transform: scale(0);
+  transition: transform .13s var(--ease-out);
+  background: #fff;
+  /* glifo spunta (checkmark) ritagliato */
+  clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0, 43% 62%);
+}
+input[type="checkbox"].cbx:checked {
+  background: var(--teal, #FF9044);
+  border-color: var(--teal, #FF9044);
+}
+input[type="checkbox"].cbx:checked::before { transform: scale(1); }
+input[type="checkbox"].cbx:focus-visible {
+  outline: 2px solid var(--teal, #FF9044);
+  outline-offset: 2px;
+}

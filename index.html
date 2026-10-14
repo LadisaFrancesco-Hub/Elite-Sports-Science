@@ -284,11 +284,11 @@
   </div>
   <div class="fg"><label class="fl">Note Antropometriche / Infortuni</label><textarea id="ma-notes" placeholder="Storico infortuni, note d'interesse..."></textarea></div>
   <label style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--text);cursor:pointer;margin:4px 0 4px">
-  <input type="checkbox" id="ma-reminder" checked style="accent-color:var(--teal);margin-top:2px;width:15px;height:15px">
+  <input type="checkbox" id="ma-reminder" class="cbx" checked>
   <span>Promemoria allenamento <span style="color:var(--dim)">— l'atleta riceve una notifica push nei giorni di allenamento programmati. Puoi disattivarlo per chi non lo gradisce.</span></span>
   </label>
   <label style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;color:var(--text);cursor:pointer;margin:4px 0 4px">
-  <input type="checkbox" id="ma-wellness-reminder" checked style="accent-color:var(--teal);margin-top:2px;width:15px;height:15px">
+  <input type="checkbox" id="ma-wellness-reminder" class="cbx" checked>
   <span>Promemoria wellness <span style="color:var(--dim)">— l'atleta riceve una notifica push per il check-in wellness del giorno. Puoi disattivarlo per chi non lo gradisce.</span></span>
   </label>
   <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
@@ -1854,7 +1854,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.16'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.17'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });
