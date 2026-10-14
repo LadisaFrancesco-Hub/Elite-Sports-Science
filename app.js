@@ -1908,6 +1908,7 @@ export function renderAthleteOverview() {
   const quickHtml = `
   <div class="co-eyebrow"><span>Vai a</span></div>
   <div class="co-actions">
+  <button class="co-action" onclick="openEditAthleteModal()"><span class="co-action-ic">👤</span><span>Dati atleta<small>Anagrafica · obiettivo · promemoria</small></span></button>
   <button class="co-action" onclick="awGo('editor')"><span class="co-action-ic">✎</span><span>Modifica scheda<small>Editor · blocchi · progressione</small></span></button>
   <button class="co-action" onclick="awGo('progressione')"><span class="co-action-ic">📈</span><span>Progressione<small>Andamento volume settimanale</small></span></button>
   <button class="co-action" onclick="awGo('analytics')"><span class="co-action-ic">📊</span><span>Analytics<small>Trend biomeccanici · composizione · test</small></span></button>
