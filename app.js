@@ -3458,9 +3458,20 @@ export function deleteBlock() {
 
 export function loadEditorForAthlete() {
   const athId = document.getElementById('ed-ath').value;
+  if (!athId) return;
+  // Il select dell'editor cambia l'atleta attivo del workspace, coerente con
+  // la barra in alto (awSelectAthlete/onAthChange). Senza aggiornare selAthId,
+  // renderEditor() — che tratta selAthId come fonte autoritativa — riforzerebbe
+  // il select sull'atleta precedente, annullando il cambio.
+  appState.selAthId = athId;
+  const g = document.getElementById('g-ath'); if (g) g.value = athId;
+  const f = document.getElementById('sf-ath'); if (f) f.value = athId;
+  const m = document.getElementById('msg-ath-select'); if (m) m.value = athId;
   const sch = DB.schedules[athId];
   appState.edSessId = (sch && sch.sessions && sch.sessions.length > 0) ? sch.sessions[0].id : '';
+  appState.edBlockId = null; // forza la riselezione del blocco attivo per il nuovo atleta
   renderEditor();
+  renderAthleteWorkbar(); // aggiorna avatar/nome nella topbar
 }
 
 export function syncEdDuration(val) {
