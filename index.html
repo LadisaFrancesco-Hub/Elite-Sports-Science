@@ -703,23 +703,23 @@
   </div>
   <div style="font-size:11px;color:var(--muted);line-height:1.5;margin-bottom:10px">Ogni blocco ha le proprie sedute, esercizi, giorni e progressione. Il blocco attivo per l'atleta è scelto in automatico dalla settimana corrente (in base alla data d'inizio). Con un solo blocco il mesociclo si comporta come una scheda classica.</div>
   <div class="sess-tabs" id="ed-block-tabs" style="margin-bottom:10px"></div>
-  <div class="fr" style="align-items:end">
-  <div class="fg" style="margin-bottom:0"><label class="fl">Nome blocco</label><input type="text" id="ed-block-name" oninput="renameBlock(this.value)" placeholder="Es: Test / Casa base / Carico"></div>
-  <div class="fg" style="margin-bottom:0;max-width:110px"><label class="fl">Settimana da</label><input type="number" id="ed-block-wstart" min="1" oninput="syncBlockWeeks()"></div>
-  <div class="fg" style="margin-bottom:0;max-width:110px"><label class="fl">a</label><input type="number" id="ed-block-wend" min="1" oninput="syncBlockWeeks()"></div>
-  <button class="btn btn-d btn-sm" id="ed-block-del" onclick="deleteBlock()">✕ Elimina blocco</button>
+  <div class="fr" style="display:flex;flex-wrap:wrap;align-items:end;gap:8px;margin-bottom:10px">
+  <div class="fg" style="margin-bottom:0;flex:1 1 110px;min-width:92px"><label class="fl">Nome blocco</label><input type="text" id="ed-block-name" oninput="renameBlock(this.value)" placeholder="Es: Test / Casa base / Carico"></div>
+  <div class="fg" style="margin-bottom:0;flex:0 0 78px"><label class="fl">Settimana da</label><input type="number" id="ed-block-wstart" min="1" oninput="syncBlockWeeks()"></div>
+  <div class="fg" style="margin-bottom:0;flex:0 0 78px"><label class="fl">a</label><input type="number" id="ed-block-wend" min="1" oninput="syncBlockWeeks()"></div>
+  <button class="btn btn-d btn-sm" id="ed-block-del" onclick="deleteBlock()" style="flex:0 0 auto">✕ Elimina blocco</button>
   </div>
   <div class="fr" style="margin-top:8px">
   <div class="fg" style="flex-basis:100%;margin-bottom:0">
   <label class="fl">Giorni allenamento in questo blocco (vista settimanale + reminder)</label>
-  <div id="ed-scheduled-days" style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
-  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="1" style="accent-color:var(--teal);width:14px;height:14px"> Lun</label>
-  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="2" style="accent-color:var(--teal);width:14px;height:14px"> Mar</label>
-  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="3" style="accent-color:var(--teal);width:14px;height:14px"> Mer</label>
-  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="4" style="accent-color:var(--teal);width:14px;height:14px"> Gio</label>
-  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="5" style="accent-color:var(--teal);width:14px;height:14px"> Ven</label>
-  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="6" style="accent-color:var(--teal);width:14px;height:14px"> Sab</label>
-  <label style="display:flex;align-items:center;gap:5px;font-size:12px;color:var(--muted);cursor:pointer"><input type="checkbox" value="0" style="accent-color:var(--teal);width:14px;height:14px"> Dom</label>
+  <div id="ed-scheduled-days" class="day-pills" style="margin-top:6px">
+  <label class="ed-day"><input type="checkbox" value="1"><span>Lun</span></label>
+  <label class="ed-day"><input type="checkbox" value="2"><span>Mar</span></label>
+  <label class="ed-day"><input type="checkbox" value="3"><span>Mer</span></label>
+  <label class="ed-day"><input type="checkbox" value="4"><span>Gio</span></label>
+  <label class="ed-day"><input type="checkbox" value="5"><span>Ven</span></label>
+  <label class="ed-day"><input type="checkbox" value="6"><span>Sab</span></label>
+  <label class="ed-day"><input type="checkbox" value="0"><span>Dom</span></label>
   </div>
   </div>
   </div>
@@ -1854,7 +1854,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.17'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.18'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });

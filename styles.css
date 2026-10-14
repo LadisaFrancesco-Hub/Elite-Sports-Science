@@ -1951,3 +1951,65 @@ input[type="checkbox"].cbx:focus-visible {
   outline: 2px solid var(--teal, #FF9044);
   outline-offset: 2px;
 }
+
+/* ── Day pills (giorni allenamento del blocco) ───────────────────────────────
+   7 giorni su una riga sempre (anche iPhone); la <label> è la cella, lo <span>
+   è il bottone-pill. Il checkbox nativo resta nel DOM (JS lo legge/scrive) ma è
+   nascosto; lo stato attivo usa `input:checked + span` (fratello adiacente,
+   affidabile anche quando .checked è impostato via proprietà JS, a differenza
+   di :has()). */
+.day-pills {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.day-pills .ed-day {
+  display: block;
+  position: relative;
+  min-width: 0;
+  cursor: pointer;
+  user-select: none;
+}
+.day-pills .ed-day input[type="checkbox"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+  margin: 0;
+}
+.day-pills .ed-day span {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 8px 2px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--muted);
+  background: var(--s1);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  text-align: center;
+  transition: background .15s ease, color .15s ease, border-color .15s ease, transform .06s ease;
+}
+.day-pills .ed-day input:checked + span {
+  background: var(--teal, #FF9044);
+  border-color: var(--teal, #FF9044);
+  color: #0A0C0F;
+}
+.day-pills .ed-day:active span { transform: scale(.94); }
+.day-pills .ed-day input:focus-visible + span {
+  outline: 2px solid var(--teal, #FF9044);
+  outline-offset: 2px;
+}
+@media (hover:hover) and (pointer:fine) {
+  .day-pills .ed-day:hover span { border-color: var(--teal, #FF9044); color: var(--text); }
+  .day-pills .ed-day input:checked + span,
+  .day-pills .ed-day:hover input:checked + span { color: #0A0C0F; }
+}
+@media (max-width: 420px) {
+  .day-pills { gap: 4px; }
+  .day-pills .ed-day span { font-size: 12px; min-height: 36px; padding: 7px 1px; border-radius: 8px; }
+}
