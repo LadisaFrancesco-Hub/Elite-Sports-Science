@@ -906,7 +906,10 @@ export async function sendWellnessReminders() {
   .from('wellness').select('athlete_id').eq('date', today);
   const doneIds = new Set((doneRows || []).map(r => r.athlete_id));
 
-  const pending = DB.athletes.filter(a => !doneIds.has(a.id));
+  const pending = DB.athletes.filter(a =>
+    !doneIds.has(a.id) &&
+    (a.wellness_reminder ?? a.wellnessReminder ?? true) !== false
+  );
 
   if (pending.length === 0) {
   toast(' Tutti gli atleti hanno già fatto il check-in oggi!');
@@ -2113,7 +2116,8 @@ export async function addAthlete() {
   codice_accesso: codiceGenerato,
   anthropoHistory: [{ date: new Date().toISOString().slice(0, 10), weight: w, bf }],
   notes: document.getElementById('ma-notes').value,
-  training_reminder: !document.getElementById('ma-reminder') || document.getElementById('ma-reminder').checked
+  training_reminder: !document.getElementById('ma-reminder') || document.getElementById('ma-reminder').checked,
+  wellness_reminder: !document.getElementById('ma-wellness-reminder') || document.getElementById('ma-wellness-reminder').checked
   };
 
   try {
@@ -2124,7 +2128,8 @@ export async function addAthlete() {
   level: a.level, goal: a.goal, freq: a.freq,
   height: a.height, weight: a.weight, bf: a.bf,
   notes: a.notes, anthropo_history: a.anthropoHistory,
-  training_reminder: a.training_reminder
+  training_reminder: a.training_reminder,
+  wellness_reminder: a.wellness_reminder
   }]);
   if (error) { toast('Errore: ' + error.message); btn.textContent = 'Aggiungi'; btn.disabled = false; return; }
   }
@@ -2170,6 +2175,7 @@ export async function addAthlete() {
 export function openNewAthleteModal() {
   ['ma-name','ma-email','ma-h','ma-w','ma-bf','ma-notes'].forEach(id => { document.getElementById(id).value = ''; });
   const rem = document.getElementById('ma-reminder'); if (rem) rem.checked = true;   // default acceso
+  const wrem = document.getElementById('ma-wellness-reminder'); if (wrem) wrem.checked = true;   // default acceso
   const btn = document.getElementById('ma-save-btn');
   btn.textContent = 'Aggiungi'; btn.onclick = addAthlete;
   openMo('mo-ath');
@@ -2188,6 +2194,8 @@ export function openEditAthleteModal() {
   document.getElementById('ma-notes').value = a.notes || '';
   const rem = document.getElementById('ma-reminder');
   if (rem) rem.checked = (a.training_reminder ?? a.trainingReminder ?? true) !== false;
+  const wrem = document.getElementById('ma-wellness-reminder');
+  if (wrem) wrem.checked = (a.wellness_reminder ?? a.wellnessReminder ?? true) !== false;
   const btn = document.getElementById('ma-save-btn');
   btn.textContent = 'Salva Modifiche'; btn.onclick = saveAthleteEdits;
   openMo('mo-ath');
@@ -2209,12 +2217,15 @@ async function saveAthleteEdits() {
   a.notes = document.getElementById('ma-notes').value;
   const _rem = document.getElementById('ma-reminder');
   a.training_reminder = !_rem || _rem.checked;
+  const _wrem = document.getElementById('ma-wellness-reminder');
+  a.wellness_reminder = !_wrem || _wrem.checked;
 
   try {
   if (window.mySupabase) await window.mySupabase.from('atleti').update({
   name: a.name, level: a.level, goal: a.goal, freq: a.freq,
   height: a.height, weight: a.weight, bf: a.bf, notes: a.notes, anthropo_history: a.anthropoHistory,
-  training_reminder: a.training_reminder
+  training_reminder: a.training_reminder,
+  wellness_reminder: a.wellness_reminder
   }).eq('id', a.id);
   } catch (e) { console.error('Errore sync Supabase:', e); }
 
