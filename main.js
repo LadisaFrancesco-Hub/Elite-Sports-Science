@@ -279,11 +279,15 @@ async function _bootstrap() {
         await checkWearableCallback();
         if (appState.selAthId) await initWearable(appState.selAthId);
 
-        // Auto-sync wearable quando si apre il pannello wellness
+        // Auto-sync wearable quando si apre il pannello wellness.
+        // I pannelli sono marcati attivi con la classe `.on` (vedi go()), NON `.active`:
+        // il check sbagliato rendeva l'observer morto (non scattava mai) e sempre
+        // attaccato a vuoto. syncWearableData è già protetta (no-op senza wearable
+        // connesso + cooldown), quindi scatta solo quando serve davvero.
         const _wPanel = document.getElementById('p-wellness');
         if (_wPanel) {
             new MutationObserver(() => {
-                if (_wPanel.classList.contains('active')) {
+                if (_wPanel.classList.contains('on')) {
                     syncWearableData(appState.selAthId);
                 }
             }).observe(_wPanel, { attributes: true, attributeFilter: ['class'] });

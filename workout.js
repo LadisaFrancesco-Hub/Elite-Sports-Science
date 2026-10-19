@@ -78,10 +78,50 @@ export function saveLiveCtx(sessId, week) {
 
 /** Cancella ogni traccia della sessione in corso (a fine allenamento o su richiesta). */
 export function clearLiveRecovery() {
+    _cancelLiveProgressSave();   // evita che un flush in coda ri-crei la sessione appena pulita
     localStorage.removeItem(LK_DOTS);
     localStorage.removeItem(LK_LOG);
     localStorage.removeItem(LK_CTX);
     window.realLog = {};
+}
+
+// ── P4: persistenza progresso live DEBOUNCED (auto-save anti-crash iOS) ──────
+// Prima si scriveva su localStorage ad OGNI tap set dentro updateLiveTotals
+// (querySelectorAll + 2× JSON.stringify sincroni) → micro-jank sul tapping rapido.
+// Ora coalizzato: max una scrittura ogni ~400ms. Rete di sicurezza: flush SINCRONO
+// su pagehide / visibilitychange(hidden) → se iOS killa o sospende la tab, l'ultimo
+// stato viene comunque salvato (più robusto del write-per-tap precedente).
+let _liveSaveTimer = null;
+
+function _flushLiveProgress() {
+    _liveSaveTimer = null;
+    const dots = [];
+    document.querySelectorAll('.dot.done').forEach(d => dots.push(d.id));
+    try {
+        localStorage.setItem(LK_DOTS, JSON.stringify(dots));
+        localStorage.setItem(LK_LOG,  JSON.stringify(window.realLog || {}));
+    } catch { /* storage pieno/negato: ignora */ }
+    if (dots.length > 0 || Object.keys(window.realLog || {}).length > 0) {
+        const sel  = document.getElementById('lv-sess');
+        const wkEl = document.getElementById('lv-week');
+        saveLiveCtx(sel ? sel.value : '', (wkEl && parseInt(wkEl.value)) || 1);
+    }
+}
+
+function scheduleLiveProgressSave() {
+    if (_liveSaveTimer) return;                 // già in coda: coalizza il burst di tap
+    _liveSaveTimer = setTimeout(_flushLiveProgress, 400);
+}
+
+function _cancelLiveProgressSave() {
+    if (_liveSaveTimer) { clearTimeout(_liveSaveTimer); _liveSaveTimer = null; }
+}
+
+// Flush immediato quando la tab passa in background o viene chiusa (iOS kill/suspend).
+if (typeof window !== 'undefined') {
+    const _flushNow = () => { if (_liveSaveTimer) { clearTimeout(_liveSaveTimer); _flushLiveProgress(); } };
+    window.addEventListener('pagehide', _flushNow);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') _flushNow(); });
 }
 
 /**
@@ -1030,15 +1070,10 @@ let sKg  = parseFloat(targetKg)  || 0;
         if (lvolEl) lvolEl.textContent = Math.round(exVol) + ' kg';
     });
 
-    // ── Auto-save anti-crash iOS ─────────────────────────────
-    let palliniSalvati = [];
-    document.querySelectorAll('.dot.done').forEach(d => palliniSalvati.push(d.id));
-    localStorage.setItem('coachOS_live_dots', JSON.stringify(palliniSalvati));
-    localStorage.setItem('coachOS_real_log',  JSON.stringify(window.realLog || {}));
-    // Stampa il contesto della ripresa (atleta+sessione+settimana+giorno) solo se c'è progresso.
-    if (palliniSalvati.length > 0 || Object.keys(window.realLog || {}).length > 0) {
-        saveLiveCtx(selectLiveSess ? selectLiveSess.value : '', weekVal);
-    }
+    // ── Auto-save anti-crash iOS (debounced, vedi scheduleLiveProgressSave) ──
+    // Niente più scrittura localStorage sincrona ad ogni tap: coalizzata a ~400ms
+    // + flush su pagehide/visibilitychange. Persiste pallini .done, realLog e ctx.
+    scheduleLiveProgressSave();
 
     // ── Aggiornamento KPI nella UI ───────────────────────────
     document.getElementById('lv-vol').textContent  = Math.round(vol).toLocaleString('it-IT') + ' kg';

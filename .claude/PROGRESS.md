@@ -79,6 +79,13 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**Audit performance JS/PWA → fix P3 (observer morto) + P4 (localStorage per-tap debounced) (2026-10-19)**
+- Seguito dell'audit: implementati i 2 punti a ROI minore rimasti.
+- **P3 — `MutationObserver` morto** (`main.js`): l'auto-sync wearable all'apertura del pannello wellness controllava `classList.contains('active')`, ma i pannelli sono marcati attivi con **`.on`** (vedi `go()`) → l'observer non scattava mai ed era attaccato a vuoto per sempre. Fix: condizione → `'on'`. `syncWearableData` è già protetta (no-op senza wearable connesso + cooldown) → scatta solo quando serve. Commento anti-regressione aggiunto.
+- **P4 — scrittura `localStorage` ad ogni tap set → debounced** (`workout.js`): `updateLiveTotals` scriveva sincrono `querySelectorAll('.dot.done')` + 2× `JSON.stringify` + `setItem` ad **ogni** tap (micro-jank sul tapping rapido). Sostituito con `scheduleLiveProgressSave()` (coalizza a max 1 scrittura/~400ms) + **flush sincrono su `pagehide`/`visibilitychange(hidden)`** → rete di sicurezza anti-crash iOS *più* robusta del write-per-tap (l'ultimo stato si salva quando la tab va in background/killata). `clearLiveRecovery()` ora annulla il flush in coda (niente ri-creazione della sessione appena pulita). Usa le costanti `LK_DOTS`/`LK_LOG` (prima stringhe inline).
+- **Verifica**: `node --check` main/workout OK; `weekVal`/`selectLiveSess` ancora usati altrove (non orfani). **Browser smoke (Chromium reale, source :8766)**: boot sano (`appState`/`loadLive`/`updateLiveTotals` presenti → il blocco listener top-level di workout.js non rompe il load); P4 `pagehide`+`visibilitychange` dispatch → nessun throw; P3 toggle `.on` su `#p-wellness` → callback observer senza errori; P1 regressione OK (`window.Chart` undefined a boot); **0 errori/0 warning** console. (Path live-workout autenticato non esercitato: serve login + scheda.)
+- **DEPLOYATO v7.20 (2026-10-19)**: bump 7.19→7.20 (`sw.js`+`index.html`+`package.json`), `npm run build:web`, commit su `main`, `vercel --prod`.
+
 **Audit performance JS/PWA → fix P1 (lazy Chart.js + defer CDN) + P2 (warm-render fuori dal path critico) (2026-10-19)**
 - Contesto: l'utente ha chiesto di usare lo skill "SwiftUI Pro" per cercare problemi di performance. Verificato in repo: **nessun codice Swift/SwiftUI** su alcun branch (anche `feat/ios-native-shell`/`chore/capacitor-8` sono Capacitor = WebView, zero `.swift`/`.xcodeproj`) → lo skill non era applicabile (non l'ho invocato, sarebbe stato un no-op). Ripiegato su **audit performance JS/PWA** del vero stack (Vanilla JS). Trovati 5 punti; implementati i 2 a maggior ROI.
 - **P1 — Chart.js non più render-blocking + CDN deferiti**:
