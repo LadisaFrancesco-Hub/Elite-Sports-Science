@@ -47,7 +47,7 @@ import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          updateEx, linkToGroup, delExConfirm, moveExercise,
          openProgressionModal, saveProgressionData, applySmartMicrocycle,
          handleExNameChange, syncEdDuration, syncEdCoachNote,
-         syncMesoStart, addBlock, renameBlock, syncBlockWeeks, deleteBlock,
+         syncMesoStart, addBlock, renameBlock, setBlockPhase, syncBlockWeeks, deleteBlock,
          addNewSessionToSchedule, renameCurrentSession, deleteCurrentSession,
          openTemplatesModal, applyProgramTemplate, openDuplicateModal,
          duplicateScheduleFrom, duplicateCurrentSession,
@@ -64,8 +64,7 @@ import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          openAnnotator, openAnnotationReview, closeAnnotator, saveAnnotations,
          annotPlayPause, annotFrame, annotSeek, annotRate, annotResume,
          annotTool, annotColor, annotUndo, annotClearMoment,
-         renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
-         applyMacroTemplate, saveMacroPlan,
+         renderMacro,
          sendWellnessReminders,
          openBodyCompModal, toggleSkinfoldInputs, calcBFFromSkinfolds, saveBodyComp,
          renderProgressPhotos, renderPhotoCompare, openPhotoUpload, onProgressPhotoPick,
@@ -131,7 +130,7 @@ Object.assign(window, {
     updateCircuitMeta, updateCircuitEx, updateEx, linkToGroup,
     delExConfirm, moveExercise, handleExNameChange,
     syncEdDuration, syncEdCoachNote,
-    syncMesoStart, addBlock, renameBlock, syncBlockWeeks, deleteBlock,
+    syncMesoStart, addBlock, renameBlock, setBlockPhase, syncBlockWeeks, deleteBlock,
     addNewSessionToSchedule, renameCurrentSession, deleteCurrentSession,
     openTemplatesModal, applyProgramTemplate, openDuplicateModal,
     duplicateScheduleFrom, duplicateCurrentSession,
@@ -176,9 +175,8 @@ Object.assign(window, {
     openAnnotator, openAnnotationReview, closeAnnotator, saveAnnotations,
     annotPlayPause, annotFrame, annotSeek, annotRate, annotResume,
     annotTool, annotColor, annotUndo, annotClearMoment,
-    // Macro Periodizzazione
-    renderMacro, cycleMacroPhase, setMacroSessions, setMacroWeeks,
-    applyMacroTemplate, saveMacroPlan,
+    // Macro Periodizzazione (vista derivata read-only)
+    renderMacro,
     // Wellness notifications
     sendWellnessReminders,
     // Test Atletici
@@ -265,12 +263,17 @@ async function _bootstrap() {
 
         populateSelects();
         initFB();
-        upW();
-        loadLive();
-        renderDashboard();
-        renderAthletes();
-        renderStorico();
-        renderInjuries();
+
+        // Il pannello attivo è già stato disegnato da go() sopra; la navigazione
+        // (go()) disegna ogni altro pannello quando l'utente lo apre. Questi render
+        // sono solo un "warm-up" dei pannelli secondari → spostati fuori dal path
+        // critico di boot (non ritardano più l'hide dello splash né la prima
+        // interazione). requestIdleCallback con fallback setTimeout.
+        const _warmRender = () => {
+            try { upW(); loadLive(); renderDashboard(); renderAthletes(); renderStorico(); renderInjuries(); }
+            catch (e) { console.warn('[CoachOS] warm-render:', e); }
+        };
+        (window.requestIdleCallback || (cb => setTimeout(cb, 200)))(_warmRender);
 
         // Wearable: processa eventuale callback OAuth e carica connessioni
         await checkWearableCallback();

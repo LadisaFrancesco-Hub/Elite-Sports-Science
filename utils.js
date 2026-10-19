@@ -47,6 +47,28 @@ export function openMo(id)  { document.getElementById(id).classList.add('show');
 export function closeMo(id) { document.getElementById(id).classList.remove('show'); }
 
 // ─────────────────────────────────────────────────────────────
+// CHART.JS — lazy loader.
+// Chart.js (~65KB gzip) serve SOLO ai pannelli con grafici (analytics,
+// progressi, nutrizione, test). Non è più caricato render-blocking nel
+// <head>: lo si inietta la prima volta che un grafico serve davvero.
+// Idempotente: una sola <script>, promise condivisa.
+// ─────────────────────────────────────────────────────────────
+let _chartJsPromise = null;
+export function ensureChartJs() {
+  if (typeof window.Chart !== 'undefined') return Promise.resolve(window.Chart);
+  if (_chartJsPromise) return _chartJsPromise;
+  _chartJsPromise = new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/chart.js';
+    s.async = true;
+    s.onload  = () => resolve(window.Chart);
+    s.onerror = () => { _chartJsPromise = null; reject(new Error('Chart.js load failed')); };
+    document.head.appendChild(s);
+  });
+  return _chartJsPromise;
+}
+
+// ─────────────────────────────────────────────────────────────
 // FORM-CHECK VIDEO (Supabase Storage)
 // Bucket privato 'form-checks', path = {athId}/{ts}-{rand}.{ext}.
 // I messaggi con media_type='video' portano in media_url il PATH
@@ -407,6 +429,7 @@ export function ensureBlocks(sch) {
         const blockId = 'blk_default';
         sch.blocks = [{
             id: blockId, name: 'Blocco 1', weekStart: 1, weekEnd: dur,
+            phase: sch.phase || '',
             scheduledDays: [...(sch.scheduledDays || [])]
         }];
         sch.sessions.forEach(s => { if (!s.blockId) s.blockId = blockId; });

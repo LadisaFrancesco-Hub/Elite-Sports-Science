@@ -3385,6 +3385,8 @@ function renderBlockBar(sch) {
   if (nameEl) nameEl.value = curBlk.name || '';
   if (wsEl) wsEl.value = curBlk.weekStart || 1;
   if (weEl) weEl.value = curBlk.weekEnd || (sch.duration || 4);
+  const phEl = document.getElementById('ed-block-phase');
+  if (phEl) phEl.value = curBlk.phase || '';
   // Il bottone "elimina blocco" ha senso solo con più di un blocco.
   const delBtn = document.getElementById('ed-block-del');
   if (delBtn) delBtn.style.display = sch.blocks.length > 1 ? '' : 'none';
@@ -3420,7 +3422,7 @@ export async function addBlock() {
   const id = 'blk_' + uid();
   sch.blocks.push({
   id, name: `Blocco ${sch.blocks.length + 1}`,
-  weekStart: start, weekEnd: dur,
+  weekStart: start, weekEnd: dur, phase: '',
   scheduledDays: [...(last.scheduledDays || sch.scheduledDays || [])]
   });
   // Ogni nuovo blocco nasce con una seduta vuota.
@@ -3439,6 +3441,14 @@ export function renameBlock(val) {
   saveDB();
   const tab = document.querySelector('#ed-block-tabs .sess-tab.on');
   if (tab && sch.blocks.length <= 1) tab.textContent = blk.name;
+}
+
+export function setBlockPhase(val) {
+  const sch = _edSch();
+  const blk = sch && sch.blocks.find(b => b.id === appState.edBlockId);
+  if (!blk) return;
+  blk.phase = val || '';
+  saveDB();
 }
 
 export function syncBlockWeeks() {
@@ -6892,18 +6902,20 @@ const _MACRO_FILL = {
 };
 const _MACRO_SHORT = { 'Accumulo':'ACC', 'Intensificazione':'INT', 'Picco':'PIC', 'Scarico':'SCA', '':'—' };
 
-function _getMacroPlan(athId) {
-  if (!DB.macroPlans[athId]) DB.macroPlans[athId] = { weeks: 12, plan: [] };
-  const mp = DB.macroPlans[athId];
-  const weeks = mp.weeks || 12;
-  // Ensure plan has an entry for every week
-  for (let w = 1; w <= weeks; w++) {
-  if (!mp.plan.find(p => p.week === w)) {
-  mp.plan.push({ week: w, phase: '', targetSessions: 4, notes: '' });
-  }
-  }
-  mp.plan = mp.plan.filter(p => p.week <= weeks).sort((a, b) => a.week - b.week);
-  return mp;
+// La periodizzazione "vera" vive nell'editor (blocchi del mesociclo): questa vista la
+// DERIVA in sola lettura e ci sovrappone l'aderenza reale (sedute fatte/target + volume).
+// Fase della settimana = fase del blocco che la copre; target = n° giorni programmati del blocco.
+function _macroBlockForWeek(sch, w) {
+  const blocks = sch.blocks || [];
+  return blocks.find(b => w >= (b.weekStart || 1) && w <= (b.weekEnd || (sch.duration || 4)))
+  || blocks[blocks.length - 1] || blocks[0] || null;
+}
+
+function _macroEmpty(title, sub) {
+  return `<div style="text-align:center;color:var(--muted);padding:44px 20px">
+  <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px">${title}</div>
+  <div style="font-size:12.5px;line-height:1.5">${sub}</div>
+  </div>`;
 }
 
 export function renderMacro() {
@@ -6915,92 +6927,107 @@ export function renderMacro() {
   athSel.onchange = () => { appState.selAthId = athSel.value; renderMacro(); };
   }
 
+  const grid = document.getElementById('macro-grid');
+  const summaryEl = document.getElementById('macro-summary');
+  if (!grid) return;
+  const clearSummary = () => { if (summaryEl) summaryEl.innerHTML = ''; };
+
   const athId = appState.selAthId;
-  if (!athId) {
-  const g0 = document.getElementById('macro-grid');
-  if (g0) g0.innerHTML = `<div style="text-align:center;color:var(--muted);padding:44px 20px">
-  <div style="font-size:14px;font-weight:800;color:var(--text);margin-bottom:5px">Nessun atleta selezionato</div>
-  <div style="font-size:12.5px;line-height:1.5">Aggiungi o seleziona un atleta per pianificare il macrociclo.</div>
-  </div>`;
-  return;
+  if (!athId) { grid.innerHTML = _macroEmpty('Nessun atleta selezionato', 'Seleziona un atleta per vedere la sua periodizzazione.'); clearSummary(); return; }
+
+  const sch = DB.schedules[athId];
+  if (!sch || !Array.isArray(sch.sessions) || !sch.sessions.length) {
+  grid.innerHTML = _macroEmpty('Nessun mesociclo', 'Crea un mesociclo nell’Editor schede: i blocchi e le loro fasi compariranno qui, con l’aderenza reale.')
+  + `<div style="text-align:center;margin-top:-18px"><button class="btn btn-p btn-sm" onclick="go('editor')">Vai all’editor</button></div>`;
+  clearSummary(); return;
   }
+  ensureBlocks(sch);
 
-  const mp = _getMacroPlan(athId);
+  const weeks = sch.duration || 4;
+  const mesoWk = mesoWeekFromDate(sch);   // null se manca la data d'inizio
 
-  // Sync weeks selector
-  const wkSel = document.getElementById('macro-weeks');
-  if (wkSel) wkSel.value = mp.weeks;
-
-  // Historical data per mesocycle week
+  // Aderenza reale per settimana (sedute fatte + volume), indicizzata su s.week.
   const hist = {};
   DB.sessions.filter(s => s.athlete === athId).forEach(s => {
-  const w = s.week;
-  if (!w) return;
+  const w = parseInt(s.week); if (!w) return;
   if (!hist[w]) hist[w] = { count: 0, vol: 0 };
   hist[w].count++;
   hist[w].vol += s.vol || 0;
   });
 
-  // Build grid
-  const grid = document.getElementById('macro-grid');
-  if (!grid) return;
+  // Info derivata per ogni settimana del mesociclo (dal blocco che la copre).
+  const perWeek = [];
+  for (let w = 1; w <= weeks; w++) {
+  const blk = _macroBlockForWeek(sch, w);
+  const days = (blk && blk.scheduledDays && blk.scheduledDays.length) ? blk.scheduledDays : (sch.scheduledDays || []);
+  perWeek.push({
+  week: w,
+  phase: (blk && blk.phase) || '',
+  blockId: blk ? blk.id : null,
+  blockName: (blk && blk.name) || 'Blocco',
+  target: days.length || 0
+  });
+  }
 
-  const weekCols = mp.plan.map(wp => {
-  const c = _MACRO_COLORS[wp.phase];
-  const fill = _MACRO_FILL[wp.phase];
-  const s = _MACRO_SHORT[wp.phase];
-  const h = hist[wp.week];
+  // Raggruppa le settimane consecutive dello stesso blocco → bande allineate alla griglia.
+  const runs = [];
+  perWeek.forEach(pw => {
+  const last = runs[runs.length - 1];
+  if (last && last.blockId === pw.blockId) last.span++;
+  else runs.push({ blockId: pw.blockId, blockName: pw.blockName, phase: pw.phase, span: 1 });
+  });
+
+  const bandRow = runs.map(r => {
+  const c = _MACRO_COLORS[r.phase];
+  const fill = _MACRO_FILL[r.phase];
+  const sh = _MACRO_SHORT[r.phase];
+  const phLabel = r.phase || 'Fase non definita';
+  return `<div style="grid-column:span ${r.span};background:${fill};border:1px solid ${c};border-radius:9px;padding:8px 10px;min-height:46px;display:flex;flex-direction:column;justify-content:center;gap:2px;overflow:hidden">
+  <div style="font-size:12px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.blockName)}</div>
+  <div style="font-size:9px;font-weight:800;letter-spacing:.08em;color:${c};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(sh)} · ${escHtml(phLabel)}</div>
+  </div>`;
+  }).join('');
+
+  const weekRow = perWeek.map(pw => {
+  const c = _MACRO_COLORS[pw.phase];
+  const h = hist[pw.week];
   const done = h ? h.count : null;
   const vol = h ? (h.vol / 1000).toFixed(1) + 't' : '—';
-  const hit = done !== null && done >= (wp.targetSessions || 4);
-
-  return `<div style="min-width:70px;text-align:center;padding:0 3px">
-  <div onclick="cycleMacroPhase(${wp.week})" title="Clicca per cambiare fase"
-  style="background:${fill};border:1px solid ${c};border-radius:9px;
-  min-height:54px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
-  cursor:pointer;margin-bottom:7px;user-select:none;transition:filter .15s"
-  onmouseover="this.style.filter='brightness(1.25)'" onmouseout="this.style.filter=''">
-  <div style="font-size:13px;font-weight:800;color:var(--text);letter-spacing:.02em">W${wp.week}</div>
-  <div style="font-size:9px;font-weight:800;color:${c};letter-spacing:.08em">${escHtml(s)}</div>
-  </div>
-  <div style="font-size:9px;color:var(--muted);margin-bottom:2px">Target</div>
-  <input type="number" min="1" max="7" value="${wp.targetSessions || 4}"
-  style="width:48px;text-align:center;font-size:13px;font-weight:700;
-  background:var(--s2);border:1px solid var(--border);border-radius:6px;
-  padding:4px 0;color:var(--text)"
-  onchange="setMacroSessions(${wp.week},+this.value)">
-  <div style="margin-top:6px;font-size:11px;font-weight:700;
-  color:${done===null ? 'var(--border)' : hit ? 'var(--teal)' : 'var(--amber)'}">
-  ${done !== null ? done + '/' + (wp.targetSessions||4) : '—'}
-  </div>
+  const hit = done !== null && pw.target > 0 && done >= pw.target;
+  const isNow = mesoWk === pw.week;
+  const doneCol = done === null ? 'var(--border)' : hit ? 'var(--teal)' : 'var(--amber)';
+  return `<div style="text-align:center;padding:7px 2px;border-radius:8px;background:var(--s2);${isNow ? 'outline:2px solid var(--teal);outline-offset:-1px' : ''}">
+  <div style="font-size:12px;font-weight:800;color:var(--text)">W${pw.week}${isNow ? ' •' : ''}</div>
+  <div style="width:16px;height:4px;border-radius:2px;background:${c};margin:4px auto 0"></div>
+  <div style="margin-top:5px;font-size:11px;font-weight:700;color:${doneCol}">${done === null ? '—' : done}/${pw.target || '—'}</div>
   <div style="font-size:10px;color:var(--muted)">${vol}</div>
   </div>`;
   }).join('');
 
-  grid.innerHTML = `<div style="display:flex;gap:6px;min-width:max-content">${weekCols}</div>`;
+  grid.innerHTML = `<div style="min-width:max-content;display:grid;grid-template-columns:repeat(${weeks},minmax(62px,1fr));gap:6px">
+  ${bandRow}
+  ${weekRow}
+  </div>`;
 
-  // Summary bar
+  // Senza data d'inizio, s.week non è allineato alle settimane → aderenza non attendibile.
+  const warn = !sch.mesoStartDate
+  ? `<div style="margin-bottom:10px;font-size:11px;color:var(--amber);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);border-radius:8px;padding:8px 10px">Imposta la <b>data d’inizio mesociclo</b> nell’editor per allineare l’aderenza (fatte/target) alle settimane reali.</div>`
+  : '';
+
+  // Distribuzione fasi (settimane per fase, derivata dai blocchi).
   const counts = {};
-  mp.plan.forEach(wp => { counts[wp.phase || ''] = (counts[wp.phase || ''] || 0) + 1; });
-  const total = mp.weeks;
+  perWeek.forEach(pw => { counts[pw.phase || ''] = (counts[pw.phase || ''] || 0) + 1; });
+  const total = weeks;
   const summarySegs = _MACRO_PHASES.map(ph => {
   const n = counts[ph] || 0;
   if (!n) return '';
   const pct = Math.round(n / total * 100);
-  return `<div style="flex:${n};background:${_MACRO_COLORS[ph]};height:100%;
-  display:flex;align-items:center;justify-content:center;
-  font-size:10px;font-weight:800;color:#000;opacity:.85;
-  border-radius:4px;min-width:32px">
-  ${pct}%
-  </div>`;
+  return `<div style="flex:${n};background:${_MACRO_COLORS[ph]};height:100%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#000;opacity:.85;border-radius:4px;min-width:32px">${pct}%</div>`;
   }).join('');
 
   const undefinedN = counts[''] || 0;
-  const summaryEl = document.getElementById('macro-summary');
-  if (summaryEl) summaryEl.innerHTML = `
-  <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">
-  Distribuzione fasi
-  </div>
+  if (summaryEl) summaryEl.innerHTML = warn + `
+  <div style="font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700;text-transform:uppercase;letter-spacing:.05em">Distribuzione fasi</div>
   <div style="display:flex;gap:3px;height:26px;border-radius:6px;overflow:hidden;background:var(--s3)">
   ${summarySegs}
   ${undefinedN ? `<div style="flex:${undefinedN};background:var(--s3);height:100%;border-radius:4px"></div>` : ''}
@@ -7009,89 +7036,4 @@ export function renderMacro() {
   ${_MACRO_PHASES.map(ph => `<span style="color:${_MACRO_COLORS[ph]};font-weight:700">${ph}: ${counts[ph]||0} sett.</span>`).join('')}
   ${undefinedN ? `<span style="color:var(--muted)">Non definite: ${undefinedN}</span>` : ''}
   </div>`;
-}
-
-export function cycleMacroPhase(week) {
-  const athId = appState.selAthId;
-  const mp = _getMacroPlan(athId);
-  const wp = mp.plan.find(p => p.week === week);
-  if (!wp) return;
-  const idx = _MACRO_PHASES.indexOf(wp.phase);
-  wp.phase = idx < 0 ? _MACRO_PHASES[0] : _MACRO_PHASES[(idx + 1) % _MACRO_PHASES.length];
-  renderMacro();
-}
-
-export function setMacroSessions(week, val) {
-  const mp = _getMacroPlan(appState.selAthId);
-  const wp = mp.plan.find(p => p.week === week);
-  if (wp) { wp.targetSessions = Math.max(1, Math.min(7, val)); renderMacro(); }
-}
-
-export function setMacroWeeks(val) {
-  const athId = appState.selAthId;
-  if (!athId) return;
-  if (!DB.macroPlans[athId]) DB.macroPlans[athId] = { weeks: val, plan: [] };
-  DB.macroPlans[athId].weeks = val;
-  renderMacro();
-}
-
-export function applyMacroTemplate(type) {
-  if (!type) return;
-  const athId = appState.selAthId;
-  const mp = _getMacroPlan(athId);
-  const { weeks, plan } = mp;
-
-  plan.forEach(wp => {
-  const pct = wp.week / weeks;
-  if (type === 'linear') {
-  if (pct <= 0.50) wp.phase = 'Accumulo';
-  else if (pct <= 0.75) wp.phase = 'Intensificazione';
-  else if (pct <= 0.90) wp.phase = 'Picco';
-  else wp.phase = 'Scarico';
-  } else if (type === 'block') {
-  if (pct <= 0.40) wp.phase = 'Accumulo';
-  else if (pct <= 0.70) wp.phase = 'Intensificazione';
-  else if (pct <= 0.87) wp.phase = 'Picco';
-  else wp.phase = 'Scarico';
-  } else if (type === 'undulating') {
-  // Cicli da 4 settimane: 2 Acc + 1 Int + 1 Sca
-  const ph = ((wp.week - 1) % 4);
-  if (ph < 2) wp.phase = 'Accumulo';
-  else if (ph ===2)wp.phase = 'Intensificazione';
-  else wp.phase = 'Scarico';
-  } else if (type === 'competition') {
-  // Picco nelle ultime 2-3 sett, scarico nell'ultima
-  if (pct <= 0.45) wp.phase = 'Accumulo';
-  else if (pct <= 0.75) wp.phase = 'Intensificazione';
-  else if (pct <= 0.92) wp.phase = 'Picco';
-  else wp.phase = 'Scarico';
-  }
-  // Target sessions standard per fase
-  const targets = { 'Accumulo': 4, 'Intensificazione': 4, 'Picco': 3, 'Scarico': 2 };
-  wp.targetSessions = targets[wp.phase] || 4;
-  });
-
-  toast(' Template applicato');
-  renderMacro();
-}
-
-export async function saveMacroPlan() {
-  const athId = appState.selAthId;
-  if (!athId) { toast('Seleziona un atleta'); return; }
-  const mp = _getMacroPlan(athId);
-  try {
-  if (window.mySupabase) {
-  const { error } = await window.mySupabase.from('atleti')
-  .update({ macro_plan: mp }).eq('id', athId);
-  if (error) throw error;
-  toast('Piano salvato! ✓');
-  } else {
-  toast('Salvato localmente (offline)');
-  }
-  // Persisti anche in localforage
-  if (typeof window.saveDB === 'function') window.saveDB();
-  } catch (e) {
-  console.error('[Macro] Errore salvataggio:', e);
-  toast('Errore: ' + e.message);
-  }
 }

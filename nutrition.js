@@ -5,7 +5,7 @@
    ══════════════════════════════════════════════════════════════ */
 
 import { DB, appState } from './state.js';
-import { toast, escHtml, openMo, closeMo, AX, axAreaFill, axChartOptions } from './utils.js';
+import { toast, escHtml, openMo, closeMo, AX, axAreaFill, axChartOptions, ensureChartJs } from './utils.js';
 
 let nutChartAthlete = null;
 let nutChartCoach   = null;
@@ -91,6 +91,7 @@ export function openNutritionModal(athId) {
 // renderNutritionCard — card rapida per tab Progressi atleta
 // ─────────────────────────────────────────────────────────────
 export function renderNutritionCard(athId) {
+    if (typeof window.Chart === 'undefined') { ensureChartJs().then(() => renderNutritionCard(athId)).catch(() => {}); return; }
     const el = document.getElementById('ap-nutrition');
     if (!el) return;
 
@@ -168,6 +169,7 @@ export function renderNutritionCard(athId) {
 // renderNutritionCoach — vista coach nel profilo atleta
 // ─────────────────────────────────────────────────────────────
 export function renderNutritionCoach(athId, containerId) {
+    if (typeof window.Chart === 'undefined') { ensureChartJs().then(() => renderNutritionCoach(athId, containerId)).catch(() => {}); return; }
     const el = document.getElementById(containerId);
     if (!el) return;
 

@@ -27,7 +27,7 @@
   ══════════════════════════════════════════════════════════════ */
 
 import { DB, appState } from './state.js';
-import { uid, escHtml, toast, athName, athById, AX, axAreaFill, axChartOptions, axLastPointOnly, axHonestRange } from './utils.js';
+import { uid, escHtml, toast, athName, athById, AX, axAreaFill, axChartOptions, axLastPointOnly, axHonestRange, ensureChartJs } from './utils.js';
 import { renderBadgesSection } from './badges.js';
 import { renderNutritionCard } from './nutrition.js';
 
@@ -171,6 +171,7 @@ export function calculateACWR(athId) {
 // Gradient fill verde OLED dal 40% all'0% di opacità.
 // ─────────────────────────────────────────────────────────────
 export function renderE1rmChart(sessionFilter, exerciseFilter) {
+  if (typeof window.Chart === 'undefined') { ensureChartJs().then(() => renderE1rmChart(sessionFilter, exerciseFilter)).catch(() => {}); return; }
   const ctxE1rm = document.getElementById('chart-e1rm');
   const container = ctxE1rm ? ctxE1rm.parentElement : null;
   if (!ctxE1rm || !container) return;
@@ -282,6 +283,7 @@ export function renderE1rmChart(sessionFilter, exerciseFilter) {
 // dallo stato globale.
 // ─────────────────────────────────────────────────────────────
 export function renderAnalytics() {
+  if (typeof window.Chart === 'undefined') { ensureChartJs().then(renderAnalytics).catch(() => {}); return; }
   const ath = athById(appState.selAthId);
   const sess = DB.sessions.filter(s => s.athlete === appState.selAthId);
 
@@ -1182,6 +1184,7 @@ function _acwrTone(v) {
 }
 
 export function renderAthProgressi() {
+  if (typeof window.Chart === 'undefined') { ensureChartJs().then(renderAthProgressi).catch(() => {}); return; }
   const athId = window.mioIdLoggato || appState.selAthId;
   const ath = athById(athId);
   const all = [...DB.sessions]
@@ -1799,6 +1802,7 @@ export function setTestCat(cat) {
 }
 
 export function showTestChart(testName, athId) {
+  if (typeof window.Chart === 'undefined') { ensureChartJs().then(() => showTestChart(testName, athId)).catch(() => {}); return; }
   const ath = DB.athletes.find(a => a.id === athId);
   if (!ath || !ath.testHistory) return;
 
