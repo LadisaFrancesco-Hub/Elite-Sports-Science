@@ -2147,6 +2147,7 @@ body.focus-lock .bottom-bar { display: none !important; }
   background: linear-gradient(to top, var(--bg), transparent);
 }
 .focus-prev, .focus-primary {
+  box-sizing: border-box;   /* il bordo 1px dell'Indietro sta DENTRO → larghezze identiche */
   min-height: 52px; border-radius: 14px; font-size: 15px; font-weight: 800;
   cursor: pointer; touch-action: manipulation;
   user-select: none; -webkit-user-select: none;
@@ -2154,16 +2155,18 @@ body.focus-lock .bottom-bar { display: none !important; }
   transition: transform .12s var(--ease-out), filter .12s, background .12s;
 }
 .focus-prev {
-  flex: 0 0 40%; background: var(--s2); border: 1px solid var(--border); color: var(--text);
+  flex: 1 1 0; background: var(--s2); border: 1px solid var(--border); color: var(--text);
 }
 .focus-primary {
-  flex: 1 1 auto; border: none; background: var(--grad-accent); color: var(--accent-ink);
+  flex: 1 1 0; border: 1px solid transparent; background: var(--grad-accent); color: var(--accent-ink);
   box-shadow: 0 8px 20px -10px oklch(0.70 0.17 48 / .8);
 }
+/* Ultimo esercizio: "✓ Fine Allenamento" (testo) resta più largo → azione terminale prominente + spazio al testo */
+.focus-primary.is-final { flex: 1.8 1 0; }
 .focus-prev:active   { transform: scale(.97); }
 .focus-primary:active { transform: scale(.98); filter: brightness(.96); }
 /* Nav solo-freccia: carattere più grande per riempire meglio il bottone (il testo "Fine Allenamento" resta 15px) */
-.fnav-arw { font-size: 30px; line-height: 1; font-weight: 700; }
+.fnav-arw { font-size: 40px; line-height: 1; font-weight: 700; }
 
 @media (hover: hover) and (pointer: fine) {
   .focus-close:hover  { background: var(--s1); }

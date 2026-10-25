@@ -79,6 +79,12 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 
 ## Changelog recente
 
+**Focus Mode — bottom nav: frecce uguali e più grandi (2026-10-25)**
+- Contesto (screenshot coach): i due bottoni nav in fondo alla Focus Mode erano di larghezza diversa (Indietro `flex:0 0 40%`, Avanti `flex:1 1 auto` → il destro molto più largo) e le frecce (30px) sembravano piccole/sproporzionate.
+- **Fix (`styles.css` + `workout.js`)**: entrambi i bottoni `flex:1 1 0` → larghezza uguale; `.fnav-arw` 30→**40px**. `box-sizing:border-box` sulla regola condivisa + `border:1px solid transparent` sul primario (il bordo 1px dell'Indietro, prima in content-box, spostava 2px → ora geometria simmetrica, larghezze identiche). Sull'**ultimo esercizio** il primario ha testo "✓ Fine Allenamento": nuova classe `.focus-primary.is-final{flex:1.8 1 0}` (più largo = azione terminale prominente + spazio al testo) togglata in `updateFocusChrome` (`prim.classList.toggle('is-final', isLast)`).
+- **Verifica (Playwright, vero `styles.css` via fixture, device 390px)**: stato freccia → `prevW===primW===176` (equalWidth, stessa altezza), arrow `font-size:40px`; stato ultimo → "✓ Fine Allenamento" su **una riga** senza overflow (prim 225 / prev 127 px). `node --check workout.js` OK. (Screenshot `tests/focus_nav_equal.png` non catturato: wrapper screenshot MCP in timeout 5s — ambientale; verifica via asserzioni DOM.)
+- **DEPLOYATO v7.28 (2026-10-25)**: bump 7.27→7.28, build:web, commit su `main`, `vercel --prod`.
+
 **Focus Mode — schermata di transizione "3-2-1 · VIA" all'avvio (2026-10-25)**
 - Contesto: il coach voleva uno stacco mentale tra "sfogliare la scheda" (anteprima) e "allenare" (Focus Mode), stile TrainHeroic/Hevy: al tap di "▶ Inizia allenamento" un breve countdown prima di entrare nella prima card.
 - **Vincolo chiave**: `startFocus()` NON parte sempre da zero — riusa il timestamp `coachOS_focus_start` e atterra sulla prima card incompleta (rientro anti-crash a metà sessione). Un countdown ad ogni ingresso sarebbe fastidioso → mostrarlo **solo all'avvio vero**, saltarlo al rientro.

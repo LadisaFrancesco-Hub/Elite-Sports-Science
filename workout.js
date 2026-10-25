@@ -3066,9 +3066,13 @@ export function updateFocusChrome() {
         : '';
 
     const prim = document.getElementById('focus-primary');
-    if (prim) prim.innerHTML = (cur >= cards.length - 1)
-        ? '<span>✓</span> Fine Allenamento'
-        : '<span class="fnav-arw" aria-hidden="true">→</span>';
+    if (prim) {
+        const isLast = cur >= cards.length - 1;
+        prim.innerHTML = isLast
+            ? '<span>✓</span> Fine Allenamento'
+            : '<span class="fnav-arw" aria-hidden="true">→</span>';
+        prim.classList.toggle('is-final', isLast);   // ultimo = bottone testo più largo
+    }
 }
 
 /** Scorre il pager alla card idx. */
