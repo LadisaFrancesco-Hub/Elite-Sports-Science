@@ -1843,7 +1843,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.28'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.29'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });
@@ -1869,8 +1869,8 @@
   <div id="focus-sub" class="focus-sub"></div>
   <div id="focus-stage" class="focus-stage"></div>
   <div class="focus-bottom">
-    <button class="focus-prev" onclick="focusBack()" aria-label="Indietro"><span class="fnav-arw" aria-hidden="true">←</span></button>
-    <button class="focus-primary" id="focus-primary" onclick="focusNext()" aria-label="Avanti"><span class="fnav-arw" aria-hidden="true">→</span></button>
+    <button class="focus-prev" onclick="focusBack()" aria-label="Indietro"><svg class="fnav-arw" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M20 12H4"/><path d="M11 5l-7 7 7 7"/></svg></button>
+    <button class="focus-primary" id="focus-primary" onclick="focusNext()" aria-label="Avanti"><svg class="fnav-arw" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h16"/><path d="M13 5l7 7-7 7"/></svg></button>
   </div>
   <!-- Transizione d'avvio: countdown 3→2→1→VIA (solo avvio fresco · tap per saltare) -->
   <div id="focus-countdown" class="focus-cd" aria-hidden="true" hidden>

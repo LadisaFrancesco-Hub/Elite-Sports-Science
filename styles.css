@@ -2165,8 +2165,10 @@ body.focus-lock .bottom-bar { display: none !important; }
 .focus-primary.is-final { flex: 1.8 1 0; }
 .focus-prev:active   { transform: scale(.97); }
 .focus-primary:active { transform: scale(.98); filter: brightness(.96); }
-/* Nav solo-freccia: carattere più grande per riempire meglio il bottone (il testo "Fine Allenamento" resta 15px) */
-.fnav-arw { font-size: 40px; line-height: 1; font-weight: 700; }
+/* Nav solo-freccia: SVG geometricamente centrato (il carattere Unicode cadeva sull'asse
+   matematico del font → sembrava fuori centro, diverso per device). currentColor = colore del bottone. */
+.fnav-arw { width: 34px; height: 34px; display: block;
+  stroke: currentColor; stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 
 @media (hover: hover) and (pointer: fine) {
   .focus-close:hover  { background: var(--s1); }

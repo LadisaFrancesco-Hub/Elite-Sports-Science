@@ -3070,7 +3070,7 @@ export function updateFocusChrome() {
         const isLast = cur >= cards.length - 1;
         prim.innerHTML = isLast
             ? '<span>✓</span> Fine Allenamento'
-            : '<span class="fnav-arw" aria-hidden="true">→</span>';
+            : '<svg class="fnav-arw" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M4 12h16"/><path d="M13 5l7 7-7 7"/></svg>';
         prim.classList.toggle('is-final', isLast);   // ultimo = bottone testo più largo
     }
 }
