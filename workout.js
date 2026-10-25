@@ -3214,11 +3214,19 @@ export function startFocus() {
         updateFocusChrome();
     });
 
-    // Countdown d'avvio solo alla partenza vera (nessun timestamp = non è un rientro;
-    // firstInc===0 = nessuna card già completata). Al rientro a metà sessione: nessun countdown.
-    const fresh = !localStorage.getItem(LK_FOCUS_TS) && firstInc === 0;
-    if (fresh) _focusCountdown(() => _focusTimerStart());
-    else       _focusTimerStart();
+    // Countdown d'avvio solo alla partenza VERA = nessuna serie di lavoro ancora completata
+    // nell'intera sessione. Segnale robusto (NON si basa su coachOS_focus_start, che si azzera
+    // solo con "Fine Allenamento" e resterebbe stantio dopo sessioni abbandonate → niente countdown).
+    // Al rientro a metà allenamento (almeno un set fatto): nessun countdown, timer prosegue.
+    const anyDone = list.some(c => c.querySelector('.dot.done:not(.warm)'));
+    if (!anyDone) {
+        // Fresh: azzera l'eventuale timestamp stantio così il timer totale riparte dal VIA
+        // (sistema anche il "timer che riparte da ore prima" dopo una sessione non chiusa).
+        localStorage.removeItem(LK_FOCUS_TS);
+        _focusCountdown(() => _focusTimerStart());
+    } else {
+        _focusTimerStart();
+    }
 }
 
 /** Esce da Focus Mode e ripristina #lv-exs nell'anteprima. Il timer resta attivo (ri-entry continua). */
