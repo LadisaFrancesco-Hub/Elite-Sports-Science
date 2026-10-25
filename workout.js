@@ -25,6 +25,28 @@ import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStat
 
 
 // ─────────────────────────────────────────────────────────────
+// Riconciliazione: ri-sincronizza le sessioni rimaste solo in locale
+// (upsert fallito / offline). Marcate con _synced === false (campo locale,
+// NON nella whitelist sessionCloudRow → non raggiunge il cloud). Chiamata su
+// 'online', ritorno in foreground e una volta dopo l'hydration. Nessun polling.
+// ─────────────────────────────────────────────────────────────
+export function reconcileUnsyncedSessions() {
+    if (!window.mySupabase || !navigator.onLine) return;
+    const pending = DB.sessions.filter(s => s._synced === false);
+    if (!pending.length) return;
+    updateCloudStatus('saving');
+    const rows = pending.map(sessionCloudRow);
+    window.mySupabase.from('sessions').upsert(rows)
+        .then(({ error }) => {
+            if (error) { console.error('[reconcile sessions]', error); updateCloudStatus('error'); return; }
+            pending.forEach(s => { s._synced = true; });
+            window.saveDB?.();
+            updateCloudStatus('cloud');
+        });
+}
+
+
+// ─────────────────────────────────────────────────────────────
 // 1. STATO CONDIVISO DELLA SESSIONE LIVE
 // ─────────────────────────────────────────────────────────────
 
@@ -2909,14 +2931,18 @@ export function endWorkout() {
             notes: note || (partial ? `Completati ${dotsDone}/${dotsTotal} set` : ''),
             reply: ''
         };
-        if (existing) { Object.assign(existing, sessObj); }
-        else { DB.sessions.push(sessObj); }
+        let stored;
+        if (existing) { Object.assign(existing, sessObj); stored = existing; }
+        else { DB.sessions.push(sessObj); stored = sessObj; }
+        stored._synced = false;
         window.saveDB();
         if (window.mySupabase) {
-            const cloud = sessionCloudRow(sessObj);
+            updateCloudStatus('saving');
+            const cloud = sessionCloudRow(stored);
             window.mySupabase.from('sessions').upsert([cloud])
                 .then(({ error }) => {
-                    if (error) { console.error('[session upsert]', error); toast('Allenamento salvato in locale — sync cloud non riuscita.'); }
+                    if (error) { console.error('[session upsert]', error); stored._synced = false; toast('Allenamento salvato in locale — sync cloud non riuscita.'); updateCloudStatus('error'); }
+                    else { stored._synced = true; updateCloudStatus('cloud'); window.saveDB?.(); }
                 });
         }
         window._updateFeedbackBadge?.(athId);
@@ -2963,9 +2989,14 @@ export function endWorkout() {
         if (window.mySupabase) {
             const sk = DB.sessions.find(s => s.athlete === athId && s.session === sessName && s.date === today);
             if (sk) {
+                sk._synced = false;
+                updateCloudStatus('saving');
                 const cloud = sessionCloudRow(sk);
                 window.mySupabase.from('sessions').upsert([cloud])
-                    .then(({ error }) => { if (error) { console.error('[session upsert skip]', error); toast('Salvato in locale — sync cloud non riuscita.'); } });
+                    .then(({ error }) => {
+                        if (error) { console.error('[session upsert skip]', error); sk._synced = false; toast('Salvato in locale — sync cloud non riuscita.'); updateCloudStatus('error'); }
+                        else { sk._synced = true; updateCloudStatus('cloud'); window.saveDB?.(); }
+                    });
             }
         }
         window._updateFeedbackBadge?.(athId);

@@ -30,7 +30,8 @@ import { loadLive, updateLiveTotals, toggleDot,
          saveLiveNextLoad,
          toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
          openVideoModal, closeVideoModal, endWorkout, restartLiveSession,
-         startFocus, exitFocus, focusNext, focusBack, focusGoTo, updateFocusChrome } from './workout.js';
+         startFocus, exitFocus, focusNext, focusBack, focusGoTo, updateFocusChrome,
+         reconcileUnsyncedSessions } from './workout.js';
 
 import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          populateSelects, onAthChange, updateModalSessions,
@@ -118,6 +119,7 @@ Object.assign(window, {
     toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
     openVideoModal, closeVideoModal, endWorkout, restartLiveSession,
     startFocus, exitFocus, focusNext, focusBack, focusGoTo, updateFocusChrome,
+    reconcileUnsyncedSessions,
     // Atleti
     renderAthletes, openNewAthleteModal, openEditAthleteModal, deleteSelectedAthlete,
     // Storico
@@ -222,6 +224,14 @@ async function _bootstrap() {
         window.addEventListener('online', () => banner.remove(), { once: true });
     }
     startRealtime(authResult);
+
+    // Riconciliazione: ripusha le sessioni rimaste solo in locale (upsert fallito
+    // / offline). Una volta dopo l'hydration, poi al ritorno online / in foreground.
+    reconcileUnsyncedSessions();
+    window.addEventListener('online', reconcileUnsyncedSessions);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') reconcileUnsyncedSessions();
+    });
 
     try {
         if (authResult === 'ATLETA') {

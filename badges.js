@@ -5,7 +5,7 @@
    ══════════════════════════════════════════════════════════════ */
 
 import { DB } from './state.js';
-import { toast } from './utils.js';
+import { toast, updateCloudStatus } from './utils.js';
 
 // ─────────────────────────────────────────────────────────────
 // DEFINIZIONI BADGE
@@ -104,12 +104,31 @@ function _wellnessStreak(ath) {
 // loadBadges — legge i badge dall'archiviazione locale
 // ─────────────────────────────────────────────────────────────
 export function loadBadges(athId) {
-    try { return JSON.parse(localStorage.getItem(`badges_${athId}`) || '{}'); }
-    catch (_) { return {}; }
+    let local = {};
+    try { local = JSON.parse(localStorage.getItem(`badges_${athId}`) || '{}'); }
+    catch (_) { local = {}; }
+    // Copia cloud (idratata grezza in DB.athletes[].badges): è la fonte durabile
+    // cross-device. Fonde local+cloud tenendo la data di sblocco più vecchia.
+    const cloud = DB.athletes.find(a => a.id === athId)?.badges || {};
+    const merged = { ...cloud };
+    for (const [id, date] of Object.entries(local)) {
+        if (!merged[id] || date < merged[id]) merged[id] = date;
+    }
+    return merged;
 }
 
 function _saveBadges(athId, earned) {
     localStorage.setItem(`badges_${athId}`, JSON.stringify(earned));
+    // Persisti anche sul cloud così i badge (e le date originali) sopravvivono
+    // al cambio device. Chiamata rara (solo a nuovo sblocco o migrazione).
+    const ath = DB.athletes.find(a => a.id === athId);
+    if (ath) ath.badges = earned;
+    if (window.mySupabase) {
+        window.mySupabase.from('atleti').update({ badges: earned }).eq('id', athId)
+            .then(({ error }) => {
+                if (error) { console.error('[badges upsert]', error); updateCloudStatus('error'); }
+            });
+    }
 }
 
 
@@ -121,6 +140,7 @@ export function checkAndAwardBadges(athId) {
     const sessions = DB.sessions.filter(s => s.athlete === athId);
     const ath      = DB.athletes.find(a => a.id === athId);
     const earned   = loadBadges(athId);
+    const cloudCount = Object.keys(ath?.badges || {}).length;
     const newlyEarned = [];
 
     for (const def of BADGE_DEFS) {
@@ -133,8 +153,12 @@ export function checkAndAwardBadges(athId) {
         } catch (_) {}
     }
 
-    if (newlyEarned.length) {
+    // Persisti su nuovo sblocco OPPURE quando il cloud è indietro rispetto al
+    // merge locale (migrazione dei badge pre-cloud verso Supabase).
+    if (newlyEarned.length || Object.keys(earned).length > cloudCount) {
         _saveBadges(athId, earned);
+    }
+    if (newlyEarned.length) {
         newlyEarned.forEach(def => {
             setTimeout(() => {
                 toast(`${def.icon} Nuovo badge: "${def.name}" — ${def.desc}`);

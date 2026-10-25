@@ -714,7 +714,8 @@ export async function loadDB() {
                 flag:        s.flag,
                 notes:       s.notes,
                 variations:  s.variations || '',
-                reply:       s.reply
+                reply:       s.reply,
+                donePerExercise: s.done_per_exercise || {}
             }));
         }
 
@@ -1017,7 +1018,8 @@ function _mapSessionRow(row) {
         doms:        row.doms,
         flag:        row.flag,
         notes:       row.notes,
-        reply:       row.reply
+        reply:       row.reply,
+        donePerExercise: row.done_per_exercise || {}
     };
 }
 

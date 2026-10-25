@@ -5795,23 +5795,27 @@ export async function submitFB() {
   e1rmNDom: sessType==='Palestra' ? (window.liveE1rmNDom||0) : 0,
   doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: ''
   };
+  sessObj._synced = false;
   DB.sessions.push(sessObj);
   await saveDB();
 
   try {
   if (window.mySupabase) {
+  updateCloudStatus('saving');
   const { error } = await window.mySupabase.from('sessions').upsert([{
   id: generatedId, athlete_id: appState.selAthId, date: today,
   session_name: sessObj.session, session_type: sessType,
   week: currentWeekNum, phase: sessObj.phase, readiness: sessObj.readiness,
   vol: sessObj.vol, srpe: sRPE, rpe: appState.pwRpe, qual: appState.pwStars, hrv: hrvVal,
   max_e1rm: sessObj.maxE1rm, e1rm_dom: sessObj.e1rmDom, e1rm_ndom: sessObj.e1rmNDom,
-  doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: ''
+  doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: '',
+  done_per_exercise: sessObj.donePerExercise || window.liveDonePerExercise || {}
   }]);
-  if (error) { toast(' Sync Cloud fallita. Dati salvati in locale.'); }
+  if (error) { sessObj._synced = false; toast(' Sync Cloud fallita. Dati salvati in locale.'); updateCloudStatus('error'); }
   else {
+  sessObj._synced = true;
   if (ath) await window.mySupabase.from('atleti').update({ anthropo_history: ath.anthropoHistory }).eq('id', appState.selAthId);
-  toast('Allenamento registrato e sincronizzato nel Cloud! ✓');
+  toast('Allenamento registrato e sincronizzato nel Cloud! ✓'); updateCloudStatus('cloud');
   const nomeAtleta = ath ? ath.name.split(' ')[0] : 'Un atleta';
   _sendPushNotification('coach', null, ' Allenamento Completato', `${nomeAtleta} ha completato un allenamento`, 'storico');
   window.realLog = {};
