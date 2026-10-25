@@ -1000,8 +1000,11 @@
   <div class="card" style="margin-bottom:10px">
   <div class="fr"><div class="fg"><label class="fl">Sessione</label><select id="lv-sess" onchange="loadLive()"></select></div><div class="fg"><label class="fl">Settimana</label><select id="lv-week" onchange="loadLive()"><option>1</option><option>2</option><option>3</option><option>4</option></select></div></div>
   </div>
+  <button id="lv-start" class="ax-cta ax-cta-lg" onclick="startFocus()" style="margin-bottom:10px">
+    <span>▶</span> Inizia allenamento
+  </button>
   <div id="lv-resume" style="display:none"></div>
-  <div class="card" style="margin-bottom:10px"><div class="card-t">Set tracker</div><div id="lv-exs"></div></div>
+  <div class="card" style="margin-bottom:10px"><div class="card-t" style="display:flex;align-items:center;justify-content:space-between;gap:10px">Anteprima allenamento<span style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:none">tocca <b style="color:var(--accent)">▶ Inizia</b> per la modalità focus</span></div><div id="lv-exs"></div></div>
   <div class="g4">
   <div class="kpi"><div class="kpi-l">Volume Totale</div><div class="kpi-v" id="lv-vol" style="color:var(--accent)">0 kg</div></div>
   <div class="kpi"><div class="kpi-l">e1RM Max</div><div class="kpi-v" id="lv-e1rm" style="color:var(--text)">0 kg</div></div>
@@ -1839,7 +1842,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.20'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.21'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });
@@ -1853,5 +1856,20 @@
   document.head.appendChild(entry);
 }());
 </script>
+
+<!-- ═══ FOCUS MODE · overlay allenamento full-screen (un esercizio alla volta) ═══ -->
+<div id="focus-ovl" class="focus-ovl" aria-hidden="true">
+  <div class="focus-top">
+    <button class="focus-close" onclick="exitFocus()" aria-label="Torna all'anteprima">⌄</button>
+    <div id="focus-dots" class="focus-dots" aria-hidden="true"></div>
+    <div id="focus-timer" class="focus-timer" aria-label="Durata allenamento">0:00</div>
+  </div>
+  <div id="focus-sub" class="focus-sub"></div>
+  <div id="focus-stage" class="focus-stage"></div>
+  <div class="focus-bottom">
+    <button class="focus-prev" onclick="focusBack()"><span aria-hidden="true">←</span> Indietro</button>
+    <button class="focus-primary" id="focus-primary" onclick="focusNext()">Avanti <span aria-hidden="true">→</span></button>
+  </div>
+</div>
 </body>
 </html>

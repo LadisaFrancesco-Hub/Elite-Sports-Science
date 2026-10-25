@@ -2013,3 +2013,174 @@ input[type="checkbox"].cbx:focus-visible {
   .day-pills { gap: 4px; }
   .day-pills .ed-day span { font-size: 12px; min-height: 36px; padding: 7px 1px; border-radius: 8px; }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   FOCUS MODE — allenamento full-screen, un esercizio alla volta
+   Pager scroll-snap sopra le card già renderizzate (#lv-exs spostato
+   in #focus-stage). Mobile-native: safe-area, dvh, no tap-highlight.
+   ═══════════════════════════════════════════════════════════════ */
+body.focus-lock { overflow: hidden; }
+
+.focus-ovl {
+  position: fixed; inset: 0; z-index: 9000;
+  display: none; flex-direction: column;
+  height: 100dvh;
+  background: radial-gradient(120% 55% at 50% -8%, #14171C 0%, var(--bg) 58%);
+  -webkit-tap-highlight-color: transparent;
+}
+.focus-ovl.on { display: flex; }
+
+/* ── Top bar: chiudi · pallini progresso · timer totale ── */
+.focus-top {
+  display: flex; align-items: center; gap: 10px;
+  padding: calc(env(safe-area-inset-top, 0px) + 12px) 14px 8px;
+}
+.focus-close {
+  flex: 0 0 auto; width: 38px; height: 38px; border-radius: 12px;
+  background: var(--s2); border: 1px solid var(--border); color: var(--muted);
+  font-size: 20px; line-height: 1; cursor: pointer;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none;
+  transition: transform .12s var(--ease-out), background .12s;
+}
+.focus-close:active { transform: scale(.92); }
+.focus-dots {
+  flex: 1 1 auto; display: flex; flex-wrap: wrap; justify-content: center;
+  align-items: center; gap: 7px; min-width: 0;
+}
+.fdot {
+  width: 9px; height: 9px; border-radius: 99px;
+  border: 1.5px solid var(--muted); background: transparent;
+  cursor: pointer; touch-action: manipulation; flex: 0 0 auto;
+  transition: background .2s, border-color .2s, transform .2s;
+}
+.fdot.done { background: var(--accent); border-color: var(--accent); }
+.fdot.cur  { transform: scale(1.5); border-color: var(--accent); box-shadow: 0 0 0 3px oklch(0.76 0.16 52 / .18); }
+.fdot.cur.done { box-shadow: 0 0 0 3px oklch(0.76 0.16 52 / .32); }
+.focus-timer {
+  flex: 0 0 auto; min-width: 58px; text-align: right;
+  font-family: var(--fmono); font-size: 16px; font-weight: 700;
+  color: var(--text); font-variant-numeric: tabular-nums; letter-spacing: .02em;
+}
+.focus-sub {
+  text-align: center; padding: 2px 16px 8px;
+  font-size: 11px; font-weight: 600; letter-spacing: .04em;
+  color: var(--muted); text-transform: uppercase;
+}
+
+/* ── Stage: il pager orizzontale (#lv-exs vi viene spostato) ── */
+.focus-stage { flex: 1 1 auto; min-height: 0; position: relative; }
+.focus-stage > #lv-exs {
+  display: flex; flex-direction: row; height: 100%; width: 100%;
+  overflow-x: auto; overflow-y: hidden;
+  scroll-snap-type: x mandatory; scroll-behavior: smooth;
+  overscroll-behavior-x: contain;
+}
+.focus-stage > #lv-exs::-webkit-scrollbar { display: none; }
+.focus-stage > #lv-exs { scrollbar-width: none; }
+/* Solo le card sono pagine: header di fase, prog-header, tip, banner → nascosti */
+.focus-stage > #lv-exs > *:not(.lv-card) { display: none !important; }
+.focus-stage .lv-card {
+  flex: 0 0 100%; width: 100%; min-width: 100%;
+  scroll-snap-align: start; scroll-snap-stop: always;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding: 2px 16px calc(env(safe-area-inset-bottom, 0px) + 16px);
+}
+/* In focus ogni esercizio è una pagina a sé → annulla la fusione visiva dei superset */
+.focus-stage .lv-card .ax-ex {
+  border-radius: 14px !important; margin-bottom: 0 !important;
+  border-top: 1px solid var(--line) !important;
+}
+.focus-stage .lv-card .ax-link-badge { display: none; }
+
+/* Timer di recupero reso prominente dentro la card in focus */
+.focus-ovl .timer-container { gap: 10px; }
+.focus-ovl .timer-display { font-size: 20px; font-family: var(--fmono); font-weight: 700; }
+.focus-ovl .timer-btn { padding: 9px 16px; font-size: 13px; }
+
+/* ── Bottom bar: Indietro · Avanti/Fine ── */
+.focus-bottom {
+  display: flex; gap: 10px; align-items: stretch;
+  padding: 10px 14px calc(env(safe-area-inset-bottom, 0px) + 12px);
+  border-top: 1px solid var(--border);
+  background: linear-gradient(to top, var(--bg), transparent);
+}
+.focus-prev, .focus-primary {
+  min-height: 52px; border-radius: 14px; font-size: 15px; font-weight: 800;
+  cursor: pointer; touch-action: manipulation;
+  user-select: none; -webkit-user-select: none;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  transition: transform .12s var(--ease-out), filter .12s, background .12s;
+}
+.focus-prev {
+  flex: 0 0 40%; background: var(--s2); border: 1px solid var(--border); color: var(--text);
+}
+.focus-primary {
+  flex: 1 1 auto; border: none; background: var(--grad-accent); color: var(--accent-ink);
+  box-shadow: 0 8px 20px -10px oklch(0.70 0.17 48 / .8);
+}
+.focus-prev:active   { transform: scale(.97); }
+.focus-primary:active { transform: scale(.98); filter: brightness(.96); }
+
+@media (hover: hover) and (pointer: fine) {
+  .focus-close:hover  { background: var(--s1); }
+  .focus-prev:hover   { background: var(--s1); }
+  .focus-primary:hover { filter: brightness(1.04); }
+}
+
+/* ── Focus Mode · anteprima video, pallini-reps, mini-grafico carico ── */
+
+/* Etichette lunghe nei pallini (es. "8-10") → font ridotto, resta nel cerchio */
+.dot.lbl-sm { font-size: 10.5px; letter-spacing: -.02em; }
+
+/* RIR · TUT · RPE — stessa riga, SENZA riquadro, valori in arancione per visibilità */
+.ax-params { display: flex; flex-wrap: nowrap; align-items: baseline; gap: 6px 18px; margin: 10px 0; font-family: var(--fmono); }
+.ax-param { display: inline-flex; align-items: baseline; gap: 5px; white-space: nowrap; }
+.ax-param-l { font-size: 10px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.ax-param-v { font-size: 15px; font-weight: 800; color: var(--accent); font-variant-numeric: tabular-nums; }
+
+/* Wrapper centrabili della card */
+.ax-ex-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.ax-dots    { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; width: 100%; }
+.ax-rest-row{ display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+
+/* Focus Mode: contenuto della card CENTRATO */
+.focus-stage .ax-ex { text-align: center; }
+.focus-stage .ax-ex-head,
+.focus-stage .ax-params,
+.focus-stage .ax-dots,
+.focus-stage .ax-rest-row,
+.focus-stage .ax-nextload { justify-content: center; }
+.focus-stage .ax-cue,
+.focus-stage .ax-ramp { text-align: center; }
+
+/* Più aria in Focus Mode: nome esercizio più grande/arioso + cue del coach più ampio */
+.focus-stage .ax-ex-name { font-size: 18.5px; flex: 0 1 auto; padding-right: 0; line-height: 1.25; }
+.focus-stage .ax-ex-head { gap: 10px; margin-bottom: 16px; }
+.focus-stage .ax-cue { padding: 14px 16px; margin: 6px 0 2px; }
+.focus-stage .ax-cue .ax-overline { margin-bottom: 6px; }
+.focus-stage .ax-cue div:last-child { font-size: 13px; line-height: 1.6; }
+
+/* Mini-grafico carico/settimana — visibile SOLO in Focus Mode (riempie lo spazio) */
+.ax-wk-chart { display: none; }
+.focus-stage .ax-wk-chart {
+  display: block; width: 100%; margin-top: 12px;
+  padding: 12px 14px; border-radius: 12px;
+  background: rgba(255,255,255,.02); border: 1px solid var(--line);
+}
+.ax-wk-head { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+.ax-wk-e1 { font-family: var(--fmono); font-size: 11px; color: var(--muted); white-space: nowrap; }
+.ax-wk-e1 b { color: var(--accent); font-weight: 700; font-size: 13px; }
+.ax-wk-svg { width: 100%; height: auto; display: block; }
+.ax-wk-empty { font-size: 11.5px; color: var(--muted); line-height: 1.5; padding: 4px 2px 2px; }
+
+/* In Focus Mode: nascondi il volume per-esercizio (poco utile durante la serie; resta in anteprima) */
+.focus-stage .ax-ex-vol { display: none; }
+/* "Prossimo carico" reso discreto e spostato in fondo (pianificazione, non azione live) */
+.ax-nextload { display: flex; align-items: center; gap: 8px; margin-top: 16px; opacity: .72; }
+.ax-nextload .ax-next-in { max-width: 132px; }
+.ax-wk-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 10px; color: var(--muted); font-family: var(--fmono); }
+.ax-wk-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.ax-wk-legend i { display: inline-block; }
+.ax-wk-legend .lg-bar  { width: 10px; height: 10px; border-radius: 2px; background: var(--accent); }
+.ax-wk-legend .lg-line { width: 14px; height: 0; border-top: 1.5px solid var(--text); opacity: .6; }

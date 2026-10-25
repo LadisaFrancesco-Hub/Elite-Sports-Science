@@ -291,6 +291,76 @@ function _setTimeSeconds(raw) {
     return 0;
 }
 
+/** Mini-grafico SVG: barre = carico REALMENTE FATTO per settimana (kg) + reps in etichetta.
+ *  Fonte: DB.sessions[].donePerExercise[nome] salvato a fine sessione. Nessun Chart.js. Focus-only via CSS. */
+function _weeklyLoadChart(ex, currentWeek, isVBT, isIso) {
+    const head = `<div class="ax-wk-head"><span class="ax-overline">Carico fatto / settimana</span></div>`;
+    if (isVBT || isIso) return '';                       // carico non espresso in kg
+
+    // Raccogli il carico fatto per settimana da tutte le sessioni dell'atleta per questo esercizio.
+    const byWeek = {};
+    (DB.sessions || []).forEach(s => {
+        if (s.athlete !== appState.selAthId) return;
+        const d = s.donePerExercise && s.donePerExercise[ex.name];
+        if (!d || !(d.kg > 0)) return;
+        const w = parseInt(s.week) || 1;
+        // Per settimana tieni il set più pesante registrato (coerente con il "top set" salvato)
+        if (!byWeek[w] || d.kg > byWeek[w].kg) byWeek[w] = { kg: d.kg, reps: d.reps };
+    });
+
+    let pts = Object.keys(byWeek)
+        .map(w => ({ w: parseInt(w), kg: byWeek[w].kg, reps: byWeek[w].reps }))
+        .sort((a, b) => a.w - b.w)
+        .slice(-6);                                      // ultime 6 settimane con dati
+
+    // Nessuno storico ancora → empty-state (si popola dopo le prime sessioni)
+    if (!pts.length) {
+        return `<div class="ax-wk-chart">${head}
+          <div class="ax-wk-empty">I tuoi carichi appariranno qui dopo le prime sessioni.</div></div>`;
+    }
+
+    const curW  = parseInt(currentWeek) || 1;
+    const W = 320, H = 112, padX = 16, padT = 20, padB = 32;
+    const plotH = H - padT - padB;
+    const maxV  = Math.max(...pts.map(p => p.kg)) || 1;
+    const step  = (W - padX * 2) / pts.length;
+    const bw    = Math.min(30, step * 0.52);
+    const xOf   = i => padX + step * i + (step - bw) / 2;
+    const cx    = i => padX + step * i + step / 2;
+
+    const topOf = p => padT + plotH - Math.max((p.kg / maxV) * plotH, 2);
+
+    // Barre (carico fatto)
+    const bars = pts.map((p, i) => {
+        const h = Math.max((p.kg / maxV) * plotH, 2);
+        const fill = p.w === curW ? 'var(--accent)' : 'rgba(255,255,255,.12)';
+        return `<rect x="${xOf(i).toFixed(1)}" y="${(padT + plotH - h).toFixed(1)}" width="${bw.toFixed(1)}" height="${h.toFixed(1)}" rx="3" style="fill:${fill}"></rect>`;
+    }).join('');
+
+    // Linea di tendenza che collega le colonne (andamento del carico)
+    const trend = pts.length > 1
+        ? `<polyline points="${pts.map((p, i) => `${cx(i).toFixed(1)},${topOf(p).toFixed(1)}`).join(' ')}"
+             style="fill:none;stroke:var(--text);stroke-width:1.6;stroke-opacity:.6;stroke-linejoin:round;stroke-linecap:round"></polyline>`
+        : '';
+    const marks = pts.map((p, i) =>
+        `<circle cx="${cx(i).toFixed(1)}" cy="${topOf(p).toFixed(1)}" r="${p.w === curW ? 3.2 : 2.6}" style="fill:var(--text)"></circle>`
+    ).join('');
+
+    // Etichette: kg sopra il punto, W{n} e ×reps sotto
+    const labels = pts.map((p, i) => {
+        const acc = p.w === curW;
+        const kgTxt = (Math.round(p.kg * 10) / 10).toString().replace('.0', '');
+        return `<text x="${cx(i).toFixed(1)}" y="${(topOf(p) - 9).toFixed(1)}" text-anchor="middle" style="font-size:10px;font-weight:700;font-family:var(--fmono);fill:${acc ? 'var(--accent)' : 'var(--text)'}">${kgTxt}</text>`
+          + `<text x="${cx(i).toFixed(1)}" y="${(H - 16).toFixed(1)}" text-anchor="middle" style="font-size:9px;font-family:var(--fmono);fill:${acc ? 'var(--accent)' : 'var(--muted)'}">W${p.w}</text>`
+          + `<text x="${cx(i).toFixed(1)}" y="${(H - 5).toFixed(1)}" text-anchor="middle" style="font-size:9px;font-family:var(--fmono);fill:var(--muted)">×${p.reps}</text>`;
+    }).join('');
+
+    return `<div class="ax-wk-chart">${head}
+      <svg class="ax-wk-svg" viewBox="0 0 ${W} ${H}" role="img" aria-label="Carico fatto per settimana con andamento">
+        ${bars}${trend}${marks}${labels}
+      </svg></div>`;
+}
+
 // ─────────────────────────────────────────────────────────────
 // 2. loadLive()
 //    Carica e renderizza la scheda della sessione selezionata.
@@ -538,6 +608,11 @@ export function loadLive() {
             // ── Circuito a Tempo — render dedicato ───────────
             if (ex.type === 'circuit') {
                 const circDiv = _buildCircuitCard(ex, i);
+                // Marker Focus Mode: rende la card una "pagina" del pager
+                circDiv.classList.add('lv-card');
+                circDiv.dataset.exIdx  = i;
+                circDiv.dataset.exName = ex.name || 'Circuito';
+                circDiv.dataset.phase  = fase.label;
                 if (wrap) wrap.appendChild(circDiv);
                 return;
             }
@@ -703,12 +778,15 @@ for (let l = 0; l < actualSet; l++) {
         defaultLabel = repParts[l].trim(); // piramidale: rep specifica per serie
         rawRepForSet = repParts[l];
     } else {
-        defaultLabel = l + 1;
+        // Rep singola (es. "10") → mostra le reps nel pallino, non il numero di serie
+        defaultLabel = (repCompact.meta !== '' && repCompact.meta != null) ? repCompact.meta : (l + 1);
         rawRepForSet = l + 1;
     }
 
     let label  = defaultLabel;
     let cls    = 'dot';
+    // Etichette multi-carattere (es. "8-10") → font ridotto per non debordare dal cerchio
+    if (String(defaultLabel).length > 2) cls += ' lbl-sm';
 
     if (window.realLog && window.realLog[logKey]) {
         const logged = window.realLog[logKey];
@@ -769,13 +847,18 @@ for (let l = 0; l < actualSet; l++) {
                     </b></div>`;
             }
 
-            // ── Badge RIR e TUT (valori della settimana corrente) ──
-            let rirLabel = (targetRir && targetRir !== '—' && targetRir !== '')
-                ? `<span class="ax-sep">•</span><b>RIR ${escHtml(String(targetRir))}</b>`
+            // ── Riga parametri prominente: RIR · TUT · RPE (settimana corrente) ──
+            // RPE non è in progression → usa il valore base dell'esercizio (ex.rpe).
+            const pW_          = ex.progression && ex.progression[`w${currentWeek}`];
+            const targetRpe    = (pW_ && pW_.rpe != null && pW_.rpe !== '') ? pW_.rpe : (ex.rpe || '');
+            const _isSet = v => v != null && v !== '' && v !== '—' && v !== '-';
+            const _paramChip = (label, val) => _isSet(val)
+                ? `<span class="ax-param"><span class="ax-param-l">${label}</span><span class="ax-param-v">${escHtml(String(val))}</span></span>`
                 : '';
-            let tutLabel = (targetTut && targetTut !== '-' && targetTut !== '')
-                ? `<span class="ax-sep">•</span><b>TUT ${escHtml(String(targetTut))}</b>`
-                : '';
+            const paramsRow = (() => {
+                const chips = _paramChip('RIR', targetRir) + _paramChip('TUT', targetTut) + _paramChip('RPE', targetRpe);
+                return chips ? `<div class="ax-params">${chips}</div>` : '';
+            })();
 
             // ── Timer REST o etichetta NO REST ────────────────
             let restTimerHtml = '';
@@ -830,53 +913,63 @@ for (let l = 0; l < actualSet; l++) {
                           border-radius:${cardRadius}; margin-bottom:${cardMargin};">
                 ${linkBadge}
 
-                <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:8px;">
-                  <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
-                    <span class="ax-ex-name">${escHtml(ex.name)}</span>
-                    ${seriesTypeBadge}
-                    ${videoBadge}
-                    <span id="pr-badge-${i}" class="ax-pr-badge" style="display:none;">PR</span>
-                  </div>
+                <!-- 1. Nome esercizio (+ pulsante video a fianco) -->
+                <div class="ax-ex-head">
+                  <span class="ax-ex-name">${escHtml(ex.name)}</span>
+                  ${videoBadge}
+                  ${seriesTypeBadge}
+                  <span id="pr-badge-${i}" class="ax-pr-badge" style="display:none;">PR</span>
                   <span class="ax-ex-vol" id="lvol-${i}">0 kg</span>
                 </div>
 
-                ${seriesTypeInfoHtml}
-
+                <!-- 2. Serie e ripetizioni -->
                 <p class="ax-ex-meta">
                   ${armLabel}${actualSet}×${repCompact.meta}
                   <span class="ax-sep">•</span>
                   <b style="color:${autoRegBadge ? 'var(--amber)' : 'var(--text)'};">${renderTargetLoad}</b>
-                  ${rirLabel}${tutLabel}
                 </p>
+
+                <!-- 4. RIR · TUT · RPE (stessa riga, senza riquadro) -->
+                ${paramsRow}
                 ${autoRegBadge}
                 ${injBadgeHtml}
+                ${seriesTypeInfoHtml}
 
-                <div style="margin-bottom:16px;"></div>
-
-                <div style="display:flex; justify-content:space-between; align-items:center;
-                            gap:12px; margin-bottom:16px; flex-wrap:wrap;">
-                  <div style="display:flex; align-items:center; gap:8px;">
-                    <span class="ax-next-l">Prossimo carico</span>
-                    <input type="text" id="next-load-${i}"
-                           value="${escHtml(valoreNotaPrecedente)}"
-                           oninput="window.carichiFuturi['${notaChiave}'] = this.value"
-                           onchange="saveLiveNextLoad(${i}, this.value)"
-                           class="ax-next-in"
-                           placeholder="+2.5 kg">
-                  </div>
-                  <div style="display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end;">
-                    ${restTimerHtml}
-                  </div>
-                </div>
-
+                <!-- 5. Cue del coach -->
                 ${ex.note
                     ? `<div class="ax-cue"><div class="ax-overline">◇ Cue del coach</div><div>${escHtml(ex.note)}</div></div>`
                     : ''}
 
-                <div style="display:flex; flex-wrap:wrap; gap:10px; margin-top:8px; width:100%;">${dots}</div>
+                <!-- 6. Pallini delle serie -->
+                <div class="ax-dots">${dots}</div>
                 ${hintHtml}
+
+                <!-- 7. Ramping -->
                 ${rampingHtml}
+
+                <!-- 8. Rest -->
+                <div class="ax-rest-row">${restTimerHtml}</div>
+
+                <!-- 9. Prossimo carico -->
+                <div class="ax-nextload">
+                  <span class="ax-next-l">Prossimo carico</span>
+                  <input type="text" id="next-load-${i}"
+                         value="${escHtml(valoreNotaPrecedente)}"
+                         oninput="window.carichiFuturi['${notaChiave}'] = this.value"
+                         onchange="saveLiveNextLoad(${i}, this.value)"
+                         class="ax-next-in"
+                         placeholder="+2.5 kg">
+                </div>
+
+                <!-- 10. Grafico -->
+                ${_weeklyLoadChart(ex, currentWeek, isVBT, isIso)}
               </div>`;
+
+            // Marker Focus Mode: rende la card una "pagina" del pager
+            div.classList.add('lv-card');
+            div.dataset.exIdx  = i;
+            div.dataset.exName = ex.name;
+            div.dataset.phase  = fase.label;
 
             if (wrap) wrap.appendChild(div);
         });
@@ -974,6 +1067,8 @@ export function updateLiveTotals(exs) {
     let e1rmNDom            = 0;
     let tuttiiSetCompletati = true;
     const e1rmPerExercise   = {};
+    // Storico "carico fatto": set di lavoro più pesante realmente eseguito per esercizio
+    const donePerExercise   = {};
 
     const selectLiveSess = document.getElementById('lv-sess');
     const sessId         = selectLiveSess ? selectLiveSess.value : 'unknown';
@@ -1058,6 +1153,12 @@ let sKg  = parseFloat(targetKg)  || 0;
                         }
                     }
                 }
+
+                // Traccia il set di lavoro più pesante davvero fatto (storico "carico fatto")
+                if (ex.name && sRep > 0 && sKg > 0 && !isSpeed) {
+                    const prevDone = donePerExercise[ex.name];
+                    if (!prevDone || sKg > prevDone.kg) donePerExercise[ex.name] = { kg: sKg, reps: sRep };
+                }
             }
         }
 
@@ -1085,6 +1186,13 @@ let sKg  = parseFloat(targetKg)  || 0;
     window.liveE1rmDom  = Math.round(e1rmDom);
     window.liveE1rmNDom = Math.round(e1rmNDom);
     window.liveMaxE1rm  = Math.round(maxE1rm);
+    // Storico "carico fatto" per esercizio (kg×reps del set di lavoro più pesante)
+    window.liveDonePerExercise = Object.fromEntries(
+        Object.entries(donePerExercise).map(([k, v]) => [k, { kg: Math.round(v.kg * 10) / 10, reps: v.reps }])
+    );
+
+    // Focus Mode: riempi i pallini di progresso globali ad ogni set completato
+    updateFocusChrome();
 
     // ── Sessione completata: auto-salvataggio + redirect ─────
     if (tuttiiSetCompletati && maxE1rm > 0) {
@@ -1104,6 +1212,7 @@ let sKg  = parseFloat(targetKg)  || 0;
             sessioneEsistente.e1rmDom         = Math.round(e1rmDom);
             sessioneEsistente.e1rmNDom        = Math.round(e1rmNDom);
             sessioneEsistente.e1rmPerExercise = roundedE1rmPerEx;
+            sessioneEsistente.donePerExercise = window.liveDonePerExercise || {};
         } else {
             // Crea la sessione automaticamente
             DB.sessions.push({
@@ -1119,6 +1228,7 @@ let sKg  = parseFloat(targetKg)  || 0;
                 e1rmNDom:         Math.round(e1rmNDom),
                 maxE1rm:          Math.round(maxE1rm),
                 e1rmPerExercise:  roundedE1rmPerEx,
+                donePerExercise:  window.liveDonePerExercise || {},
                 sRPE:             0,
                 rpe:              8,
                 qual:             4,
@@ -1127,6 +1237,18 @@ let sKg  = parseFloat(targetKg)  || 0;
                 notes:            'Aggiornamento istantaneo automatico',
                 reply:            ''
             });
+        }
+
+        // Focus Mode: ultimo set dell'ultimo esercizio chiuso → ferma il cronometro
+        // (congela il display; il timestamp resta per prefillare la durata, azzerato a fine).
+        _focusTimerStop(false);
+        const _durMin = _focusElapsedMin();
+        if (_durMin > 0) {
+            const _pwDur = document.getElementById('pw-dur');
+            if (_pwDur && !_pwDur.value) {
+                _pwDur.value = _durMin;
+                if (window.calcSrpe) { try { window.calcSrpe(); } catch (e) {} }
+            }
         }
 
         window.saveDB();
@@ -2609,6 +2731,11 @@ export function closeVideoModal() {
 //   sessione e manda un messaggio strutturato in chat al coach.
 // ─────────────────────────────────────────────────────────────
 export function endWorkout() {
+    // Focus Mode: ferma e azzera il cronometro, chiudi l'overlay (il bottom sheet
+    // sale sull'anteprima ripristinata). No-op se non si è in Focus Mode.
+    _focusTimerStop(true);
+    exitFocus();
+
     const lvSess   = document.getElementById('lv-sess');
     const lvWeek   = document.getElementById('lv-week');
     const sessName = lvSess?.selectedIndex >= 0
@@ -2773,6 +2900,8 @@ export function endWorkout() {
             vol, maxE1rm,
             e1rmDom:  window.liveE1rmDom  || 0,
             e1rmNDom: window.liveE1rmNDom || 0,
+            e1rmPerExercise: existing?.e1rmPerExercise || {},
+            donePerExercise: window.liveDonePerExercise || existing?.donePerExercise || {},
             sRPE: _rpe * 60, rpe: _rpe, qual: _stars,
             doms: '', flag: partial ? 'Parziale' : '',
             notes: note || (partial ? `Completati ${dotsDone}/${dotsTotal} set` : ''),
@@ -2848,3 +2977,178 @@ export function endWorkout() {
     });
 }
 
+
+// ═════════════════════════════════════════════════════════════
+// FOCUS MODE — allenamento "un esercizio alla volta"
+// Pager full-screen che RIUSA le card già renderizzate da loadLive()
+// (pallini, log reale, timer recupero, e1RM, tecniche… restano invariati).
+// Il controller è una cornice sottile: pallini di progresso globali in alto,
+// timer di durata totale, navigazione prev/next. Nessuna duplicazione di logica.
+// ═════════════════════════════════════════════════════════════
+
+const LK_FOCUS_TS = 'coachOS_focus_start';   // timestamp inizio allenamento (anti-crash iOS)
+let   _focusTimerInt = null;
+
+/** Elenco ordinato delle card-pagina attualmente nel pager. */
+function _focusCards() {
+    const stage = document.getElementById('lv-exs');
+    return stage ? Array.from(stage.querySelectorAll(':scope > .lv-card')) : [];
+}
+
+/** Indice della card attualmente visibile (snap orizzontale). */
+function _focusCurIdx() {
+    const stage = document.getElementById('lv-exs');
+    if (!stage) return 0;
+    const w = stage.clientWidth || 1;
+    return Math.max(0, Math.round(stage.scrollLeft / w));
+}
+
+/** Una card è "completata" se ha set di lavoro e sono tutti .done (i warm-up 'W' non contano). */
+function _focusCardDone(card) {
+    const work = card.querySelectorAll('.dot:not(.warm)');
+    return work.length > 0 && Array.from(work).every(d => d.classList.contains('done'));
+}
+
+const _focusFmt = (ms) => {
+    const s = Math.max(0, Math.floor(ms / 1000));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), ss = s % 60;
+    return h > 0
+        ? `${h}:${String(m).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
+        : `${m}:${String(ss).padStart(2,'0')}`;
+};
+
+function _focusTick() {
+    const ts = parseInt(localStorage.getItem(LK_FOCUS_TS));
+    const el = document.getElementById('focus-timer');
+    if (el && ts) el.textContent = _focusFmt(Date.now() - ts);
+}
+
+function _focusTimerStart() {
+    let ts = parseInt(localStorage.getItem(LK_FOCUS_TS));
+    if (!ts) { ts = Date.now(); localStorage.setItem(LK_FOCUS_TS, String(ts)); }
+    _focusTick();
+    if (_focusTimerInt) clearInterval(_focusTimerInt);
+    _focusTimerInt = setInterval(_focusTick, 1000);
+}
+
+/** Ferma il tick. clear=true azzera anche il timestamp (fine allenamento). */
+function _focusTimerStop(clear) {
+    if (_focusTimerInt) { clearInterval(_focusTimerInt); _focusTimerInt = null; }
+    _focusTick();                                   // congela l'ultimo valore
+    if (clear) localStorage.removeItem(LK_FOCUS_TS);
+}
+
+/** Durata allenamento in minuti (per prefill del Post-Workout log). */
+function _focusElapsedMin() {
+    const ts = parseInt(localStorage.getItem(LK_FOCUS_TS));
+    return ts ? Math.max(1, Math.round((Date.now() - ts) / 60000)) : 0;
+}
+
+/** Ridisegna pallini progresso + sottotitolo + label del bottone primario. */
+export function updateFocusChrome() {
+    const ovl = document.getElementById('focus-ovl');
+    if (!ovl || !ovl.classList.contains('on')) return;
+
+    const cards = _focusCards();
+    const cur   = _focusCurIdx();
+
+    const dotsWrap = document.getElementById('focus-dots');
+    if (dotsWrap) {
+        dotsWrap.innerHTML = cards.map((c, idx) =>
+            `<span class="fdot${_focusCardDone(c) ? ' done' : ''}${idx === cur ? ' cur' : ''}"
+                   onclick="focusGoTo(${idx})"></span>`
+        ).join('');
+    }
+
+    const card = cards[cur];
+    const sub  = document.getElementById('focus-sub');
+    if (sub) sub.textContent = card
+        ? `${card.dataset.phase || ''}  ·  Esercizio ${cur + 1}/${cards.length}`
+        : '';
+
+    const prim = document.getElementById('focus-primary');
+    if (prim) prim.innerHTML = (cur >= cards.length - 1)
+        ? '<span>✓</span> Fine Allenamento'
+        : 'Avanti <span aria-hidden="true">→</span>';
+}
+
+/** Scorre il pager alla card idx. */
+export function focusGoTo(idx) {
+    const stage = document.getElementById('lv-exs');
+    const cards = _focusCards();
+    if (!stage || !cards.length) return;
+    idx = Math.max(0, Math.min(idx, cards.length - 1));
+    stage.scrollTo({ left: idx * stage.clientWidth, behavior: 'smooth' });
+    // aggiornamento ottimistico (lo scroll-listener riconferma a fine snap)
+    setTimeout(updateFocusChrome, 60);
+}
+
+/** Avanti → ; sull'ultima card = Fine Allenamento. */
+export function focusNext() {
+    const cards = _focusCards();
+    const cur   = _focusCurIdx();
+    if (cur >= cards.length - 1) { exitFocus(); endWorkout(); }
+    else focusGoTo(cur + 1);
+}
+
+/** Indietro ← ; sulla prima card = torna all'anteprima. */
+export function focusBack() {
+    const cur = _focusCurIdx();
+    if (cur <= 0) exitFocus();
+    else focusGoTo(cur - 1);
+}
+
+/** Entra in Focus Mode: sposta #lv-exs nell'overlay, avvia timer, va alla prima card incompleta. */
+export function startFocus() {
+    const stage = document.getElementById('lv-exs');
+    if (!stage) return;
+    const cards = stage.querySelectorAll(':scope > .lv-card');
+    if (!cards.length) { toast('Nessun esercizio da allenare.'); return; }
+
+    const ovl  = document.getElementById('focus-ovl');
+    const host = document.getElementById('focus-stage');
+    if (!ovl || !host) return;
+
+    // Ricorda la posizione originale per il ripristino all'uscita
+    if (!stage._focusHome) stage._focusHome = { parent: stage.parentNode, next: stage.nextSibling };
+    host.appendChild(stage);
+
+    ovl.classList.add('on');
+    ovl.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('focus-lock');
+
+    _focusTimerStart();
+
+    // Scroll-listener (una volta) → riallinea la cornice a fine snap
+    if (!stage._focusScrollBound) {
+        stage.addEventListener('scroll', () => {
+            if (stage._focusRaf) return;
+            stage._focusRaf = requestAnimationFrame(() => { stage._focusRaf = null; updateFocusChrome(); });
+        }, { passive: true });
+        stage._focusScrollBound = true;
+    }
+
+    // Parti dalla prima card non ancora completata
+    const list = _focusCards();
+    let firstInc = 0;
+    while (firstInc < list.length && _focusCardDone(list[firstInc])) firstInc++;
+    if (firstInc >= list.length) firstInc = 0;
+
+    requestAnimationFrame(() => {
+        stage.scrollTo({ left: firstInc * stage.clientWidth });
+        updateFocusChrome();
+    });
+}
+
+/** Esce da Focus Mode e ripristina #lv-exs nell'anteprima. Il timer resta attivo (ri-entry continua). */
+export function exitFocus() {
+    const ovl   = document.getElementById('focus-ovl');
+    const stage = document.getElementById('lv-exs');
+    if (ovl) { ovl.classList.remove('on'); ovl.setAttribute('aria-hidden', 'true'); }
+    document.body.classList.remove('focus-lock');
+    if (stage && stage._focusHome) {
+        const { parent, next } = stage._focusHome;
+        if (next && next.parentNode === parent) parent.insertBefore(stage, next);
+        else parent.appendChild(stage);
+    }
+}
