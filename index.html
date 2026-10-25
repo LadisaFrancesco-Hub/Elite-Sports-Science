@@ -514,6 +514,7 @@
   <symbol id="ic-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8"/><path d="M9 12h0M12 12h0M15 12h0M9 16h0M12 16h0M15 16h0"/></symbol>
   <symbol id="ic-team" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.3"/><path d="M2.8 20v-.8a5 5 0 0 1 5-5H10"/><path d="M15.5 5.2a3.3 3.3 0 0 1 0 6.2"/><path d="M14.5 14.2h.5a5 5 0 0 1 5 5v.8"/></symbol>
   <symbol id="ic-brand" viewBox="0 0 24 24"><path d="M12 3s6.2 5.6 6.2 10.2A6.2 6.2 0 0 1 5.8 13.2C5.8 8.6 12 3 12 3z"/></symbol>
+  <symbol id="ic-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7.5"/><path d="M12 14V9"/><path d="M9.5 3h5"/><path d="M12 3v3.5"/><path d="m18.6 8 1.1-1.1"/></symbol>
 </svg>
 
 <nav class="sidebar">
@@ -1842,7 +1843,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.22'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.23'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });
@@ -1863,6 +1864,7 @@
     <button class="focus-close" onclick="exitFocus()" aria-label="Torna all'anteprima">⌄</button>
     <div id="focus-dots" class="focus-dots" aria-hidden="true"></div>
     <div id="focus-timer" class="focus-timer" aria-label="Durata allenamento">0:00</div>
+    <span class="focus-timer-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#ic-timer"/></svg></span>
   </div>
   <div id="focus-sub" class="focus-sub"></div>
   <div id="focus-stage" class="focus-stage"></div>

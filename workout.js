@@ -867,12 +867,12 @@ for (let l = 0; l < actualSet; l++) {
                 <div class="timer-container" id="timer-container-${i}"
                      data-seconds="${totalSeconds}"
                      style="display:flex; align-items:center; gap:8px; margin-top:0;">
-                  <span class="ax-timer-l">REST</span>
-                  <span class="timer-display" id="timer-display-${i}">${formatTime(totalSeconds)}</span>
                   <button class="timer-btn" id="timer-btn-${i}"
                           onClick="startTimer(${i}, ${totalSeconds})">
-                    START
+                    START REST
                   </button>
+                  <span class="timer-display" id="timer-display-${i}">${formatTime(totalSeconds)}</span>
+                  <span class="ax-timer-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#ic-timer"/></svg></span>
                 </div>`;
             } else {
                 restTimerHtml = `
@@ -1918,7 +1918,7 @@ function _autoStartRestTimer(exIdx) {
         const display = document.getElementById(`timer-display-${exIdx}`);
         const btn     = document.getElementById(`timer-btn-${exIdx}`);
         if (display) display.textContent = formatTime(seconds);
-        if (btn)     btn.textContent     = 'START';
+        if (btn)     btn.textContent     = 'START REST';
     }
     startTimer(exIdx, seconds);
 }
@@ -1938,7 +1938,7 @@ export function startTimer(exerciseId, defaultSeconds) {
         clearInterval(activeTimers[exerciseId].interval);
         document.getElementById(`timer-container-${exerciseId}`).classList.remove('timer-running');
         document.getElementById(`timer-display-${exerciseId}`).textContent = formatTime(defaultSeconds);
-        document.getElementById(`timer-btn-${exerciseId}`).textContent     = 'START';
+        document.getElementById(`timer-btn-${exerciseId}`).textContent     = 'START REST';
         delete activeTimers[exerciseId];
         return;
     }
@@ -1958,7 +1958,7 @@ export function startTimer(exerciseId, defaultSeconds) {
             clearInterval(interval);
             container.classList.remove('timer-running');
             display.textContent = 'VIA!';
-            btn.textContent     = 'START';
+            btn.textContent     = 'START REST';
             delete activeTimers[exerciseId];
             playTimerEndSound();
         } else {

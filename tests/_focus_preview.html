@@ -26,6 +26,11 @@
 </div>
 
 
+<!-- Sprite minimale per il test (solo l'icona timer) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <symbol id="ic-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7.5"/><path d="M12 14V9"/><path d="M9.5 3h5"/><path d="M12 3v3.5"/><path d="m18.6 8 1.1-1.1"/></symbol>
+</svg>
+
 <div class="device-note">Anteprima a proporzioni iPhone (390 × 844)</div>
 <div class="device">
 <div id="focus-ovl" class="focus-ovl on" style="z-index:999999">
@@ -37,6 +42,7 @@
       <span class="fdot"></span>
     </div>
     <div id="focus-timer" class="focus-timer">12:48</div>
+    <span class="focus-timer-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#ic-timer"/></svg></span>
   </div>
   <div id="focus-sub" class="focus-sub">PARTE CENTRALE&nbsp;&nbsp;·&nbsp;&nbsp;ESERCIZIO 2/3</div>
   <div id="focus-stage" class="focus-stage">
@@ -77,7 +83,7 @@
 
           <!-- 8. Rest -->
           <div class="ax-rest-row">
-            <div class="timer-container" data-seconds="90"><span class="ax-timer-l">REST</span><span class="timer-display">1:30</span><button class="timer-btn">START</button></div>
+            <div class="timer-container" data-seconds="90"><button class="timer-btn">START REST</button><span class="timer-display">1:30</span><span class="ax-timer-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#ic-timer"/></svg></span></div>
           </div>
 
           <!-- 9. Prossimo carico -->

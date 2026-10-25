@@ -2106,6 +2106,15 @@ body.focus-lock .bottom-bar { display: none !important; }
 .focus-ovl .timer-display { font-size: 20px; font-family: var(--fmono); font-weight: 700; }
 .focus-ovl .timer-btn { padding: 9px 16px; font-size: 13px; }
 
+/* Icona cronometro (timer totale in alto + riga rest) — monoline, eredita currentColor */
+.focus-timer-ic, .ax-timer-ic { display: inline-flex; align-items: center; flex: 0 0 auto; color: var(--muted); }
+.focus-timer-ic svg, .ax-timer-ic svg { fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; display: block; }
+.focus-timer-ic svg { width: 15px; height: 15px; }
+.ax-timer-ic svg { width: 16px; height: 16px; }
+
+/* Rest in corsa: il tempo diventa arancione mentre scorre (il container pulsa già via .timer-running) */
+.is-athlete .timer-running .timer-display { color: var(--accent) !important; }
+
 /* ── Bottom bar: Indietro · Avanti/Fine ── */
 .focus-bottom {
   display: flex; gap: 10px; align-items: stretch;
