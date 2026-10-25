@@ -1843,7 +1843,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.25'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.26'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });
@@ -1871,6 +1871,12 @@
   <div class="focus-bottom">
     <button class="focus-prev" onclick="focusBack()" aria-label="Indietro"><span class="fnav-arw" aria-hidden="true">←</span></button>
     <button class="focus-primary" id="focus-primary" onclick="focusNext()" aria-label="Avanti"><span class="fnav-arw" aria-hidden="true">→</span></button>
+  </div>
+  <!-- Transizione d'avvio: countdown 3→2→1→VIA (solo avvio fresco · tap per saltare) -->
+  <div id="focus-countdown" class="focus-cd" aria-hidden="true" hidden>
+    <div class="focus-cd-eyebrow">Si parte</div>
+    <div id="focus-cd-num" class="focus-cd-num" aria-live="assertive">3</div>
+    <div class="focus-cd-skip">tocca per saltare</div>
   </div>
 </div>
 </body>

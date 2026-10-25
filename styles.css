@@ -2038,6 +2038,30 @@ body.focus-lock .bottom-bar { display: none !important; }
 }
 .focus-ovl.on { display: flex; }
 
+/* ── Transizione d'avvio: countdown 3→2→1→VIA (solo avvio fresco · tap per saltare) ── */
+.focus-cd {
+  position: absolute; inset: 0; z-index: 20;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;
+  padding: env(safe-area-inset-top, 0px) 16px env(safe-area-inset-bottom, 0px);
+  background: radial-gradient(120% 60% at 50% 42%, #171B21 0%, var(--bg) 70%);
+  -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+  user-select: none; -webkit-user-select: none; cursor: pointer;
+}
+.focus-cd[hidden] { display: none; }
+.focus-cd-eyebrow {
+  font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--muted);
+}
+.focus-cd-num {
+  font-family: var(--fmono); font-variant-numeric: tabular-nums; font-weight: 800;
+  font-size: clamp(84px, 34vw, 160px); line-height: 1; color: var(--text);
+  animation: cdPop .26s var(--ease-out) both;
+}
+.focus-cd-num.go { color: var(--accent); }
+.focus-cd-skip {
+  font-size: 11px; letter-spacing: .04em; color: var(--muted); opacity: .7;
+}
+@keyframes cdPop { from { transform: scale(1.35); opacity: .25; } to { transform: scale(1); opacity: 1; } }
+
 /* ── Top bar: chiudi · pallini progresso · timer totale ── */
 .focus-top {
   display: flex; align-items: center; gap: 10px;

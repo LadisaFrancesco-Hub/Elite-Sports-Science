@@ -3097,6 +3097,81 @@ export function focusBack() {
     else focusGoTo(cur - 1);
 }
 
+/**
+ * Segnale "VIA" di fine countdown: beep secco (880Hz, ~180ms) + vibrazione corta.
+ * Più leggero del triplo pattern di playTimerEndSound(): è un "la" di partenza, non un allarme.
+ */
+function _focusGoSound() {
+    if ('vibrate' in navigator) navigator.vibrate(90);
+    try {
+        const ctx  = sharedAudioCtx || new (window.AudioContext || window.webkitAudioContext)();
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
+        gain.gain.setValueAtTime(0.9, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.18);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + 0.18);
+    } catch (e) { /* audio non supportato: il countdown resta comunque visivo */ }
+}
+
+/**
+ * Countdown d'avvio 3→2→1→VIA sul layer #focus-countdown, poi onDone().
+ * Tap sul layer = salta ed esegue onDone() subito. Idempotente (doppi avvii ignorati).
+ */
+let _focusCdRunning = false;
+function _focusCountdown(onDone) {
+    const layer = document.getElementById('focus-countdown');
+    const num   = document.getElementById('focus-cd-num');
+    if (!layer || !num) { onDone && onDone(); return; }
+    if (_focusCdRunning) return;
+    _focusCdRunning = true;
+
+    const steps = ['3', '2', '1', 'VIA'];
+    let i = 0;
+    let tid = null;
+
+    const paint = () => {
+        const v = steps[i];
+        num.textContent = v;
+        num.classList.toggle('go', v === 'VIA');
+        // ri-triggera l'animazione pop ad ogni cambio
+        num.style.animation = 'none';
+        void num.offsetWidth;
+        num.style.animation = '';
+        if (v === 'VIA') _focusGoSound();
+    };
+
+    const finish = () => {
+        if (!_focusCdRunning) return;
+        _focusCdRunning = false;
+        if (tid) clearTimeout(tid);
+        layer.removeEventListener('pointerdown', skip);
+        layer.setAttribute('aria-hidden', 'true');
+        layer.hidden = true;
+        onDone && onDone();
+    };
+
+    const skip = () => finish();
+
+    const tick = () => {
+        paint();
+        if (i >= steps.length - 1) {           // mostrato "VIA"
+            tid = setTimeout(finish, 480);
+            return;
+        }
+        i++;
+        tid = setTimeout(tick, 820);
+    };
+
+    layer.hidden = false;
+    layer.setAttribute('aria-hidden', 'false');
+    layer.addEventListener('pointerdown', skip, { once: true });
+    tick();
+}
+
 /** Entra in Focus Mode: sposta #lv-exs nell'overlay, avvia timer, va alla prima card incompleta. */
 export function startFocus() {
     const stage = document.getElementById('lv-exs');
@@ -3108,6 +3183,9 @@ export function startFocus() {
     const host = document.getElementById('focus-stage');
     if (!ovl || !host) return;
 
+    // Tap su "Inizia allenamento" = user gesture → sblocca l'audio (beep recupero su iOS).
+    try { unlockAudio(); } catch (e) {}
+
     // Ricorda la posizione originale per il ripristino all'uscita
     if (!stage._focusHome) stage._focusHome = { parent: stage.parentNode, next: stage.nextSibling };
     host.appendChild(stage);
@@ -3115,8 +3193,6 @@ export function startFocus() {
     ovl.classList.add('on');
     ovl.setAttribute('aria-hidden', 'false');
     document.body.classList.add('focus-lock');
-
-    _focusTimerStart();
 
     // Scroll-listener (una volta) → riallinea la cornice a fine snap
     if (!stage._focusScrollBound) {
@@ -3137,6 +3213,12 @@ export function startFocus() {
         stage.scrollTo({ left: firstInc * stage.clientWidth });
         updateFocusChrome();
     });
+
+    // Countdown d'avvio solo alla partenza vera (nessun timestamp = non è un rientro;
+    // firstInc===0 = nessuna card già completata). Al rientro a metà sessione: nessun countdown.
+    const fresh = !localStorage.getItem(LK_FOCUS_TS) && firstInc === 0;
+    if (fresh) _focusCountdown(() => _focusTimerStart());
+    else       _focusTimerStart();
 }
 
 /** Esce da Focus Mode e ripristina #lv-exs nell'anteprima. Il timer resta attivo (ri-entry continua). */
