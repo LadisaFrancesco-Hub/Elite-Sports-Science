@@ -545,11 +545,8 @@ export function loadLive() {
             <div style="height:5px;background:rgba(255,255,255,.06);border-radius:99px;overflow:hidden">
                 <div class="prog-fill" style="width:0%;height:100%;background:var(--accent);border-radius:99px;transition:width .4s cubic-bezier(.22,1,.36,1);box-shadow:0 0 10px -2px var(--accent)"></div>
             </div>
-        </div>
-        <div class="ax-tip">
-            <strong>Tip</strong> · <strong>Tap</strong> sul pallino per completare,
-            <strong>tieni premuto</strong> per modificare rep/kg reali.
         </div>`;
+        // Tip "Tap sul pallino…" rimosso: l'anteprima non è interattiva (i pallini sono solo in Focus).
     }
 
     const currentWeek = document.getElementById('lv-week').value || '1';
@@ -733,7 +730,7 @@ export function loadLive() {
 
             // Stili card collegamento visivo
             let cardRadius    = '12px';
-            let cardMargin    = '12px';
+            let cardMargin    = '8px'; // anteprima compatta (Focus azzera a 0 via CSS)
             let cardBorderTop = '1px solid var(--line)';
             let linkBadge     = '';
 
@@ -746,7 +743,7 @@ export function loadLive() {
                 cardRadius = '0'; cardMargin = '0'; cardBorderTop = '1px dashed rgba(255,255,255,0.1)';
                 linkBadge  = `<div class="ax-link-badge">↳ ${groupLabel}</div>`;
             } else if (linkedToPrev && !linkedToNext) {
-                cardRadius = '0 0 12px 12px'; cardMargin = '12px'; cardBorderTop = '1px dashed rgba(255,255,255,0.1)';
+                cardRadius = '0 0 12px 12px'; cardMargin = '8px'; cardBorderTop = '1px dashed rgba(255,255,255,0.1)';
             }
 
             // ── Generazione pallini ───────────────────────────
@@ -878,6 +875,11 @@ for (let l = 0; l < actualSet; l++) {
                 <div class="ax-norest">NO REST · VAI AL PROSSIMO</div>`;
             }
 
+            // ── Recupero accorpato alla riga serie×reps•kg (solo anteprima; in Focus c'è START REST) ──
+            const metaRestHtml = linkedToNext
+                ? `<span class="ax-meta-rest"><span class="ax-sep">·</span> No rest</span>`
+                : `<span class="ax-meta-rest"><span class="ax-sep">·</span> Rec ${formatTime(totalSeconds)}</span>`;
+
             // ── Badge infortuni zona anatomica ────────────────
             let injBadgeHtml = '';
             if (ex.anatomicalZone && ex.anatomicalZone !== '') {
@@ -926,6 +928,7 @@ for (let l = 0; l < actualSet; l++) {
                   ${armLabel}${actualSet}×${repCompact.meta}
                   <span class="ax-sep">•</span>
                   <b class="ax-load${autoRegBadge ? ' autoreg' : ''}">${renderTargetLoad}</b>
+                  ${metaRestHtml}
                 </p>
 
                 <!-- 4. RIR · TUT · RPE (stessa riga, senza riquadro) -->

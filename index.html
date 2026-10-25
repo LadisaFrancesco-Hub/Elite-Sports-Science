@@ -1006,14 +1006,15 @@
   </button>
   <div id="lv-resume" style="display:none"></div>
   <div class="card" style="margin-bottom:10px"><div class="card-t" style="display:flex;align-items:center;justify-content:space-between;gap:10px">Anteprima allenamento<span style="font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.06em;text-transform:none">tocca <b style="color:var(--accent)">▶ Inizia</b> per la modalità focus</span></div><div id="lv-exs"></div></div>
-  <div class="g4">
+  <!-- KPI/grafico/Fine: nascosti in anteprima (nodi tenuti per endWorkout/renderE1rmChart). L'allenamento si chiude da Focus Mode. -->
+  <div class="g4" style="display:none">
   <div class="kpi"><div class="kpi-l">Volume Totale</div><div class="kpi-v" id="lv-vol" style="color:var(--accent)">0 kg</div></div>
   <div class="kpi"><div class="kpi-l">e1RM Max</div><div class="kpi-v" id="lv-e1rm" style="color:var(--text)">0 kg</div></div>
   <div class="kpi"><div class="kpi-l">Max e1RM (DOM)</div><div class="kpi-v" id="lv-edom" style="color:var(--text2)">0 kg</div></div>
   <div class="kpi"><div class="kpi-l">Max e1RM (NDOM)</div><div class="kpi-v" id="lv-endom" style="color:var(--text2)">0 kg</div></div>
   </div>
 
-  <div class="card" style="margin-top: 12px; margin-bottom: 12px;">
+  <div class="card" style="margin-top: 12px; margin-bottom: 12px; display:none">
   <div class="card-t" style="text-align: center;">Evoluzione Forza Massima Stimata (e1RM) nel Tempo</div>
   <div id="e1rm-ex-filter" style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;"></div>
   <div style="position: relative; height: 220px; width: 100%;">
@@ -1024,8 +1025,8 @@
   </div>
   </div>
 
-  <!-- Pulsante Fine Allenamento -->
-  <button onclick="endWorkout()" class="ax-cta ax-cta-lg" style="margin-top:4px; margin-bottom:8px;">
+  <!-- Pulsante Fine Allenamento — nascosto in anteprima: la sessione si chiude dall'ultima card di Focus Mode -->
+  <button onclick="endWorkout()" class="ax-cta ax-cta-lg" style="margin-top:4px; margin-bottom:8px; display:none">
   <span>✓</span> Fine Allenamento
   </button>
 </div>
@@ -1843,7 +1844,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.29'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.30'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });

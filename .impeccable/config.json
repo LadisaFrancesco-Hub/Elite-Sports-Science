@@ -11,6 +11,24 @@
         ],
         "createdAt": "2026-10-05T21:20:51.006Z",
         "reason": "Claude: legal fine-print disclaimer at 11px, matches landing's existing caption scale (footer/pills/table th already 11px)"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          "tests/_preview_vs_focus.html"
+        ],
+        "createdAt": "2026-10-25T21:21:46.869Z",
+        "reason": "test fixture: reuses shipped styles.css, not new design"
+      },
+      {
+        "rule": "dark-glow",
+        "value": "*",
+        "files": [
+          "tests/_preview_vs_focus.html"
+        ],
+        "createdAt": "2026-10-25T21:21:46.886Z",
+        "reason": "test fixture: reuses shipped styles.css, not new design"
       }
     ]
   }

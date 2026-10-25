@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  *,*::before,*::after{animation:none!important;transition:none!important}
+  body{margin:0;background:#06070a;color:#fff;font:13px system-ui}
+  h2{color:#8A939E;font:600 12px/1.4 system-ui;margin:16px 12px 8px}
+  .col{max-width:390px;margin:0 auto 24px;padding:0 12px}
+</style>
+</head>
+<body class="is-athlete">
+
+<svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden" aria-hidden="true">
+  <symbol id="ic-timer" viewBox="0 0 24 24"><circle cx="12" cy="14" r="7.5"/><path d="M12 14V9"/><path d="M9.5 3h5"/><path d="M12 3v3.5"/><path d="m18.6 8 1.1-1.1"/></symbol>
+</svg>
+
+<!-- ===== A) ANTEPRIMA: #lv-exs NON dentro .focus-stage ===== -->
+<h2>A · ANTEPRIMA</h2>
+<div class="col">
+  <div id="lv-exs-prev"></div>
+</div>
+
+<!-- ===== B) FOCUS: #lv-exs dentro .focus-stage ===== -->
+<h2>B · FOCUS</h2>
+<div class="col">
+  <div class="focus-stage"><div id="lv-exs-focus"></div></div>
+</div>
+
+<template id="card-tpl">
+  <div class="lv-card" data-ex-name="Panca Piana">
+    <div class="ax-ex" style="border-left:3px solid var(--accent)">
+      <div class="ax-ex-head">
+        <span class="ax-ex-name">Panca Piana</span>
+        <button class="ax-chip-btn"><span>▶</span><span>Video</span></button>
+        <span class="ax-ex-vol">0 kg</span>
+      </div>
+      <p class="ax-ex-meta">4×8-10 <span class="ax-sep">•</span> <b class="ax-load">110kg</b> <span class="ax-meta-rest"><span class="ax-sep">·</span> Rec 1:30</span></p>
+      <div class="ax-params">
+        <span class="ax-param"><span class="ax-param-l">RIR</span><span class="ax-param-v">1</span></span>
+        <span class="ax-param"><span class="ax-param-l">RPE</span><span class="ax-param-v">8</span></span>
+      </div>
+      <div class="ax-cue"><div class="ax-overline">◇ Cue del coach</div><div>Scapole addotte, discesa controllata.</div></div>
+      <div class="ax-dots">
+        <div class="dot done lbl-sm">10</div>
+        <div class="dot lbl-sm">8-10</div>
+      </div>
+      <div id="hint-lp-first" style="margin-top:10px; font-size:10.5px; color:var(--muted); text-align:left; font-weight:600;"><span style="color:var(--accent)">✎</span> tieni premuto per registrare rep/kg reali</div>
+      <div class="ax-ramp">RAMPING <span class="ax-sep">·</span><b>60kg <span class="ax-sep">→</span> 110kg</b></div>
+      <div class="ax-rest-row">
+        <div class="timer-container" data-seconds="90"><button class="timer-btn" id="timer-btn-0">START REST</button><span class="timer-display" id="timer-display-0">1:30</span><span class="ax-timer-ic" aria-hidden="true"><svg viewBox="0 0 24 24"><use href="#ic-timer"/></svg></span></div>
+      </div>
+      <div class="ax-nextload">
+        <span class="ax-next-l">Prossimo carico</span>
+        <input class="ax-next-in" placeholder="+2.5 kg">
+      </div>
+      <div class="ax-wk-chart"><div class="ax-wk-empty">grafico</div></div>
+    </div>
+  </div>
+</template>
+
+<script>
+  const tpl = document.getElementById('card-tpl');
+  document.getElementById('lv-exs-prev').appendChild(tpl.content.cloneNode(true));
+  document.getElementById('lv-exs-focus').appendChild(tpl.content.cloneNode(true));
+</script>
+
+</body>
+</html>

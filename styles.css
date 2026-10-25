@@ -1795,13 +1795,14 @@ html body select:focus {
 .ax-tip strong { color: var(--text2); }
 
 .ax-ex {
-  position: relative; width: 100%; padding: 16px;
+  position: relative; width: 100%; padding: 12px 14px; /* anteprima compatta; Focus ripristina 16px */
   background: var(--sheen), var(--e1); border: 1px solid var(--line);
   border-left: 3px solid var(--accent) !important;
   box-shadow: var(--sh-card);
 }
+.focus-stage .lv-card .ax-ex { padding: 16px; }
 .ax-ex-name { font-weight: 700; font-size: 16.5px; letter-spacing: -.01em; color: var(--text); flex: 1 1 auto; word-wrap: break-word; min-width: 0; padding-right: 8px; }
-.ax-ex-vol { position: absolute; top: 16px; right: 16px; font-family: var(--fmono); font-weight: 600; font-size: 14px; color: var(--accent); }
+.ax-ex-vol { display: none; position: absolute; top: 16px; right: 16px; font-family: var(--fmono); font-weight: 600; font-size: 14px; color: var(--accent); } /* non più mostrato (anteprima e Focus) */
 .ax-ex-meta { margin: 0; font-family: var(--fmono); font-size: 12.5px; color: var(--muted); letter-spacing: .01em; overflow-wrap: anywhere; }
 .ax-ex-meta b { color: var(--text); font-weight: 600; }
 /* kg programmato: bianco di default, ambra se target autoregolato (segnale mantenuto),
@@ -2189,7 +2190,8 @@ body.focus-lock .bottom-bar { display: none !important; }
 
 /* Wrapper centrabili della card */
 .ax-ex-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-.ax-dots    { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; width: 100%; }
+.ax-dots    { display: none; flex-wrap: wrap; gap: 10px; margin-top: 12px; width: 100%; } /* anteprima: nascosti; mostrati in Focus */
+.focus-stage .ax-dots { display: flex; }
 .ax-rest-row{ display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 
 /* Focus Mode: contenuto della card CENTRATO */
@@ -2227,9 +2229,26 @@ body.focus-lock .bottom-bar { display: none !important; }
 
 /* In Focus Mode: nascondi il volume per-esercizio (poco utile durante la serie; resta in anteprima) */
 .focus-stage .ax-ex-vol { display: none; }
-/* "Prossimo carico" reso discreto e spostato in fondo (pianificazione, non azione live) */
-.ax-nextload { display: flex; align-items: center; gap: 8px; margin-top: 16px; opacity: .72; }
+/* "Prossimo carico": input nascosto in anteprima (azione post-serie), mostrato in Focus */
+.ax-nextload { display: none; align-items: center; gap: 8px; margin-top: 16px; opacity: .72; }
+.focus-stage .ax-nextload { display: flex; }
 .ax-nextload .ax-next-in { max-width: 132px; }
+
+/* ── Anteprima (default) vs Focus Mode ──────────────────────────────
+   La schermata Sessione pre-allenamento è SOLA ANTEPRIMA: niente azioni.
+   Pattern: default = anteprima (nascondi/statico), `.focus-stage …` = Focus (ripristina). */
+/* Hint long-press: solo in Focus (in anteprima non si registra nulla) */
+#hint-lp-first { display: none; }
+.focus-stage #hint-lp-first { display: block; }
+/* Rest: in anteprima è mostrato in coda alla riga serie×reps•kg (.ax-meta-rest);
+   la riga START REST interattiva resta solo in Focus */
+.ax-rest-row { display: none; }
+.focus-stage .ax-rest-row { display: flex; }
+.ax-meta-rest { color: var(--muted); font-weight: 600; white-space: nowrap; }
+.focus-stage .ax-meta-rest { display: none; }
+/* Ramping: solo in Focus (all'atleta non serve prima di iniziare, risparmia spazio) */
+.ax-ramp { display: none; }
+.focus-stage .ax-ramp { display: block; }
 .ax-wk-legend { display: flex; gap: 16px; margin-top: 8px; font-size: 10px; color: var(--muted); font-family: var(--fmono); }
 .ax-wk-legend span { display: inline-flex; align-items: center; gap: 6px; }
 .ax-wk-legend i { display: inline-block; }
