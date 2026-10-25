@@ -2139,7 +2139,7 @@ body.focus-lock .bottom-bar { display: none !important; }
 .focus-prev:active   { transform: scale(.97); }
 .focus-primary:active { transform: scale(.98); filter: brightness(.96); }
 /* Nav solo-freccia: carattere più grande per riempire meglio il bottone (il testo "Fine Allenamento" resta 15px) */
-.fnav-arw { font-size: 24px; line-height: 1; font-weight: 700; }
+.fnav-arw { font-size: 30px; line-height: 1; font-weight: 700; }
 
 @media (hover: hover) and (pointer: fine) {
   .focus-close:hover  { background: var(--s1); }
