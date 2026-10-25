@@ -750,10 +750,9 @@ export function loadLive() {
             }
 
             // ── Generazione pallini ───────────────────────────
+// Solo serie allenanti: i pallini warm-up ('W') sono stati rimossi — il riscaldamento
+// è già mostrato dalla tabella RAMPING (più chiara e senza occupare spazio ai set).
 let dots = '';
-for (let w = 0; w < ex.wset; w++) {
-    dots += `<div class="dot warm" id="wd-${i}-${w}">W</div>`;
-}
 
 // Analizziamo il formato delle ripetizioni (es: "10-8-6-4" o "10,8,6,4" o range "8-10")
 let repParts = [];
@@ -902,7 +901,7 @@ for (let l = 0; l < actualSet; l++) {
             let hintHtml = '';
             if (showHint && !hintShown) {
                 hintShown = true;
-                hintHtml = `<div id="hint-lp-first" style="margin-top:10px; font-size:10.5px; color:var(--muted); text-align:right; font-weight:600;"><span style="color:var(--accent)">✎</span> tieni premuto per registrare rep/kg reali</div>`;
+                hintHtml = `<div id="hint-lp-first" style="margin-top:10px; font-size:10.5px; color:var(--muted); text-align:left; font-weight:600;"><span style="color:var(--accent)">✎</span> tieni premuto per registrare rep/kg reali</div>`;
             }
 
             // ── Assemblaggio card esercizio ───────────────────
@@ -3069,7 +3068,7 @@ export function updateFocusChrome() {
     const prim = document.getElementById('focus-primary');
     if (prim) prim.innerHTML = (cur >= cards.length - 1)
         ? '<span>✓</span> Fine Allenamento'
-        : 'Avanti <span aria-hidden="true">→</span>';
+        : '<span class="fnav-arw" aria-hidden="true">→</span>';
 }
 
 /** Scorre il pager alla card idx. */
