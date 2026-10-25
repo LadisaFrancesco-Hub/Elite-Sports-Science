@@ -1804,6 +1804,11 @@ html body select:focus {
 .ax-ex-vol { position: absolute; top: 16px; right: 16px; font-family: var(--fmono); font-weight: 600; font-size: 14px; color: var(--accent); }
 .ax-ex-meta { margin: 0; font-family: var(--fmono); font-size: 12.5px; color: var(--muted); letter-spacing: .01em; overflow-wrap: anywhere; }
 .ax-ex-meta b { color: var(--text); font-weight: 600; }
+/* kg programmato: bianco di default, ambra se target autoregolato (segnale mantenuto),
+   arancione in Focus Mode quando NON autoregolato (il dato su cui agisce l'atleta). */
+.ax-ex-meta b.ax-load { color: var(--text); font-weight: 600; }
+.ax-ex-meta b.ax-load.autoreg { color: var(--amber); }
+.focus-stage .ax-ex-meta b.ax-load:not(.autoreg) { color: var(--accent); }
 .ax-sep { color: var(--dim3); margin: 0 5px; }
 .ax-next-l { font-size: 11.5px; font-weight: 600; color: var(--muted); white-space: nowrap; }
 html body.is-athlete input.ax-next-in:not([type="range"]):not([type="hidden"]) {
@@ -2020,6 +2025,9 @@ input[type="checkbox"].cbx:focus-visible {
    in #focus-stage). Mobile-native: safe-area, dvh, no tap-highlight.
    ═══════════════════════════════════════════════════════════════ */
 body.focus-lock { overflow: hidden; }
+/* In Focus Mode la tab bar atleta sparisce (altrimenti copre i pulsanti Indietro/Avanti,
+   z-index 99999 > overlay 9000) → ricompare da sola uscendo (exitFocus toglie .focus-lock). */
+body.focus-lock .bottom-bar { display: none !important; }
 
 .focus-ovl {
   position: fixed; inset: 0; z-index: 9000;
@@ -2155,7 +2163,10 @@ body.focus-lock { overflow: hidden; }
 .focus-stage .ax-ramp { text-align: center; }
 
 /* Più aria in Focus Mode: nome esercizio più grande/arioso + cue del coach più ampio */
-.focus-stage .ax-ex-name { font-size: 18.5px; flex: 0 1 auto; padding-right: 0; line-height: 1.25; }
+.focus-stage .ax-ex-name { font-size: 21px; flex: 0 1 auto; padding-right: 0; line-height: 1.25; }
+/* Riga serie×reps • kg più leggibile in Focus Mode; il kg (azione dell'atleta) è il più prominente */
+.focus-stage .ax-ex-meta { font-size: 15px; }
+.focus-stage .ax-ex-meta b.ax-load { font-size: 17px; }
 .focus-stage .ax-ex-head { gap: 10px; margin-bottom: 16px; }
 .focus-stage .ax-cue { padding: 14px 16px; margin: 6px 0 2px; }
 .focus-stage .ax-cue .ax-overline { margin-bottom: 6px; }

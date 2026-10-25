@@ -926,7 +926,7 @@ for (let l = 0; l < actualSet; l++) {
                 <p class="ax-ex-meta">
                   ${armLabel}${actualSet}×${repCompact.meta}
                   <span class="ax-sep">•</span>
-                  <b style="color:${autoRegBadge ? 'var(--amber)' : 'var(--text)'};">${renderTargetLoad}</b>
+                  <b class="ax-load${autoRegBadge ? ' autoreg' : ''}">${renderTargetLoad}</b>
                 </p>
 
                 <!-- 4. RIR · TUT · RPE (stessa riga, senza riquadro) -->
