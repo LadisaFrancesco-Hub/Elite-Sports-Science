@@ -506,6 +506,7 @@ export function sessionCloudRow(s) {
         notes:        s.notes || '',
         reply:        s.reply || '',
         variations:   s.variations || '',
-        done_per_exercise: s.donePerExercise || {}
+        done_per_exercise: s.donePerExercise || {},
+        e1rm_per_exercise: s.e1rmPerExercise || {}
     };
 }

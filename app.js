@@ -3277,9 +3277,11 @@ export async function saveSess() {
   await saveDB(); renderStorico(); closeMo('mo-sess'); toast('Sessione salvata!');
   try {
   if (window.mySupabase) {
+  sessObj._synced = false; // reconcileUnsyncedSessions() la ripesca se l'upsert fallisce
   const cloud = sessionCloudRow(sessObj);
   const { error } = await window.mySupabase.from('sessions').upsert([cloud]);
   if (error) { console.error('[saveSess upsert]', error); toast('Salvata in locale — sync cloud non riuscita.'); }
+  else { sessObj._synced = true; }
   }
   } catch (e) { console.error(e); }
 }
@@ -5809,7 +5811,8 @@ export async function submitFB() {
   vol: sessObj.vol, srpe: sRPE, rpe: appState.pwRpe, qual: appState.pwStars, hrv: hrvVal,
   max_e1rm: sessObj.maxE1rm, e1rm_dom: sessObj.e1rmDom, e1rm_ndom: sessObj.e1rmNDom,
   doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: '',
-  done_per_exercise: sessObj.donePerExercise || window.liveDonePerExercise || {}
+  done_per_exercise: sessObj.donePerExercise || window.liveDonePerExercise || {},
+  e1rm_per_exercise: sessObj.e1rmPerExercise || {}
   }]);
   if (error) { sessObj._synced = false; toast(' Sync Cloud fallita. Dati salvati in locale.'); updateCloudStatus('error'); }
   else {

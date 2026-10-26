@@ -599,6 +599,18 @@ export async function initApp() {
 // ─────────────────────────────────────────────────────────────
 // 16. loadDB
 // ─────────────────────────────────────────────────────────────
+
+// Ricostruisce la flat-array DB.injuries dalle righe atleta (colonna jsonb
+// `injuries`). Idempotente: riparte sempre da DB.athletes, non appende — così
+// un update realtime della riga atleta non duplica né perde infortuni.
+// Senza questo gli infortuni sopravvivono solo via localStorage e si perdono
+// su nuovo device (indebolendo in silenzio la readiness che penalizza per VAS).
+export function rebuildInjuriesFromAthletes() {
+    DB.injuries = (DB.athletes || []).flatMap(a =>
+        (a.injuries || []).map(i => ({ ...i, athlete: a.id }))
+    );
+}
+
 export async function loadDB() {
     try {
         if (!window.mySupabase) throw new Error('Supabase non connesso');
@@ -615,6 +627,7 @@ export async function loadDB() {
                 if (a.anthropo_history && !a.anthropoHistory) a.anthropoHistory = a.anthropo_history;
                 if (a.progress_photos  && !a.progressPhotos)  a.progressPhotos  = a.progress_photos;
             });
+            rebuildInjuriesFromAthletes();
         }
 
         const { data: schedData, error: errSch } = await window.mySupabase.from('schedules').select('*');
@@ -715,7 +728,8 @@ export async function loadDB() {
                 notes:       s.notes,
                 variations:  s.variations || '',
                 reply:       s.reply,
-                donePerExercise: s.done_per_exercise || {}
+                donePerExercise: s.done_per_exercise || {},
+                e1rmPerExercise: s.e1rm_per_exercise || {}
             }));
         }
 
@@ -1019,7 +1033,8 @@ function _mapSessionRow(row) {
         flag:        row.flag,
         notes:       row.notes,
         reply:       row.reply,
-        donePerExercise: row.done_per_exercise || {}
+        donePerExercise: row.done_per_exercise || {},
+        e1rmPerExercise: row.e1rm_per_exercise || {}
     };
 }
 
@@ -1091,6 +1106,7 @@ function _onAtletiChange(payload) {
         if (idx >= 0) Object.assign(DB.athletes[idx], row);
         else          DB.athletes.push(row);
     }
+    rebuildInjuriesFromAthletes();
 
     if (typeof window.renderAthletes === 'function') window.renderAthletes();
     if (appState.curPanel === 'dashboard' && typeof window.renderDashboard === 'function')

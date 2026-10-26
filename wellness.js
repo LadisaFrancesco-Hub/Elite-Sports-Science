@@ -480,6 +480,25 @@ export function openInjuryMo(zone) {
 }
 
 /**
+ * _persistInjuriesCloud(athId)
+ * Scrive il sottoinsieme infortuni dell'atleta su `atleti.injuries` (jsonb),
+ * mirror del playbook badge (_saveBadges). Chiamata rara (solo a nuovo/risolto
+ * infortunio). Senza, gli infortuni restano in localStorage e si perdono su
+ * nuovo device, falsando in silenzio la readiness/triage coach (penalità VAS).
+ */
+function _persistInjuriesCloud(athId) {
+    const mine = (DB.injuries || []).filter(x => x.athlete === athId);
+    const ath  = DB.athletes.find(a => a.id === athId);
+    if (ath) ath.injuries = mine;
+    if (window.mySupabase) {
+        window.mySupabase.from('atleti').update({ injuries: mine }).eq('id', athId)
+            .then(({ error }) => {
+                if (error) { console.error('[injuries upsert]', error); updateCloudStatus('error'); }
+            });
+    }
+}
+
+/**
  * saveInjury()
  * Salva il nuovo record infortunio nel DB (rimuovendo l'eventuale
  * precedente record attivo per la stessa zona), poi aggiorna
@@ -509,6 +528,7 @@ export function saveInjury() {
     });
 
     window.saveDB();
+    _persistInjuriesCloud(appState.selAthId);
     document.getElementById('mo-injury').remove();
     renderInjuries();
     upW(); // Ricalcola la Readiness con la nuova penalità VAS
@@ -530,6 +550,7 @@ export function resolveInjury(zone) {
     if (inj) inj.status = 'Risolto';
 
     window.saveDB();
+    _persistInjuriesCloud(appState.selAthId);
     document.getElementById('mo-injury').remove();
     renderInjuries();
     upW();
