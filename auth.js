@@ -893,9 +893,9 @@ export function startRealtime(role) {
     if (!window._rtResyncBound) {
         window._rtResyncBound = true;
         document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible') _reloadSessions(window.userRole, 'focus');
+            if (document.visibilityState === 'visible') { _reloadSessions(window.userRole, 'focus'); _reloadWellness('focus'); }
         });
-        window.addEventListener('online', () => _reloadSessions(window.userRole, 'online'));
+        window.addEventListener('online', () => { _reloadSessions(window.userRole, 'online'); _reloadWellness('online'); });
     }
 }
 
@@ -1070,6 +1070,39 @@ async function _reloadSessions(role, reason) {
         _renderSessionPanels();
     } catch (e) {
         console.warn('[RT] re-sync sessions fallito:', e);
+    }
+}
+
+let _lastWellnessResync = 0;
+// Re-sync del wellness per il coach: DB.wellnessByAthlete si popola solo in
+// loadDB (login) e la tabella `wellness` NON ha un canale realtime → senza
+// questo la readiness nel cruscotto resterebbe ferma al login. Richiamato a
+// focus/online, come _reloadSessions. Throttle 3s, solo lato coach.
+async function _reloadWellness(reason) {
+    if (!window.mySupabase || window.userRole !== 'ADMIN') return;
+    const now = Date.now();
+    if (now - _lastWellnessResync < 3000) return;
+    _lastWellnessResync = now;
+    try {
+        const { data, error } = await window.mySupabase.from('wellness')
+            .select('athlete_id, date, sleep, sore, readiness_score, cns_score')
+            .order('date', { ascending: false });
+        if (error || !data) return;
+        const map = {};
+        data.forEach(w => {
+            if (!map[w.athlete_id]) map[w.athlete_id] = {
+                date:           w.date,
+                sleep:          w.sleep,
+                sore:           w.sore,
+                readinessScore: w.readiness_score,
+                cnsScore:       w.cns_score
+            };
+        });
+        DB.wellnessByAthlete = map;
+        console.log(`[RT] re-sync wellness (${reason}) → ${Object.keys(map).length} atleti`);
+        if (appState.curPanel === 'dashboard' && typeof window.renderDashboard === 'function') window.renderDashboard();
+    } catch (e) {
+        console.warn('[RT] re-sync wellness fallito:', e);
     }
 }
 

@@ -1106,6 +1106,31 @@ export function renderDashboard() {
   alertsDiv.innerHTML = demoBanner + (combined || '<div style="color:var(--muted);font-size:12px;text-align:center;padding:16px 0;">Nessun alert attivo</div>');
   }
 
+  // Readiness atleta selezionato — banner prominente sopra le KPI.
+  // Dato durabile dal check-in wellness (v7.33); DB.wellnessByAthlete è
+  // ri-sincronizzato a focus/online da _reloadWellness (niente realtime su wellness).
+  const rEl = document.getElementById('dh-readiness');
+  if (rEl) {
+  const wSel = DB.wellnessByAthlete?.[appState.selAthId] || {};
+  const rv = (wSel.readinessScore ?? null);
+  if (rv === null) {
+  rEl.innerHTML = '';
+  } else {
+  const rc = rv >= 75 ? 'var(--green)' : rv >= 50 ? 'var(--amber)' : 'var(--coral)';
+  const rl = rv >= 75 ? 'Pronto' : rv >= 50 ? 'Moderato' : 'Affaticato';
+  const dstr = wSel.date ? (wSel.date === new Date().toISOString().slice(0, 10) ? 'check di oggi' : `ultimo check: ${wSel.date.slice(5)}`) : '';
+  rEl.innerHTML = `<div class="dh-ready" style="--rc:${rc}">
+  <div class="dh-ready-ring"><span>${rv}</span></div>
+  <div class="dh-ready-txt">
+  <div class="dh-ready-l">Readiness</div>
+  <div class="dh-ready-v">${rl}</div>
+  ${dstr ? `<div class="dh-ready-d">${dstr}</div>` : ''}
+  </div>
+  ${wSel.cnsScore ? `<div class="dh-ready-cns">CNS<b>${wSel.cnsScore}</b></div>` : ''}
+  </div>`;
+  }
+  }
+
   const n = sess.length;
   const avgRpe = n ? (sess.reduce((a, s) => a + s.rpe, 0) / n).toFixed(1) : '-';
   document.getElementById('dh-kpis').innerHTML = `
@@ -1684,8 +1709,9 @@ function _renderWeeklyCockpit() {
       .filter(v => v !== null && !isNaN(v));
     const worst = vals.length ? vals.reduce((m, v) => (v > m ? v : m), vals[0]) : null;
     const inj = (DB.injuries || []).some(x => x.athlete === a.id && x.status === 'Attivo');
+    const readiness = DB.wellnessByAthlete?.[a.id]?.readinessScore ?? null;
     const topFinding = ins.findings.find(f => f.level === 'bad') || ins.findings.find(f => f.level === 'warn') || null;
-    return { a, ins, adopt, risk, worst, inj, topFinding };
+    return { a, ins, adopt, risk, worst, inj, readiness, topFinding };
   });
 
   const toneRank = { bad: 0, warn: 1, good: 2 };
@@ -1712,6 +1738,10 @@ function _renderWeeklyCockpit() {
     const tk = TONE[r.ins.tone];
     const sel = appState.selAthId === r.a.id;
     const chips = [];
+    if (r.readiness !== null) {
+    const rc = r.readiness >= 75 ? 'var(--green)' : r.readiness >= 50 ? 'var(--amber)' : 'var(--coral)';
+    chips.push(`<span style="color:${rc}">Readiness <b>${r.readiness}</b></span>`);
+    }
     chips.push(`<span style="color:${r.ins.nWeek >= Math.ceil(r.ins.target * 0.6) ? 'var(--muted)' : 'var(--amber)'}">Aderenza <b style="color:var(--text)">${r.ins.nWeek}/${r.ins.target}</b></span>`);
     if (r.worst !== null) chips.push(`<span style="color:${_acwrColor(r.worst)}">ACWR <b>${r.worst.toFixed(2)}</b></span>`);
     chips.push(`<span style="color:${ADOPT[r.adopt.tier]}">Log ${escHtml(r.adopt.label)}</span>`);
