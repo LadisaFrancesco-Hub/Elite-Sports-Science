@@ -755,6 +755,7 @@ export async function loadDB() {
             .order('date', { ascending: false });
         if (!errW && wellnessRows) {
             DB.wellnessByAthlete = {};
+            DB.wellnessHistByAthlete = {};
             wellnessRows.forEach(w => {
                 // Primo record per athlete_id = più recente (già ordinati per date DESC)
                 if (!DB.wellnessByAthlete[w.athlete_id]) {
@@ -765,6 +766,12 @@ export async function loadDB() {
                         readinessScore: w.readiness_score,
                         cnsScore:       w.cns_score
                     };
+                }
+                // Storico readiness per il trend coach: righe DESC → unshift per ordine
+                // crescente, cap a 30 per atleta. Solo record con readiness valida.
+                if (w.readiness_score != null) {
+                    const h = (DB.wellnessHistByAthlete[w.athlete_id] ||= []);
+                    if (h.length < 30) h.unshift({ date: w.date, r: w.readiness_score });
                 }
             });
         }
@@ -1089,6 +1096,7 @@ async function _reloadWellness(reason) {
             .order('date', { ascending: false });
         if (error || !data) return;
         const map = {};
+        const hist = {};
         data.forEach(w => {
             if (!map[w.athlete_id]) map[w.athlete_id] = {
                 date:           w.date,
@@ -1097,8 +1105,13 @@ async function _reloadWellness(reason) {
                 readinessScore: w.readiness_score,
                 cnsScore:       w.cns_score
             };
+            if (w.readiness_score != null) {
+                const h = (hist[w.athlete_id] ||= []);
+                if (h.length < 30) h.unshift({ date: w.date, r: w.readiness_score });
+            }
         });
         DB.wellnessByAthlete = map;
+        DB.wellnessHistByAthlete = hist;
         console.log(`[RT] re-sync wellness (${reason}) → ${Object.keys(map).length} atleti`);
         if (appState.curPanel === 'dashboard' && typeof window.renderDashboard === 'function') window.renderDashboard();
     } catch (e) {

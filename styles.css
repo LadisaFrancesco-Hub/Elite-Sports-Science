@@ -393,6 +393,22 @@ body {
 .dh-ready-d { font-size: 11px; color: var(--dim); margin-top: 1px; }
 .dh-ready-cns { font-family: var(--fmono); font-size: 11px; color: var(--muted); text-align: right; flex: 0 0 auto; }
 .dh-ready-cns b { display: block; color: var(--text); font-size: 16px; }
+.dh-ready-spark { width: 104px; height: 40px; flex: 0 0 auto; }
+.dh-spark-ref { stroke: var(--border); stroke-width: 1; stroke-dasharray: 3 3; }
+
+/* Ultimo feedback post-workout dell'atleta selezionato (cruscotto coach) */
+.dh-feedback { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; margin-bottom: 12px; }
+.dh-feedback-h { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 6px; }
+.dh-feedback-l { font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: var(--muted); font-family: var(--fmono); }
+.dh-feedback-badge { font-size: 10px; font-weight: 800; font-family: var(--fmono); border-radius: 4px; padding: 2px 7px; flex: 0 0 auto; }
+.dh-feedback-badge.is-answered { color: var(--green); border: 1px solid var(--green); }
+.dh-feedback-badge.is-pending { color: var(--amber); border: 1px solid var(--amber); }
+.dh-feedback-note { font-size: 13px; color: var(--text); line-height: 1.45; }
+.dh-feedback-meta { margin-top: 7px; font-family: var(--fmono); font-size: 11px; color: var(--muted); }
+.dh-feedback-meta b { color: var(--text); }
+.dh-feedback-sep { margin: 0 7px; color: var(--dim); }
+.dh-feedback-reply { margin-top: 8px; padding: 8px 10px; background: var(--s2); border-left: 3px solid var(--teal); border-radius: 0 6px 6px 0; font-size: 12.5px; color: var(--text2); }
+.dh-feedback-reply .ax-overline { color: var(--teal); margin-right: 4px; }
 
 /* ══════════════════════════════════════════════════════════════
    KPI BLOCKS

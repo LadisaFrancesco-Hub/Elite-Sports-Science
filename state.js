@@ -375,6 +375,7 @@ export const DB = {
     injuries:          [],
     wellness:          { sleep:4, stress:2, sore:2, motiv:4, cycle:'N/A', weight:'', bf:'' },
     wellnessByAthlete: {},   // { [athleteId]: { sleep, sore, readinessScore } } — ultimo check-in per atleta
+    wellnessHistByAthlete: {}, // { [athleteId]: [{ date, r }, ...] } — storico readiness (ultimi ~30, ordine crescente) per trend coach
     messages:          {},   // { [athleteId]: [msg, ...] } — messaggi diretti coach ↔ atleta
     macroPlans:        {},   // { [athleteId]: { weeks, plan: [{week, phase, targetSessions, notes}] } }
     nutrition:         {},   // { [athleteId]: [{ date, kcal, proteine, carboidrati, grassi, note }] }
@@ -389,6 +390,7 @@ export function replaceDB(data) {
     DB.injuries   = data.injuries   || [];
     if (data.wellness)          DB.wellness          = data.wellness;
     if (data.wellnessByAthlete) DB.wellnessByAthlete = data.wellnessByAthlete;
+    if (data.wellnessHistByAthlete) DB.wellnessHistByAthlete = data.wellnessHistByAthlete;
     if (data.messages)          DB.messages          = data.messages;
     if (data.macroPlans)        DB.macroPlans        = data.macroPlans;
     if (data.nutrition)         DB.nutrition         = data.nutrition;

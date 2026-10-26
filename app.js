@@ -259,7 +259,7 @@ export async function seed() {
 
   // reset collezioni
   DB.athletes = []; DB.sessions = []; DB.schedules = {}; DB.mesocycles = [];
-  DB.injuries = []; DB.wellnessByAthlete = {}; DB.messages = {};
+  DB.injuries = []; DB.wellnessByAthlete = {}; DB.wellnessHistByAthlete = {}; DB.messages = {};
   DB.nutrition = {}; DB.nutritionTargets = {};
 
   const mkEx = (name, set, rep, kg, rir, rest) =>
@@ -1119,6 +1119,7 @@ export function renderDashboard() {
   const rc = rv >= 75 ? 'var(--green)' : rv >= 50 ? 'var(--amber)' : 'var(--coral)';
   const rl = rv >= 75 ? 'Pronto' : rv >= 50 ? 'Moderato' : 'Affaticato';
   const dstr = wSel.date ? (wSel.date === new Date().toISOString().slice(0, 10) ? 'check di oggi' : `ultimo check: ${wSel.date.slice(5)}`) : '';
+  const hist = DB.wellnessHistByAthlete?.[appState.selAthId] || [];
   rEl.innerHTML = `<div class="dh-ready" style="--rc:${rc}">
   <div class="dh-ready-ring"><span>${rv}</span></div>
   <div class="dh-ready-txt">
@@ -1126,10 +1127,12 @@ export function renderDashboard() {
   <div class="dh-ready-v">${rl}</div>
   ${dstr ? `<div class="dh-ready-d">${dstr}</div>` : ''}
   </div>
+  ${_readinessSpark(hist, rc)}
   ${wSel.cnsScore ? `<div class="dh-ready-cns">CNS<b>${wSel.cnsScore}</b></div>` : ''}
   </div>`;
   }
   }
+  _renderFeedbackCard();
 
   const n = sess.length;
   const avgRpe = n ? (sess.reduce((a, s) => a + s.rpe, 0) / n).toFixed(1) : '-';
@@ -1167,6 +1170,55 @@ export function renderDashboard() {
   }
 
   _renderComplianceCard();
+}
+
+// Sparkline readiness disegnata a mano (niente Chart.js, come _weeklyLoadChart):
+// polyline dei punti readiness (≤30), bande di riferimento a 50 e 75, colore linea =
+// colore stato dell'ultimo valore. Vuota (stringa) se < 2 punti → banner invariato.
+function _readinessSpark(hist, color) {
+  if (!Array.isArray(hist) || hist.length < 2) return '';
+  const W = 104, H = 40, pad = 3;
+  const n = hist.length;
+  const x = i => pad + (W - pad * 2) * (n === 1 ? 0 : i / (n - 1));
+  const y = v => pad + (H - pad * 2) * (1 - Math.max(0, Math.min(100, v)) / 100);
+  const pts = hist.map((p, i) => `${x(i).toFixed(1)},${y(p.r).toFixed(1)}`).join(' ');
+  const lastX = x(n - 1).toFixed(1), lastY = y(hist[n - 1].r).toFixed(1);
+  return `<svg class="dh-ready-spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+    <line x1="0" y1="${y(75).toFixed(1)}" x2="${W}" y2="${y(75).toFixed(1)}" class="dh-spark-ref"/>
+    <line x1="0" y1="${y(50).toFixed(1)}" x2="${W}" y2="${y(50).toFixed(1)}" class="dh-spark-ref"/>
+    <polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="${lastX}" cy="${lastY}" r="2.6" fill="${color}"/>
+  </svg>`;
+}
+
+// Ultimo feedback post-workout dell'atleta selezionato: porta nota + RPE/stelle + dolori
+// nel cruscotto, così il coach non deve aprire lo Storico. Nascosto se nessuna sessione
+// con nota. Riusa il parse "NOTE: " dello Storico (app.js openAthlete / renderFeedback).
+function _renderFeedbackCard() {
+  const el = document.getElementById('dh-feedback');
+  if (!el) return;
+  const athId = appState.selAthId;
+  const withNote = DB.sessions
+    .filter(s => s.athlete === athId && s.notes && s.notes.replace('NOTE: ', '').trim())
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  const s = withNote[0];
+  if (!s) { el.innerHTML = ''; return; }
+  const noteTxt = s.notes.replace('NOTE: ', '').trim();
+  const answered = !!(s.reply && s.reply.trim());
+  const stars = Number.isFinite(+s.stars) && +s.stars > 0 ? '★'.repeat(Math.min(5, Math.round(+s.stars))) : '';
+  const bits = [];
+  if (s.rpe) bits.push(`RPE <b>${escHtml(String(s.rpe))}</b>`);
+  if (s.doms) bits.push(`Dolori <b>${escHtml(String(s.doms))}</b>`);
+  if (stars) bits.push(`<span style="color:var(--amber)">${stars}</span>`);
+  el.innerHTML = `<div class="dh-feedback">
+    <div class="dh-feedback-h">
+      <span class="dh-feedback-l">Ultimo feedback · ${escHtml(s.date.slice(5))}</span>
+      <span class="dh-feedback-badge ${answered ? 'is-answered' : 'is-pending'}">${answered ? '✓ risposto' : 'da rispondere'}</span>
+    </div>
+    <div class="dh-feedback-note">“${escHtml(noteTxt)}”</div>
+    ${bits.length ? `<div class="dh-feedback-meta">${bits.join('<span class="dh-feedback-sep">·</span>')}</div>` : ''}
+    ${answered ? `<div class="dh-feedback-reply"><span class="ax-overline">◇ Coach</span> ${escHtml(s.reply)}</div>` : ''}
+  </div>`;
 }
 
 function _renderComplianceCard() {
@@ -1663,10 +1715,19 @@ function _renderTodayCard() {
     rows.push(`<div class="alert alert-bad"><span class="alert-ic">▲</span><span><b>${critici.length} ${critici.length === 1 ? 'atleta in stato critico' : 'atleti in stato critico'}</b> — ${critici.slice(0, 4).map(a => `<a onclick="openAthlete('${a.id}')" style="color:inherit;text-decoration:underline;cursor:pointer;font-weight:700">${escHtml(a.name.split(' ')[0])}</a>`).join(', ')}${critici.length > 4 ? ' …' : ''}</span></div>`);
   }
   if (unanswered.length) {
-    rows.push(`<div class="alert alert-warn" style="align-items:center;justify-content:space-between"><span style="display:flex;gap:9px;align-items:flex-start"><span class="alert-ic">✎</span><span><b>${unanswered.length} ${unanswered.length === 1 ? 'sessione da rispondere' : 'sessioni da rispondere'}</b> — note dagli atleti senza reply del coach</span></span><button class="btn btn-a btn-sm" style="flex:0 0 auto" onclick="_todayGoUnanswered()">Rispondi →</button></div>`);
+    const uAth = [...new Set(unanswered.map(s => s.athlete))];
+    const uNames = uAth.slice(0, 4).map(id => `<a onclick="openAthlete('${id}')" style="color:inherit;text-decoration:underline;cursor:pointer;font-weight:700">${escHtml((athName(id) || '').split(' ')[0])}</a>`).join(', ');
+    rows.push(`<div class="alert alert-warn" style="align-items:center;justify-content:space-between"><span style="display:flex;gap:9px;align-items:flex-start"><span class="alert-ic">✎</span><span><b>${unanswered.length} ${unanswered.length === 1 ? 'sessione da rispondere' : 'sessioni da rispondere'}</b> — ${uNames}${uAth.length > 4 ? ' …' : ''}</span></span><button class="btn btn-a btn-sm" style="flex:0 0 auto" onclick="_todayGoUnanswered()">Rispondi →</button></div>`);
   }
   if (daSollecitare.length) {
-    rows.push(`<div class="alert alert-warn" style="align-items:center;justify-content:space-between"><span style="display:flex;gap:9px;align-items:flex-start"><span class="alert-ic">◷</span><span><b>${daSollecitare.length} ${daSollecitare.length === 1 ? 'atleta inattivo' : 'atleti inattivi'}</b> — non loggano da un po'</span></span><button class="btn btn-a btn-sm" style="flex:0 0 auto" onclick="nudgeSilent()">Sollecita</button></div>`);
+    const sColor = { warn: 'var(--amber)', silent: 'var(--coral)' };
+    const sList = daSollecitare
+      .map(a => ({ a, st: _athAdoptionStatus(a.id) }))
+      .sort((x, y) => (y.st.days ?? 1e9) - (x.st.days ?? 1e9))
+      .slice(0, 4)
+      .map(({ a, st }) => `<a onclick="openAthlete('${a.id}')" style="color:${sColor[st.tier] || 'inherit'};text-decoration:underline;cursor:pointer;font-weight:700">${escHtml(a.name.split(' ')[0])}</a> <span style="color:var(--dim)">${st.days == null ? 'mai' : st.days + 'gg'}</span>`)
+      .join('<span style="color:var(--dim)"> · </span>');
+    rows.push(`<div class="alert alert-warn" style="align-items:center;justify-content:space-between"><span style="display:flex;gap:9px;align-items:flex-start"><span class="alert-ic">◷</span><span><b>${daSollecitare.length} ${daSollecitare.length === 1 ? 'atleta inattivo' : 'atleti inattivi'}</b> — ${sList}${daSollecitare.length > 4 ? ' …' : ''}</span></span><button class="btn btn-a btn-sm" style="flex:0 0 auto" onclick="nudgeSilent()">Sollecita</button></div>`);
   }
   if (infortuni.length) {
     rows.push(`<div class="alert alert-bad"><span class="alert-ic">◆</span><span><b>${infortuni.length} ${infortuni.length === 1 ? 'infortunio attivo' : 'infortuni attivi'}</b> — verifica il programma di chi è coinvolto</span></div>`);
