@@ -867,10 +867,7 @@ function _getScaricoSuggestion(athId) {
   ? `RPE medio <strong>${avgRpe3}</strong> nelle ultime 3 sessioni`
   : `sRPE accumulato <strong>${totalSrpe4.toLocaleString('it-IT')} UA</strong> nelle ultime 4 sessioni`;
 
-  return `<div style="background:rgba(245,158,11,.08);border:1px solid #f59e0b;color:#fbbf24;padding:12px;border-radius:8px;margin-bottom:12px;font-size:13px;line-height:1.5;">
-  <strong>Suggerimento Scarico:</strong> ${reason}.
-  Considera una settimana di scarico — volume −30/40%, intensità invariata.
-  </div>`;
+  return `<div class="alert alert-warn"><span class="alert-ic">◷</span><span><b>Suggerimento scarico:</b> ${reason}. Considera una settimana di scarico — volume −30/40%, intensità invariata.</span></div>`;
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -1069,13 +1066,13 @@ export function renderDashboard() {
   const v = acwrData.field.value;
   const lvl = acwrData.field.level;
   if (lvl === 'high') {
-  alertCaricoHTML = `<div style="background:oklch(0.18 0.04 22);border:1px solid oklch(0.30 0.09 22);color:oklch(0.74 0.15 22);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Carico specifico molto sopra il suo standard (ACWR Campo: ${v}):</strong> valuta di scaricare il lavoro tecnico/tattico in campo.</div>`;
+  alertCaricoHTML = `<div class="alert alert-bad"><span class="alert-ic">▲</span><span><b>Carico specifico molto sopra il suo standard (ACWR Campo: ${v}):</b> valuta di scaricare il lavoro tecnico/tattico in campo.</span></div>`;
   } else if (lvl === 'elevated') {
-  alertCaricoHTML = `<div style="background:oklch(0.26 0.06 88);border:1px solid oklch(0.40 0.08 88);color:oklch(0.82 0.13 88);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Carico specifico sopra lo standard abituale (ACWR Campo: ${v}):</strong> monitora il recupero.</div>`;
+  alertCaricoHTML = `<div class="alert alert-warn"><span class="alert-ic">▲</span><span><b>Carico specifico sopra lo standard abituale (ACWR Campo: ${v}):</b> monitora il recupero.</span></div>`;
   } else if (lvl === 'optimal') {
-  alertCaricoHTML = `<div style="background:oklch(0.24 0.04 175);border:1px solid oklch(0.36 0.05 175);color:oklch(0.80 0.10 175);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Carico specifico in linea (ACWR Campo: ${v}):</strong> nella norma.</div>`;
+  alertCaricoHTML = `<div class="alert alert-ok"><span class="alert-ic">✓</span><span><b>Carico specifico in linea (ACWR Campo: ${v}):</b> nella norma.</span></div>`;
   } else {
-  alertCaricoHTML = `<div style="background:oklch(0.26 0.06 88);border:1px solid oklch(0.40 0.08 88);color:oklch(0.82 0.13 88);padding:12px;border-radius:8px;margin-bottom:20px;font-size:13px;"> <strong>Carico specifico in calo (ACWR Campo: ${v}).</strong></div>`;
+  alertCaricoHTML = `<div class="alert alert-warn"><span class="alert-ic">▾</span><span><b>Carico specifico in calo (ACWR Campo: ${v}).</b></span></div>`;
   }
   }
 
@@ -1083,21 +1080,14 @@ export function renderDashboard() {
   const emergenze = DB.athletes.filter(a => getAthleteRiskScore(a.id) > 0);
   let triageHTML = '';
   if (emergenze.length > 0) {
-  triageHTML = `<div style="background:oklch(0.18 0.04 22);border:1px solid oklch(0.30 0.09 22);padding:15px;border-radius:9px;margin-bottom:20px;">
-  <div style="color:oklch(0.66 0.20 22);font-weight:800;margin-bottom:10px;font-size:14px;text-transform:uppercase;font-family:var(--fmono)"> Triage: Atleti a Rischio</div>
-  ${emergenze.map(a => `
-  <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid oklch(0.24 0.06 22);">
-  <span style="color:var(--text);font-weight:600;">${escHtml(a.name)}</span>
-  <span style="color:oklch(0.66 0.20 22);font-size:12px;font-weight:700;font-family:var(--fmono)">Rischio: ${getAthleteRiskScore(a.id)}</span>
-  </div>`).join('')}
+  triageHTML = `<div class="alert alert-bad" style="flex-direction:column;align-items:stretch">
+  <div class="dh-triage-t">▲ Triage · atleti a rischio</div>
+  ${emergenze.map(a => `<div class="dh-triage-row"><span>${escHtml(a.name)}</span><b>Rischio ${getAthleteRiskScore(a.id)}</b></div>`).join('')}
   </div>`;
   }
 
   const demoBanner = DB.athletes.some(a => a.demo)
-  ? `<div style="background:oklch(0.24 0.04 175);border:1px solid oklch(0.40 0.06 175);color:oklch(0.84 0.10 175);padding:11px 13px;border-radius:8px;margin-bottom:16px;font-size:12.5px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
-  <span><strong>Dati demo attivi</strong> — 3 atleti di esempio per esplorare l'app con dati realistici. Quando sei pronto, rimuovili e parti dai tuoi.</span>
-  <button onclick="clearDemoData()" style="background:transparent;border:1px solid oklch(0.55 0.08 175);color:oklch(0.84 0.10 175);padding:6px 12px;border-radius:6px;font-size:11.5px;font-weight:700;cursor:pointer;white-space:nowrap;">Rimuovi dati demo</button>
-  </div>`
+  ? `<div class="alert alert-info" style="align-items:center;justify-content:space-between;flex-wrap:wrap"><span><b>Dati demo attivi</b> — 3 atleti di esempio per esplorare l'app con dati realistici. Quando sei pronto, rimuovili e parti dai tuoi.</span><button class="dh-act-nudge" style="white-space:nowrap" onclick="clearDemoData()">Rimuovi dati demo</button></div>`
   : '';
 
   const alertsDiv = document.getElementById('dh-alerts');
@@ -1121,7 +1111,7 @@ export function renderDashboard() {
   const dstr = wSel.date ? (wSel.date === new Date().toISOString().slice(0, 10) ? 'check di oggi' : `ultimo check: ${wSel.date.slice(5)}`) : '';
   const hist = DB.wellnessHistByAthlete?.[appState.selAthId] || [];
   rEl.innerHTML = `<div class="dh-ready" style="--rc:${rc}">
-  <div class="dh-ready-ring"><span>${rv}</span></div>
+  <div class="dh-ready-ring" style="--pct:${rv}"><span>${rv}</span></div>
   <div class="dh-ready-txt">
   <div class="dh-ready-l">Readiness</div>
   <div class="dh-ready-v">${rl}</div>
@@ -1139,10 +1129,10 @@ export function renderDashboard() {
   document.getElementById('dh-kpis').innerHTML = `
   <div class="kpi"><div class="kpi-l">Sessioni totali</div><div class="kpi-v">${n}</div></div>
   <div class="kpi"><div class="kpi-l">RPE medio</div><div class="kpi-v">${avgRpe}</div></div>
-  <div class="kpi"><div class="kpi-l">ACWR Gym (Meccanico)</div>
+  <div class="kpi${acwrData ? ' has-accent' : ''}" style="--kc:${acwrData ? acwrData.gym.color : 'var(--teal)'}"><div class="kpi-l">ACWR Gym (Meccanico)</div>
   <div class="kpi-v" style="color:${acwrData ? acwrData.gym.color : 'var(--muted)'}">${acwrData ? (acwrData.gym.value ?? '—') : '—'}</div>
   <div class="kpi-s">${acwrData ? acwrData.gym.text : ''}</div></div>
-  <div class="kpi"><div class="kpi-l">ACWR Campo (Specifico)</div>
+  <div class="kpi${acwrData ? ' has-accent' : ''}" style="--kc:${acwrData ? acwrData.field.color : 'var(--teal)'}"><div class="kpi-l">ACWR Campo (Specifico)</div>
   <div class="kpi-v" style="color:${acwrData ? acwrData.field.color : 'var(--muted)'}">${acwrData ? (acwrData.field.value ?? '—') : '—'}</div>
   <div class="kpi-s">${acwrData ? acwrData.field.text : ''}</div></div>`;
 
@@ -1268,14 +1258,13 @@ function _renderComplianceCard() {
   const html = rows.map(({ ath, curDots, curCount, avgPct }) => {
   const avgCol = avgPct >= 90 ? 'var(--teal)' : avgPct >= 65 ? 'var(--amber)' : avgPct > 0 ? 'var(--coral)' : 'var(--muted)';
   const dots = curDots.map((d,i) => {
-  const bg = d.done ? 'var(--teal)' : d.future ? 'var(--s2)' : 'var(--border)';
-  const border = d.future ? '1px dashed var(--border)' : 'none';
+  const cls = d.done ? 'is-done' : d.future ? 'is-future' : 'is-miss';
   return `<div style="display:flex;flex-direction:column;align-items:center;gap:2px;flex:1">
-  <div style="width:14px;height:14px;border-radius:50%;background:${bg};border:${border}"></div>
+  <div class="cmp-dot ${cls}"></div>
   <div style="font-size:8px;color:var(--muted)">${dayLabels[i]}</div>
   </div>`;
   }).join('');
-  return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+  return `<div class="cmp-row" style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
   <div style="flex:0 0 72px;font-size:12px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(ath.name.split(' ')[0])}</div>
   <div style="display:flex;gap:2px;flex:1;align-items:center">${dots}</div>
   <div style="flex:0 0 22px;text-align:center;font-size:11px;color:var(--muted)">${curCount}/${ath.freq||3}</div>
@@ -1337,25 +1326,25 @@ function _renderAdoptionCard() {
 
   el.style.display = '';
   el.innerHTML = `
-  <div class="card-t" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+  <div class="card-t">
   <span>Attività atleti — chi ha loggato</span>
-  ${nNudge > 0 ? `<button onclick="nudgeSilent()" style="background:transparent;border:1px solid var(--amber);color:var(--amber);padding:5px 11px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--fmono)">${nNudge === 1 ? 'Sollecita 1 inattivo' : `Sollecita i ${nNudge} inattivi`}</button>` : ''}
+  ${nNudge > 0 ? `<button class="dh-act-nudge is-primary" onclick="nudgeSilent()">${nNudge === 1 ? 'Sollecita 1 inattivo' : `Sollecita i ${nNudge} inattivi`}</button>` : ''}
   </div>
-  <div style="display:flex;gap:16px;margin-bottom:12px;font-size:12px;font-family:var(--fmono)">
-  <span style="color:var(--green)">● ${nActive} ${nActive === 1 ? 'attivo' : 'attivi'}</span>
-  <span style="color:var(--amber)">● ${nWarn} a rischio</span>
-  <span style="color:var(--coral)">● ${nSilent} ${nSilent === 1 ? 'silente' : 'silenti'}</span>
+  <div class="ck-legend">
+  <span class="is-ok">● ${nActive} ${nActive === 1 ? 'attivo' : 'attivi'}</span>
+  <span class="is-warn">● ${nWarn} a rischio</span>
+  <span class="is-bad">● ${nSilent} ${nSilent === 1 ? 'silente' : 'silenti'}</span>
   </div>
   ${rows.map(r => {
   const tk = TIER[r.tier];
-  return `<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)">
-  <div style="display:flex;align-items:center;gap:9px;min-width:0">
-  <span style="width:8px;height:8px;border-radius:50%;background:${tk.c};flex:0 0 8px"></span>
-  <span style="color:var(--text);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.a.name)}</span>
+  return `<div class="dh-act-row" style="--rc:${tk.c}">
+  <div class="dh-act-name-wrap">
+  <span class="dh-act-dot"></span>
+  <span class="dh-act-name">${escHtml(r.a.name)}</span>
   </div>
-  <div style="display:flex;align-items:center;gap:12px;flex:0 0 auto">
-  <span style="font-size:11.5px;color:${tk.c};font-family:var(--fmono)">${tk.t} · ${r.label}</span>
-  ${r.tier !== 'active' ? `<button onclick="nudgeAthlete('${r.a.id}')" style="background:transparent;border:1px solid var(--border);color:var(--muted);padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer">Sollecita</button>` : ''}
+  <div class="dh-act-right">
+  <span class="dh-act-status">${tk.t} · ${r.label}</span>
+  ${r.tier !== 'active' ? `<button class="dh-act-nudge" onclick="nudgeAthlete('${r.a.id}')">Sollecita</button>` : ''}
   </div>
   </div>`;
   }).join('')}`;
@@ -1539,25 +1528,26 @@ function _renderInsightCard() {
   const TONE = { good: { c: 'var(--green)', t: 'POSITIVO' }, warn: { c: 'var(--amber)', t: 'DA MONITORARE' }, bad: { c: 'var(--coral)', t: 'CRITICO' } };
   const tk = TONE[ins.tone];
   el.style.display = '';
+  el.style.setProperty('--rc', tk.c);
   el.innerHTML = `
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
-  <span style="font-size:12px;font-weight:800;letter-spacing:.04em;color:var(--muted);font-family:var(--fmono);text-transform:uppercase">Analisi automatica — settimana</span>
-  <span style="font-size:10px;font-weight:800;font-family:var(--fmono);color:${tk.c};border:1px solid ${tk.c};border-radius:4px;padding:2px 8px">${tk.t}</span>
+  <div class="dh-ins-h">
+  <span class="dh-ins-eyebrow">Analisi automatica — settimana</span>
+  <span class="dh-ins-badge">${tk.t}</span>
   </div>
-  <div style="font-size:10px;color:var(--dim,#64748b);margin-bottom:12px;font-family:var(--fmono);letter-spacing:.02em">Regole di sports science · aderenza · ACWR · HRV · monotonia · infortuni</div>
-  <div style="font-size:16px;font-weight:800;color:var(--text);margin-bottom:12px">${escHtml(ins.headline)}</div>
-  <div style="display:flex;flex-direction:column;gap:7px;margin-bottom:12px">
-  ${ins.findings.map(f => `<div style="display:flex;gap:9px;align-items:flex-start;font-size:12.5px;line-height:1.45;color:var(--text2,#cbd5e1)">
-  <span style="width:6px;height:6px;border-radius:50%;background:${TONE[f.level].c};flex:0 0 6px;margin-top:6px"></span>
+  <div class="dh-ins-sub">Regole di sports science · aderenza · ACWR · HRV · monotonia · infortuni</div>
+  <div class="dh-ins-headline">${escHtml(ins.headline)}</div>
+  <div class="dh-ins-findings">
+  ${ins.findings.map(f => `<div class="dh-ins-finding">
+  <span class="dh-ins-dot" style="--fc:${TONE[f.level].c}"></span>
   <span>${escHtml(f.text)}</span>
   </div>`).join('')}
   </div>
-  <div style="background:var(--s1);border-left:3px solid ${tk.c};border-radius:6px;padding:10px 12px;font-size:12.5px;line-height:1.5;color:var(--text)">
-  <div style="color:${tk.c};font-family:var(--fmono);font-size:10.5px;letter-spacing:.05em;font-weight:800;margin-bottom:3px">RACCOMANDAZIONE</div>
+  <div class="dh-ins-rec">
+  <div class="dh-ins-rec-l">Raccomandazione</div>
   ${escHtml(ins.rec)}
   </div>
   ${AI_BRIEFING_ENABLED ? `<div style="margin-top:12px">
-    <button id="dh-ai-btn" onclick="generateAiBriefing('${athId}')" style="width:100%;background:var(--accent,#f97316);color:#111;border:none;border-radius:8px;padding:10px 14px;font-size:13px;font-weight:800;cursor:pointer;font-family:var(--fmono);letter-spacing:.02em">✨ Genera briefing IA</button>
+    <button id="dh-ai-btn" class="dh-ai-btn" onclick="generateAiBriefing('${athId}')">✨ Genera briefing IA</button>
     <div id="dh-ai-briefing" style="margin-top:10px"></div>
   </div>` : ''}`;
 }
@@ -1784,16 +1774,19 @@ function _renderWeeklyCockpit() {
 
   const ADOPT = { active: 'var(--green)', warn: 'var(--amber)', silent: 'var(--coral)' };
 
+  // Mappa un colore-tono (es. 'var(--green)') al modifier chip corrispondente.
+  const toneClass = c => (c && c.includes('green')) ? 'is-ok' : (c && c.includes('amber')) ? 'is-warn' : (c && c.includes('coral')) ? 'is-bad' : '';
+
   el.style.display = '';
   el.innerHTML = `
   <div class="card-t" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
   <span>Cruscotto settimanale — tutti gli atleti</span>
   <span style="font-size:10px;color:var(--dim);font-family:var(--fmono);font-weight:500;text-transform:none;letter-spacing:0">clic su un atleta per aprirlo</span>
   </div>
-  <div style="display:flex;gap:16px;margin-bottom:10px;font-size:12px;font-family:var(--fmono)">
-  <span style="color:var(--coral)">● ${nBad} ${nBad === 1 ? 'critico' : 'critici'}</span>
-  <span style="color:var(--amber)">● ${nWarn} da monitorare</span>
-  <span style="color:var(--green)">● ${nGood} ok</span>
+  <div class="ck-legend">
+  <span class="is-bad">● ${nBad} ${nBad === 1 ? 'critico' : 'critici'}</span>
+  <span class="is-warn">● ${nWarn} da monitorare</span>
+  <span class="is-ok">● ${nGood} ok</span>
   </div>
   ${rows.map(r => {
     const tk = TONE[r.ins.tone];
@@ -1801,23 +1794,24 @@ function _renderWeeklyCockpit() {
     const chips = [];
     if (r.readiness !== null) {
     const rc = r.readiness >= 75 ? 'var(--green)' : r.readiness >= 50 ? 'var(--amber)' : 'var(--coral)';
-    chips.push(`<span style="color:${rc}">Readiness <b>${r.readiness}</b></span>`);
+    chips.push(`<span class="ck-chip ${toneClass(rc)}">Readiness <b>${r.readiness}</b></span>`);
     }
-    chips.push(`<span style="color:${r.ins.nWeek >= Math.ceil(r.ins.target * 0.6) ? 'var(--muted)' : 'var(--amber)'}">Aderenza <b style="color:var(--text)">${r.ins.nWeek}/${r.ins.target}</b></span>`);
-    if (r.worst !== null) chips.push(`<span style="color:${_acwrColor(r.worst)}">ACWR <b>${r.worst.toFixed(2)}</b></span>`);
-    chips.push(`<span style="color:${ADOPT[r.adopt.tier]}">Log ${escHtml(r.adopt.label)}</span>`);
-    if (r.risk > 0) chips.push(`<span style="color:var(--coral)">Rischio <b>${r.risk}</b></span>`);
-    if (r.inj) chips.push(`<span style="color:var(--coral)">◆ Infortunio</span>`);
-    return `<div class="cockpit-row" onclick="cockpitSelectAthlete('${r.a.id}')" style="cursor:pointer;padding:10px 8px;margin:0 -8px;border-bottom:1px solid var(--border);${sel ? 'background:rgba(255,255,255,.03);box-shadow:inset 3px 0 0 ' + tk.c : ''}">
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px">
-    <div style="display:flex;align-items:center;gap:9px;min-width:0">
-    <span style="width:9px;height:9px;border-radius:50%;background:${tk.c};flex:0 0 9px"></span>
-    <span style="color:var(--text);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(r.a.name)}</span>
+    const adCls = r.ins.nWeek >= Math.ceil(r.ins.target * 0.6) ? '' : 'is-warn';
+    chips.push(`<span class="ck-chip ${adCls}">Aderenza <b>${r.ins.nWeek}/${r.ins.target}</b></span>`);
+    if (r.worst !== null) chips.push(`<span class="ck-chip ${toneClass(_acwrColor(r.worst))}">ACWR <b>${r.worst.toFixed(2)}</b></span>`);
+    chips.push(`<span class="ck-chip ${toneClass(ADOPT[r.adopt.tier])}">Log ${escHtml(r.adopt.label)}</span>`);
+    if (r.risk > 0) chips.push(`<span class="ck-chip is-bad">Rischio <b>${r.risk}</b></span>`);
+    if (r.inj) chips.push(`<span class="ck-chip is-bad">◆ Infortunio</span>`);
+    return `<div class="ck-row${sel ? ' is-sel' : ''}" style="--rc:${tk.c}" onclick="cockpitSelectAthlete('${r.a.id}')">
+    <div class="ck-head">
+    <div class="ck-name-wrap">
+    <span class="ck-dot"></span>
+    <span class="ck-name">${escHtml(r.a.name)}</span>
     </div>
-    <span style="font-size:10px;font-weight:800;font-family:var(--fmono);color:${tk.c};border:1px solid ${tk.c};border-radius:4px;padding:2px 7px;flex:0 0 auto">${tk.t}</span>
+    <span class="ck-badge">${tk.t}</span>
     </div>
-    <div style="display:flex;gap:13px;flex-wrap:wrap;margin:6px 0 0 18px;font-family:var(--fmono);font-size:11px">${chips.join('')}</div>
-    ${r.topFinding ? `<div style="margin:5px 0 0 18px;font-size:11.5px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">▸ ${escHtml(r.topFinding.text)}</div>` : ''}
+    <div class="ck-chips">${chips.join('')}</div>
+    ${r.topFinding ? `<div class="ck-finding">▸ ${escHtml(r.topFinding.text)}</div>` : ''}
     </div>`;
   }).join('')}`;
 }

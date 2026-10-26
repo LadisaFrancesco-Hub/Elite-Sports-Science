@@ -483,6 +483,171 @@ body {
 .co-action .co-action-ic { font-size: 14px; line-height: 1; opacity: .85; }
 .co-action small { display: block; font-size: 10px; font-weight: 500; color: var(--dim2); font-family: var(--fmono); letter-spacing: .02em; }
 
+/* ══════════════════════════════════════════════════════════════
+   COACH DASHBOARD v7.36 — "console dati raffinata"
+   Riusa i token v4 globali (:root) sul lato coach, SCOPED a #p-dashboard
+   per non toccare editor/storico/resto. Carattere denso/pro (radius 14px,
+   mono solo per numeri), un accento + semantica verde/ambra/corallo.
+   ══════════════════════════════════════════════════════════════ */
+
+/* — Carte: da piatte a profonde (sheen + elevazione + ombra v4) — */
+#p-dashboard .card,
+#p-dashboard .kpi {
+  background: var(--sheen), var(--e1) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--sh-card) !important;
+}
+/* Header di sezione delle card dashboard: gradiente coerente col nuovo radius */
+.panel#p-dashboard .card > .card-t {
+  background: linear-gradient(180deg, var(--e3), var(--e2));
+  margin: -16px -18px 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* — KPI: gerarchia leggibile (label Archivo, numero mono grande, accento) — */
+#p-dashboard #dh-kpis { gap: 12px; }
+#p-dashboard .kpi { position: relative; overflow: hidden; padding: 15px 16px !important; }
+#p-dashboard .kpi.has-accent::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+  background: var(--kc, var(--teal)); opacity: .9;
+}
+#p-dashboard .kpi-l {
+  font-family: var(--fm); font-size: 11px; font-weight: 600; letter-spacing: .01em;
+  text-transform: none; color: var(--muted); margin-bottom: 8px;
+}
+#p-dashboard .kpi-v { font-size: 28px; font-weight: 600; letter-spacing: -.02em; }
+#p-dashboard .kpi-s { font-size: 10.5px; letter-spacing: .04em; margin-top: 5px; }
+
+/* — Readiness banner: ring conic-gradient + sweep (stile atleta) — */
+#p-dashboard .dh-ready {
+  background: var(--sheen), var(--e1); border: 1px solid var(--line);
+  border-left: 3px solid var(--rc); border-radius: 14px;
+  padding: 14px 16px; box-shadow: var(--sh-card);
+}
+#p-dashboard .dh-ready-ring {
+  width: 56px; height: 56px; border: none;
+  background:
+    radial-gradient(closest-side, var(--e1) 76%, transparent 78% 100%),
+    conic-gradient(var(--rc) calc(var(--pct, 0) * 1%), rgba(255,255,255,.07) 0);
+  box-shadow: 0 0 22px -8px var(--rc);
+}
+#p-dashboard .dh-ready-ring span { font-size: 17px; color: var(--text); }
+#p-dashboard .dh-ready-v { color: var(--rc); }
+
+/* — Feedback card: più aria + citazione con trattamento — */
+#p-dashboard .dh-feedback {
+  background: var(--sheen), var(--e1); border: 1px solid var(--line);
+  border-radius: 14px; padding: 15px 16px; box-shadow: var(--sh-card);
+}
+#p-dashboard .dh-feedback-note {
+  font-size: 13.5px; line-height: 1.5; padding-left: 11px;
+  border-left: 2px solid var(--accent-line); color: var(--text);
+}
+#p-dashboard .dh-feedback-reply {
+  background: var(--e2); border-left: 3px solid var(--teal);
+  border-radius: 0 8px 8px 0; padding: 9px 11px;
+}
+
+/* — Alert / Today card: wash semantici v4 + bordo accentato — */
+#p-dashboard .alert { border-radius: 11px; padding: 12px 14px; border-left-width: 3px; }
+#p-dashboard .alert-bad  { background: var(--bad-wash);  border-color: oklch(0.66 0.20 22 / .28);  border-left-color: var(--bad);  color: oklch(0.86 0.10 22); }
+#p-dashboard .alert-warn { background: var(--warn-wash); border-color: oklch(0.82 0.13 88 / .28); border-left-color: var(--warn); color: oklch(0.90 0.10 88); }
+#p-dashboard .alert-ok   { background: var(--ok-wash);   border-color: oklch(0.74 0.11 175 / .26); border-left-color: var(--ok);   color: oklch(0.86 0.09 175); }
+#p-dashboard .alert-info { background: var(--e2);        border-color: var(--line);                border-left-color: var(--dim2); color: var(--text2); }
+#p-dashboard .alert .btn-a.btn-sm { align-self: center; }
+
+/* — Cruscotto settimanale: righe con gerarchia + chip raggruppati — */
+#p-dashboard .ck-legend { display: flex; gap: 16px; margin-bottom: 12px; font-family: var(--fmono); font-size: 11.5px; }
+#p-dashboard .ck-legend .is-bad  { color: var(--coral); }
+#p-dashboard .ck-legend .is-warn { color: var(--amber); }
+#p-dashboard .ck-legend .is-ok   { color: var(--green); }
+#p-dashboard .ck-row {
+  cursor: pointer; padding: 12px 12px; margin: 0 -4px; border-radius: 12px;
+  border: 1px solid transparent; transition: background .15s, border-color .15s, transform .12s var(--ease-out);
+}
+#p-dashboard .ck-row + .ck-row { margin-top: 4px; }
+#p-dashboard .ck-row.is-sel { background: var(--e2); border-color: var(--line); box-shadow: inset 3px 0 0 var(--rc); }
+@media (hover:hover) and (pointer:fine) { #p-dashboard .ck-row:hover { background: rgba(255,255,255,.03); } }
+#p-dashboard .ck-row:active { transform: scale(.995); }
+#p-dashboard .ck-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+#p-dashboard .ck-name-wrap { display: flex; align-items: center; gap: 9px; min-width: 0; }
+#p-dashboard .ck-dot { width: 9px; height: 9px; border-radius: 50%; flex: 0 0 9px; background: var(--rc); box-shadow: 0 0 10px -2px var(--rc); }
+#p-dashboard .ck-name { color: var(--text); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#p-dashboard .ck-badge { font-family: var(--fmono); font-size: 10px; font-weight: 800; color: var(--rc); border: 1px solid var(--rc); border-radius: 5px; padding: 2px 7px; flex: 0 0 auto; }
+#p-dashboard .ck-chips { display: flex; gap: 7px; flex-wrap: wrap; margin: 9px 0 0 18px; }
+#p-dashboard .ck-chip {
+  font-family: var(--fmono); font-size: 11px; color: var(--muted); white-space: nowrap;
+  background: var(--e2); border: 1px solid var(--line); border-radius: 7px; padding: 3px 8px;
+}
+#p-dashboard .ck-chip b { color: var(--text); font-weight: 700; }
+#p-dashboard .ck-chip.is-ok   { color: var(--green); border-color: oklch(0.74 0.11 175 / .28); }
+#p-dashboard .ck-chip.is-warn { color: var(--amber); border-color: oklch(0.82 0.13 88 / .28); }
+#p-dashboard .ck-chip.is-bad  { color: var(--coral); border-color: oklch(0.66 0.20 22 / .28); }
+#p-dashboard .ck-chip.is-ok b, #p-dashboard .ck-chip.is-warn b, #p-dashboard .ck-chip.is-bad b { color: inherit; }
+#p-dashboard .ck-finding { margin: 7px 0 0 18px; font-size: 11.5px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* — Grafico volume: barre con gradiente accento (coerenza con l'atleta) — */
+#p-dashboard #dh-bc .bc-bar { border-top: none; border-radius: 6px 6px 2px 2px; background: linear-gradient(180deg, oklch(0.76 0.16 52 / .55), oklch(0.76 0.16 52 / .12)) !important; }
+#p-dashboard #dh-bc .bc-col:last-child .bc-bar { background: var(--grad-accent) !important; box-shadow: 0 0 18px -6px oklch(0.76 0.16 52 / .85); }
+
+/* — Azioni rapide: profondità + press — */
+#p-dashboard .co-action { border-radius: 11px; background: var(--e1); border-color: var(--line); transition: border-color .15s, color .15s, background .15s, transform .12s var(--ease-out); }
+#p-dashboard .co-action:active { transform: scale(.98); }
+
+/* — Analisi automatica (Insight card) — */
+#p-dashboard #dh-insight { --rc: var(--teal); }
+#p-dashboard .dh-ins-h { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+#p-dashboard .dh-ins-eyebrow { font-family: var(--fmono); font-size: 10px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--dim2); }
+#p-dashboard .dh-ins-badge { font-family: var(--fmono); font-size: 10px; font-weight: 800; color: var(--rc); border: 1px solid var(--rc); border-radius: 5px; padding: 2px 8px; }
+#p-dashboard .dh-ins-sub { font-size: 10px; color: var(--dim); margin-bottom: 14px; font-family: var(--fmono); letter-spacing: .02em; }
+#p-dashboard .dh-ins-headline { font-size: 17px; font-weight: 700; letter-spacing: -.01em; color: var(--text); margin-bottom: 12px; }
+#p-dashboard .dh-ins-findings { display: flex; flex-direction: column; gap: 8px; margin-bottom: 14px; }
+#p-dashboard .dh-ins-finding { display: flex; gap: 10px; align-items: flex-start; font-size: 12.5px; line-height: 1.45; color: var(--text2); }
+#p-dashboard .dh-ins-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--fc, var(--muted)); flex: 0 0 6px; margin-top: 6px; box-shadow: 0 0 8px -2px var(--fc, var(--muted)); }
+#p-dashboard .dh-ins-rec { background: var(--e2); border-left: 3px solid var(--rc); border-radius: 0 8px 8px 0; padding: 11px 13px; font-size: 12.5px; line-height: 1.5; color: var(--text); }
+#p-dashboard .dh-ins-rec-l { color: var(--rc); font-family: var(--fmono); font-size: 10px; letter-spacing: .14em; font-weight: 800; margin-bottom: 4px; text-transform: uppercase; }
+#p-dashboard .dh-ai-btn { width: 100%; background: var(--grad-accent); color: var(--accent-ink); border: none; border-radius: 10px; padding: 11px 14px; font-size: 13px; font-weight: 800; cursor: pointer; font-family: var(--fmono); letter-spacing: .02em; margin-top: 12px; }
+
+/* — Triage "atleti a rischio" (dentro Alert automatici) — */
+#p-dashboard .dh-triage-t { font-family: var(--fmono); font-size: 11px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--coral); margin-bottom: 8px; }
+#p-dashboard .dh-triage-row { display: flex; justify-content: space-between; gap: 10px; padding: 7px 0; border-top: 1px solid oklch(0.66 0.20 22 / .20); font-size: 12.5px; }
+#p-dashboard .dh-triage-row span:first-child { color: var(--text); font-weight: 600; }
+#p-dashboard .dh-triage-row b { font-family: var(--fmono); color: var(--coral); font-weight: 700; }
+
+/* — Attività atleti (Adoption) — */
+#p-dashboard #dh-inattivi .card-t { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+#p-dashboard .dh-act-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--line); }
+#p-dashboard .dh-act-row:last-child { border-bottom: none; }
+#p-dashboard .dh-act-name-wrap { display: flex; align-items: center; gap: 9px; min-width: 0; }
+#p-dashboard .dh-act-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--rc); flex: 0 0 8px; box-shadow: 0 0 9px -2px var(--rc); }
+#p-dashboard .dh-act-name { color: var(--text); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#p-dashboard .dh-act-right { display: flex; align-items: center; gap: 12px; flex: 0 0 auto; }
+#p-dashboard .dh-act-status { font-size: 11.5px; color: var(--rc); font-family: var(--fmono); }
+#p-dashboard .dh-act-nudge { background: transparent; border: 1px solid var(--line-hi); color: var(--muted); padding: 5px 11px; border-radius: 7px; font-size: 11px; font-weight: 700; cursor: pointer; font-family: var(--fmono); transition: border-color .15s, color .15s, transform .12s var(--ease-out); }
+#p-dashboard .dh-act-nudge:active { transform: scale(.97); }
+#p-dashboard .dh-act-nudge.is-primary { border-color: var(--amber); color: var(--amber); }
+
+/* — Compliance: dot sedute fatte = accento, header coerente — */
+#p-dashboard #dh-compliance .cmp-dot { width: 14px; height: 14px; border-radius: 50%; }
+#p-dashboard #dh-compliance .cmp-dot.is-done { background: var(--grad-accent); box-shadow: 0 0 10px -3px oklch(0.76 0.16 52 / .9); }
+#p-dashboard #dh-compliance .cmp-dot.is-future { background: var(--e2); border: 1px dashed var(--line-hi); }
+#p-dashboard #dh-compliance .cmp-dot.is-miss { background: var(--e3); }
+#p-dashboard #dh-compliance .cmp-row { border-bottom: 1px solid var(--line) !important; }
+
+/* — Motion: ingresso a cascata dei blocchi (riusa @keyframes ax-in globale) — */
+@media (prefers-reduced-motion: no-preference) {
+  #p-dashboard.on > * { animation: ax-in .5s var(--ease-out) both; }
+  #p-dashboard.on > *:nth-child(2) { animation-delay: .04s; }
+  #p-dashboard.on > *:nth-child(3) { animation-delay: .08s; }
+  #p-dashboard.on > *:nth-child(4) { animation-delay: .12s; }
+  #p-dashboard.on > *:nth-child(5) { animation-delay: .16s; }
+  #p-dashboard.on > *:nth-child(6) { animation-delay: .20s; }
+  #p-dashboard.on > *:nth-child(n+7) { animation-delay: .24s; }
+  #p-dashboard .card { transition: transform .18s var(--ease-out), border-color .2s; }
+}
+
 /* ── Athlete workspace — integrato nella topbar (contesto atleta persistente) ── */
 .top-brand { display: flex; align-items: center; gap: 9px; flex: 0 0 auto; }
 .top-workspace { display: flex; align-items: center; gap: 12px; min-width: 0; flex: 1 1 auto; }
