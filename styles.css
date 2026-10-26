@@ -689,6 +689,114 @@ html body .aw-switch select {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   NAV CHROME v7.38 — Topbar + Sidebar "console dati raffinata, più audace"
+   Override delle regole base (212-298, 655-689). SOLO superfici/colori/
+   gerarchia/motion: nessuna proprietà strutturale (grid/drawer/sticky,
+   ridefinite più sotto nel blocco @media mobile, che resta intatto).
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── Topbar: più profondità + hairline d'accento sul bordo inferiore ── */
+.topbar {
+  background: var(--sheen), linear-gradient(180deg, #161B22, #0F1318) !important;
+  border-bottom: 1px solid var(--line) !important;
+  box-shadow: 0 1px 0 rgba(255,255,255,.045) inset, 0 8px 22px -12px rgba(0,0,0,.95) !important;
+}
+.topbar::before {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+  background: linear-gradient(90deg, var(--accent-line), transparent 44%);
+  pointer-events: none;
+}
+.top-brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+
+/* ── Brand mark "ES" (era inline) ── */
+.top-logo-mark {
+  width: 23px; height: 23px; border-radius: 6px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font: 700 10px/1 var(--fmono); color: var(--accent-ink);
+  background: var(--grad-accent);
+  /* ring d'accento netto (non alone) + lift neutro */
+  box-shadow: 0 0 0 1px oklch(0.76 0.16 52 / .35), 0 2px 6px -2px rgba(0,0,0,.55);
+}
+
+/* ── Badge ruolo COACH/ATLETA (era inline) ── */
+.top-role {
+  border: 1px solid var(--accent-line);
+  border-radius: 5px; padding: 2px 7px;
+  background: var(--accent-wash);
+  color: var(--accent-hi) !important;
+  display: inline-flex; align-items: center; gap: 5px;
+}
+.top-role::before {
+  content: ""; width: 4px; height: 4px; border-radius: 50%;
+  background: var(--accent); flex-shrink: 0;
+}
+
+/* ── Sidebar: fondo con profondità (sheen) ── */
+.sidebar {
+  background: var(--sheen), linear-gradient(180deg, #0F1217, var(--nav-bg) 62%) !important;
+}
+.nav-lbl { letter-spacing: .18em; padding-top: 16px; }
+
+/* ── Nav button: transizioni morbide ── */
+.nav-btn { transition: background .18s var(--ease-out), color .18s var(--ease-out); }
+.nav-btn .ico { transition: color .18s var(--ease-out); }
+@media (hover:hover) and (pointer:fine){
+  .nav-btn:hover { background: rgba(255,255,255,.045); color: var(--text); }
+  .nav-btn:hover .ico { color: var(--text2); }
+}
+
+/* ── Stato ATTIVO (il cuore del "più audace"): pillola + wash + icon capsule ── */
+.nav-btn.on {
+  background: linear-gradient(90deg, var(--accent-wash), transparent 78%);
+  color: var(--text);
+  box-shadow: none;
+}
+.nav-btn.on::before {
+  content: "";
+  position: absolute; left: 0; top: 50%; transform: translateY(-50%);
+  width: 3px; height: 17px; border-radius: 0 3px 3px 0;
+  background: var(--accent);
+}
+.nav-btn.on .ico { color: var(--accent); }
+
+/* ── Badge nav: micro-bordo semantico coerente coi wash v4 ── */
+.nav-badge {
+  background: var(--bad-wash); color: var(--coral);
+  box-shadow: inset 0 0 0 1px oklch(0.66 0.20 22 / .30);
+}
+.nav-badge-warn {
+  background: var(--warn-wash); color: var(--amber);
+  box-shadow: inset 0 0 0 1px oklch(0.82 0.13 88 / .30);
+}
+
+/* ── Workspace switcher in topbar ── */
+.aw-switch { background: var(--sheen), var(--e2); border: 1px solid var(--line); }
+.aw-switch .aw-avatar {
+  box-shadow: 0 0 0 1px oklch(0.76 0.16 52 / .30), 0 2px 6px -2px rgba(0,0,0,.5);
+}
+.aw-tab.on { background: var(--accent-wash); color: var(--text); box-shadow: inset 0 -2px 0 var(--accent); }
+
+/* ── Footer ── */
+.foot-btn { border-color: var(--line); transition: border-color .18s var(--ease-out), color .18s var(--ease-out); }
+
+/* ── Motion: cascata una tantum dei gruppi nav al mount dello shell ──
+   La sidebar si renderizza una sola volta (non ri-monta al cambio pannello)
+   → la cascata parte al login e non si ripete. Il drawer mobile (left:-250px)
+   anima a parte: i gruppi finiscono la cascata mentre è off-screen. */
+@media (prefers-reduced-motion: no-preference) {
+  .sidebar .nav-group { animation: ax-in .5s var(--ease-out) both; }
+  .sidebar .nav-group:nth-of-type(1) { animation-delay: .02s; }
+  .sidebar .nav-group:nth-of-type(2) { animation-delay: .06s; }
+  .sidebar .nav-group:nth-of-type(3) { animation-delay: .10s; }
+  .sidebar .nav-group:nth-of-type(4) { animation-delay: .14s; }
+  .sidebar .nav-group:nth-of-type(5) { animation-delay: .18s; }
+  .sidebar .nav-group:nth-of-type(6) { animation-delay: .22s; }
+  .sidebar .sidebar-foot { animation: ax-in .5s var(--ease-out) .24s both; }
+  .topbar .top-brand { animation: ax-in .45s var(--ease-out) both; }
+}
+
+/* ══════════════════════════════════════════════════════════════
    FORM — Input, Select, Textarea
    ══════════════════════════════════════════════════════════════ */
 /* Base */
