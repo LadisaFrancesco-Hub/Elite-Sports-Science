@@ -383,22 +383,84 @@ export async function saveWellnessCloud() {
         hrv:            hrvVal,
         rhr:            rhrVal,
         cycle_phase:    cPhase,
-        readiness_score: parseInt(document.getElementById('ring-n').textContent)  || 80
+        readiness_score: parseInt(document.getElementById('ring-n').textContent)  || 80,
+        cns_score:      parseInt(DB.wellness && DB.wellness.cnsScore) || 0
     };
 
     try {
         if (window.mySupabase) {
             const { error } = await window.mySupabase.from('wellness').upsert([wellnessData]);
             if (error) throw error;
+            // Successo: aggiorna la copia locale letta dal coach (DB.wellnessByAthlete)
+            // e svuota l'eventuale pending di questo record.
+            _applyWellnessLocal(wellnessData);
+            _clearPendingWellness(wellnessData.id);
             if (typeof updateCloudStatus === 'function') updateCloudStatus('cloud');
         } else {
-            // Supabase non disponibile: modalità offline
+            // Supabase non disponibile: salva come pending per il retry
+            _stashPendingWellness(wellnessData);
             if (typeof updateCloudStatus === 'function') updateCloudStatus('local');
         }
     } catch (err) {
         console.error('Errore salvataggio wellness atomico:', err);
+        // Fallimento (offline/400): non perdere il dato, mettilo in coda per il retry.
+        _stashPendingWellness(wellnessData);
         if (typeof updateCloudStatus === 'function') updateCloudStatus('error');
     }
+}
+
+// ─────────────────────────────────────────────────────────────
+// 4-bis. Riconciliazione wellness (mirror di reconcileUnsyncedSessions)
+//   I payload wellness che falliscono l'upsert (offline/400) vengono
+//   stashati in localStorage 'coachOS_pending_wellness' (oggetto keyed
+//   per id = well_<athId>_<data>). reconcileUnsyncedWellness() li ri-upserta
+//   a 'online'/foreground/dopo hydration. Senza, la readiness del check-in
+//   restava solo in locale, con qw_done a mascherare il fallimento.
+// ─────────────────────────────────────────────────────────────
+const PENDING_WELLNESS_KEY = 'coachOS_pending_wellness';
+
+function _readPendingWellness() {
+    try { return JSON.parse(localStorage.getItem(PENDING_WELLNESS_KEY) || '{}'); }
+    catch (e) { return {}; }
+}
+function _stashPendingWellness(row) {
+    const p = _readPendingWellness();
+    p[row.id] = row; // l'ultimo save del giorno vince (stessa id)
+    try { localStorage.setItem(PENDING_WELLNESS_KEY, JSON.stringify(p)); } catch (e) {}
+}
+function _clearPendingWellness(id) {
+    const p = _readPendingWellness();
+    if (p[id]) { delete p[id]; try { localStorage.setItem(PENDING_WELLNESS_KEY, JSON.stringify(p)); } catch (e) {} }
+}
+// Aggiorna la copia locale che il coach legge (DB.wellnessByAthlete[athId]),
+// solo se il record è più recente o uguale a quello già in memoria.
+function _applyWellnessLocal(row) {
+    if (!DB.wellnessByAthlete) DB.wellnessByAthlete = {};
+    const cur = DB.wellnessByAthlete[row.athlete_id];
+    if (!cur || !cur.date || row.date >= cur.date) {
+        DB.wellnessByAthlete[row.athlete_id] = {
+            date:           row.date,
+            sleep:          row.sleep,
+            sore:           row.sore,
+            readinessScore: row.readiness_score,
+            cnsScore:       row.cns_score
+        };
+    }
+    if (typeof window.saveDB === 'function') window.saveDB();
+}
+
+export function reconcileUnsyncedWellness() {
+    if (!window.mySupabase || !navigator.onLine) return;
+    const p = _readPendingWellness();
+    const rows = Object.values(p);
+    if (!rows.length) return;
+    if (typeof updateCloudStatus === 'function') updateCloudStatus('saving');
+    window.mySupabase.from('wellness').upsert(rows)
+        .then(({ error }) => {
+            if (error) { console.error('[reconcile wellness]', error); if (typeof updateCloudStatus === 'function') updateCloudStatus('error'); return; }
+            rows.forEach(r => { _applyWellnessLocal(r); _clearPendingWellness(r.id); });
+            if (typeof updateCloudStatus === 'function') updateCloudStatus('cloud');
+        });
 }
 
 
@@ -903,6 +965,11 @@ export async function quickWellnessSubmit() {
 
     // Ricalcola Readiness completo
     upW();
+
+    // Sincronizza il check-in rapido sul cloud (come confermaWellnessLive):
+    // senza questa chiamata la readiness quotidiana restava solo in locale,
+    // persa su nuovo device e stantia per il triage del coach.
+    saveWellnessCloud();
 
     // Salva la data odierna per nascondere il widget al prossimo caricamento
     const today = new Date().toISOString().slice(0, 10);

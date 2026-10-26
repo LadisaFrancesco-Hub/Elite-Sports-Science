@@ -751,7 +751,7 @@ export async function loadDB() {
 
         const { data: wellnessRows, error: errW } = await window.mySupabase
             .from('wellness')
-            .select('athlete_id, date, sleep, sore, readiness_score')
+            .select('athlete_id, date, sleep, sore, readiness_score, cns_score')
             .order('date', { ascending: false });
         if (!errW && wellnessRows) {
             DB.wellnessByAthlete = {};
@@ -759,9 +759,11 @@ export async function loadDB() {
                 // Primo record per athlete_id = più recente (già ordinati per date DESC)
                 if (!DB.wellnessByAthlete[w.athlete_id]) {
                     DB.wellnessByAthlete[w.athlete_id] = {
+                        date:           w.date,
                         sleep:          w.sleep,
                         sore:           w.sore,
-                        readinessScore: w.readiness_score
+                        readinessScore: w.readiness_score,
+                        cnsScore:       w.cns_score
                     };
                 }
             });

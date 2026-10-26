@@ -16,7 +16,8 @@ import { initApp, loadDB, startRealtime,
 import { upW, setW, mkPips, renderInjuries, renderQuickWellness, qwSet, quickWellnessSubmit,
          openInjuryMo, saveInjury, resolveInjury,
          startCnsTest, registerCnsTap, endCnsTest, evaluateCnsTest,
-         confermaWellnessLive, computeSessionModifiers } from './wellness.js';
+         confermaWellnessLive, computeSessionModifiers,
+         reconcileUnsyncedWellness } from './wellness.js';
 
 import { calculateACWR, renderAnalytics, renderAthProgressi,
          renderE1rmChart, calculateEfficiencyIndex,
@@ -107,7 +108,7 @@ Object.assign(window, {
     setW, mkPips, upW, openInjuryMo, saveInjury, resolveInjury,
     renderQuickWellness, qwSet, quickWellnessSubmit,
     startCnsTest, registerCnsTap, endCnsTest, evaluateCnsTest,
-    confermaWellnessLive, computeSessionModifiers,
+    confermaWellnessLive, computeSessionModifiers, reconcileUnsyncedWellness,
     // Analytics
     renderAnalytics, renderAthProgressi, renderE1rmChart,
     calculateACWR, calculateEfficiencyIndex, calculateProgressionIndex, getRollingHrvTrend,
@@ -228,9 +229,11 @@ async function _bootstrap() {
     // Riconciliazione: ripusha le sessioni rimaste solo in locale (upsert fallito
     // / offline). Una volta dopo l'hydration, poi al ritorno online / in foreground.
     reconcileUnsyncedSessions();
+    reconcileUnsyncedWellness();
     window.addEventListener('online', reconcileUnsyncedSessions);
+    window.addEventListener('online', reconcileUnsyncedWellness);
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') reconcileUnsyncedSessions();
+        if (document.visibilityState === 'visible') { reconcileUnsyncedSessions(); reconcileUnsyncedWellness(); }
     });
 
     try {
