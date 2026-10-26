@@ -2144,23 +2144,27 @@ export function renderAthletes() {
 
   sorted.forEach(a => {
   const riskScore = getAthleteRiskScore(a.id);
-  const borderStyle = riskScore >= 50 ? '3px solid var(--coral)' : riskScore >= 20 ? '2px solid var(--amber)' : '1px solid var(--border)';
+  // Stato a 3 livelli: colore = barra sinistra + badge (sostituisce il bordone inline).
+  const tier = riskScore >= 50 ? { c: 'var(--coral)', t: 'ALTO' }
+             : riskScore >= 20 ? { c: 'var(--amber)', t: 'MEDIO' }
+             : { c: 'var(--green)', t: 'OK' };
   const sc = DB.sessions.filter(s => s.athlete === a.id).length;
   const init = a.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-  const statoCol = riskScore > 0 ? 'var(--coral)' : 'var(--green)';
 
   const div = document.createElement('div');
   div.className = 'ac' + (a.id === appState.selAthId ? ' sel' : '');
-  div.style.border = borderStyle;
+  div.style.setProperty('--rc', tier.c);
   // Click sulla card = apri il workspace dell'atleta (contesto persistente).
   div.onclick = () => { renderAthletes(); openAthlete(a.id); };
   div.innerHTML = `
+  <div class="ac-top">
   <div class="ac-av">${init}</div>
+  <span class="ac-badge">${tier.t}</span>
+  </div>
   <div class="ac-n">${escHtml(a.name)}</div>
   <div class="ac-m">${[a.level, a.goal].filter(Boolean).map(escHtml).join(' · ')}</div>
   <div class="ac-st">
-  <div class="ac-stat"><div class="ac-sv">${sc}</div><div class="ac-sl">Sess.</div></div>
-  <div class="ac-stat"><div class="ac-sv" style="color:${statoCol}">${riskScore > 0 ? 'ALTO' : 'OK'}</div><div class="ac-sl">Stato</div></div>
+  <div class="ac-stat"><div class="ac-sv">${sc}</div><div class="ac-sl">Sessioni</div></div>
   </div>`;
   grid.appendChild(div);
   });

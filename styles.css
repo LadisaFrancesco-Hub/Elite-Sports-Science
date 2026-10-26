@@ -1093,6 +1093,60 @@ tr:last-child td { border-bottom: none; }
 .ac-sl   { font-family: var(--fmono); font-size: 9px; letter-spacing: .1em; color: var(--dim2); }
 
 /* ══════════════════════════════════════════════════════════════
+   LISTA ATLETI (roster) v7.37 — stesso linguaggio "console dati raffinata"
+   della Dashboard. Scoped a #p-athletes. Rischio = barra sinistra + badge
+   (non più il bordone colorato inline). Riusa i token v4 globali.
+   ══════════════════════════════════════════════════════════════ */
+#p-athletes .ac {
+  position: relative; overflow: hidden;
+  background: var(--sheen), var(--e1);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 14px 15px;
+  box-shadow: var(--sh-card);
+  transition: transform .16s var(--ease-out), border-color .16s, box-shadow .16s;
+}
+#p-athletes .ac::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
+  background: var(--rc, var(--green)); opacity: .9;
+}
+@media (hover:hover) and (pointer:fine) {
+  #p-athletes .ac:hover { transform: translateY(-2px); border-color: var(--line-hi); box-shadow: var(--sh-float); }
+}
+#p-athletes .ac.sel { border-color: var(--accent-line); background: var(--accent-wash), var(--e1); }
+#p-athletes .ac-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+#p-athletes .ac-av {
+  width: 38px; height: 38px; border-radius: 10px; margin-bottom: 0;
+  background: var(--e3); border: 1px solid var(--line-hi); color: var(--text2);
+  font-size: 12px; font-weight: 700;
+}
+#p-athletes .ac-badge {
+  font-family: var(--fmono); font-size: 9.5px; font-weight: 800; letter-spacing: .06em;
+  color: var(--rc, var(--green)); border: 1px solid var(--rc, var(--green));
+  border-radius: 5px; padding: 2px 7px; flex: 0 0 auto;
+}
+#p-athletes .ac-n { font-size: 14.5px; font-weight: 700; letter-spacing: -.01em; margin-bottom: 2px; }
+#p-athletes .ac-m { font-family: var(--fm); font-size: 11px; color: var(--muted); margin-bottom: 12px; }
+#p-athletes .ac-st { gap: 16px; }
+#p-athletes .ac-sv { font-size: 17px; color: var(--text); }
+#p-athletes .ac-sl { font-size: 9px; color: var(--dim2); margin-top: 2px; text-transform: uppercase; }
+
+/* Ingresso a cascata — coerente con la Dashboard (riusa @keyframes ax-in).
+   Gli header del pannello entrano per primi, poi le card della griglia a stagger. */
+@media (prefers-reduced-motion: no-preference) {
+  #p-athletes.on > *:not(#ath-grid) { animation: ax-in .5s var(--ease-out) both; }
+  #p-athletes.on > *:nth-child(2) { animation-delay: .04s; }
+  #p-athletes.on > *:nth-child(3) { animation-delay: .08s; }
+  #p-athletes #ath-grid > * { animation: ax-in .45s var(--ease-out) both; }
+  #p-athletes #ath-grid > *:nth-child(2) { animation-delay: .05s; }
+  #p-athletes #ath-grid > *:nth-child(3) { animation-delay: .10s; }
+  #p-athletes #ath-grid > *:nth-child(4) { animation-delay: .15s; }
+  #p-athletes #ath-grid > *:nth-child(5) { animation-delay: .20s; }
+  #p-athletes #ath-grid > *:nth-child(6) { animation-delay: .25s; }
+  #p-athletes #ath-grid > *:nth-child(n+7) { animation-delay: .30s; }
+}
+
+/* ══════════════════════════════════════════════════════════════
    EXP INFO
    ══════════════════════════════════════════════════════════════ */
 .exp-info { background: var(--s2); border-radius: var(--radius-btn); border: 1px solid var(--border); padding: 10px 12px; font-family: var(--fm); font-size: 11px; color: var(--muted); margin-bottom: 10px; line-height: 1.7; }
