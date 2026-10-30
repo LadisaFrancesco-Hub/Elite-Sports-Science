@@ -2567,9 +2567,12 @@ body.focus-lock .bottom-bar { display: none !important; }
 }
 .focus-stage > #lv-exs::-webkit-scrollbar { display: none; }
 .focus-stage > #lv-exs { scrollbar-width: none; }
-/* Solo le card sono pagine: header di fase, prog-header, tip, banner → nascosti */
-.focus-stage > #lv-exs > *:not(.lv-card) { display: none !important; }
-.focus-stage .lv-card {
+/* Solo le card e i gruppi superset sono pagine: header di fase, prog-header, tip → nascosti */
+.focus-stage > #lv-exs > *:not(.lv-card):not(.ax-group) { display: none !important; }
+/* Unità-pagina del pager = figli DIRETTI (card autonoma o wrapper di gruppo).
+   Le .lv-card annidate in .ax-group NON sono pagine: si impilano verticalmente. */
+.focus-stage > #lv-exs > .lv-card,
+.focus-stage > #lv-exs > .ax-group {
   flex: 0 0 100%; width: 100%; min-width: 100%;
   scroll-snap-align: start; scroll-snap-stop: always;
   overflow-y: auto; -webkit-overflow-scrolling: touch;
@@ -2582,6 +2585,42 @@ body.focus-lock .bottom-bar { display: none !important; }
   border-top: 1px solid var(--line) !important;
 }
 .focus-stage .lv-card .ax-link-badge { display: none; }
+
+/* ── Gruppo superset come "pagina-giro": esercizi impilati in un'unica schermata ── */
+/* Barra sinistra VIOLA sui membri del superset/jump-set (anteprima + Focus): segnala
+   a colpo d'occhio che NON è un esercizio normale. Stesso viola dell'editor coach.
+   !important + specificità (.ax-group .ax-ex) per battere `.ax-ex{border-left …!important}`. */
+.ax-group .ax-ex { border-left-color: var(--purple) !important; }
+/* Dentro il gruppo superset (in Focus): kg e START REST in VIOLA, ben visibili → rafforza
+   il segnale "non è un esercizio normale" (coerente con barra + chip). */
+.focus-stage .ax-group .ax-ex-meta b.ax-load { color: var(--purple) !important; }
+.focus-stage .ax-group .timer-btn { background: var(--purple) !important; color: #fff !important; box-shadow: 0 1px 0 rgba(255,255,255,.3) inset !important; }
+.focus-stage .ax-group { display: flex; flex-direction: column; gap: 10px; }
+.focus-stage .ax-group > .lv-card { flex: none; min-width: 0; overflow: visible; padding: 0; }
+/* Connettore "a catena" tra membri consecutivi del superset (solo Focus): pastiglia viola che
+   galleggia nel gap e unisce visivamente gli esercizi. `.lv-card + .lv-card` = dal 2° membro in
+   poi (il 1° è preceduto da `.ax-group-head`), quindi una pastiglia per ogni coppia (regge i
+   giant-set). Assoluta → non aggiunge altezza. Bordo netto (no glow) = fondo overlay. */
+.focus-stage .ax-group > .lv-card + .lv-card::before {
+  content: ""; position: absolute; top: -17px; left: 50%; transform: translateX(-50%);
+  z-index: 5; width: 24px; height: 24px; border-radius: 50%;
+  background: var(--purple) url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2024%2024'%20fill='none'%20stroke='white'%20stroke-width='2.2'%20stroke-linecap='round'%20stroke-linejoin='round'%3E%3Cpath%20d='M10%2013a5%205%200%200%200%207.54.54l3-3a5%205%200%200%200-7.07-7.07l-1.72%201.71'/%3E%3Cpath%20d='M14%2011a5%205%200%200%200-7.54-.54l-3%203a5%205%200%200%200%207.07%207.07l1.71-1.71'/%3E%3C/svg%3E") center / 14px 14px no-repeat;
+  box-shadow: 0 0 0 3px var(--bg);
+}
+.ax-group-head { display: none; }          /* invisibile in anteprima (resta il badge ↳) */
+.focus-stage .ax-group-head {
+  display: flex; align-items: center; justify-content: center; gap: 2px;
+  align-self: center; margin: 2px 0;
+  padding: 5px 14px; border-radius: 999px;
+  background: var(--purple); color: #fff;   /* viola = "superset" (coerente con bar + editor) */
+  font-family: var(--fmono); font-size: 11px; font-weight: 700;
+  letter-spacing: .06em; text-transform: uppercase;
+}
+/* I "NO REST" intermedi sono ridondanti (gli esercizi sono già sulla stessa pagina):
+   resta solo il vero timer dell'ultimo membro = recupero fine giro. */
+.focus-stage .ax-group .ax-norest { display: none; }
+/* Contieni l'altezza della pagina-giro: niente grafico settimanale per i membri del gruppo. */
+.focus-stage .ax-group .ax-wk-chart { display: none; }
 
 /* Timer di recupero reso prominente dentro la card in focus */
 .focus-ovl .timer-container { gap: 10px; }

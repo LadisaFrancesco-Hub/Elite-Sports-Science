@@ -615,6 +615,10 @@ export function loadLive() {
         headerDiv.innerHTML = `<b>${fase.n}</b>Fase · ${fase.label}`;
         if (wrap) wrap.appendChild(headerDiv);
 
+        // Wrapper di gruppo superset/jump-set aperto: in Focus il gruppo è UNA pagina.
+        // Resettato a ogni fase (un gruppo non attraversa mai un confine di fase).
+        let curGroup = null;
+
         // Card esercizi
         itemsFase.forEach(item => {
             const ex = item.ex;
@@ -633,6 +637,7 @@ export function loadLive() {
                 circDiv.dataset.exName = ex.name || 'Circuito';
                 circDiv.dataset.phase  = fase.label;
                 if (wrap) wrap.appendChild(circDiv);
+                curGroup = null; // un circuito chiude sempre un eventuale gruppo
                 return;
             }
 
@@ -995,7 +1000,38 @@ for (let l = 0; l < actualSet; l++) {
             div.dataset.exName = ex.name;
             div.dataset.phase  = fase.label;
 
-            if (wrap) wrap.appendChild(div);
+            // ── Raggruppamento superset/jump-set ──────────────
+            // In anteprima il wrapper è trasparente (le card restano adiacenti e fuse);
+            // in Focus (.focus-stage) il wrapper diventa l'unità-pagina del pager → il
+            // gruppo intero è una sola schermata con tutti gli esercizi impilati.
+            if (linkedToNext && !linkedToPrev) {
+                // Inizio gruppo: crea il wrapper-pagina + header "↳ SUPERSET A · N giri"
+                curGroup = document.createElement('div');
+                curGroup.className   = 'ax-group';
+                curGroup.dataset.phase  = fase.label;
+                curGroup.dataset.exName = groupLabel;
+                const gh = document.createElement('div');
+                gh.className = 'ax-group-head';
+                gh.innerHTML = `<span>↳ ${groupLabel}</span><span class="ax-group-rounds"></span>`;
+                curGroup.appendChild(gh);
+                curGroup.appendChild(div);
+                if (wrap) wrap.appendChild(curGroup);
+            } else if (linkedToPrev && curGroup) {
+                // Continuazione (ed eventuale fine) del gruppo corrente
+                curGroup.appendChild(div);
+                if (!linkedToNext) {
+                    // Fine gruppo: "N giri" = max serie allenanti tra i membri
+                    const rounds = Math.max(...Array.from(curGroup.querySelectorAll('.lv-card'))
+                        .map(c => c.querySelectorAll('.ax-dots .dot:not(.warm)').length));
+                    const rEl = curGroup.querySelector('.ax-group-rounds');
+                    if (rEl && rounds > 0) rEl.textContent = ` · ${rounds} giri`;
+                    curGroup = null;
+                }
+            } else {
+                // Esercizio standalone
+                if (wrap) wrap.appendChild(div);
+                curGroup = null;
+            }
         });
     });
 
@@ -3024,8 +3060,10 @@ let   _focusTimerInt = null;
 
 /** Elenco ordinato delle card-pagina attualmente nel pager. */
 function _focusCards() {
+    // Una "pagina" del pager = una card autonoma OPPURE un wrapper di gruppo superset
+    // (che impila più esercizi in un'unica schermata-giro).
     const stage = document.getElementById('lv-exs');
-    return stage ? Array.from(stage.querySelectorAll(':scope > .lv-card')) : [];
+    return stage ? Array.from(stage.querySelectorAll(':scope > .lv-card, :scope > .ax-group')) : [];
 }
 
 /** Indice della card attualmente visibile (snap orizzontale). */
@@ -3214,7 +3252,7 @@ function _focusCountdown(onDone) {
 export function startFocus() {
     const stage = document.getElementById('lv-exs');
     if (!stage) return;
-    const cards = stage.querySelectorAll(':scope > .lv-card');
+    const cards = _focusCards();
     if (!cards.length) { toast('Nessun esercizio da allenare.'); return; }
 
     const ovl  = document.getElementById('focus-ovl');
