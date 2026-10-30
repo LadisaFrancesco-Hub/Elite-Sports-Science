@@ -383,6 +383,53 @@ function _weeklyLoadChart(ex, currentWeek, isVBT, isIso) {
       </svg></div>`;
 }
 
+/* ─── "Ultima volta" ─────────────────────────────────────────────
+ *  Riferimento storico per il sovraccarico progressivo: il top set di lavoro
+ *  fatto l'ultima volta su questo esercizio (sessione passata più recente).
+ *  Fonte: DB.sessions[].donePerExercise[nome]={kg,reps} (durabile nel cloud da v7.31).
+ *  Esclude la seduta odierna in corso (s.date === oggi). null se nessuno storico. */
+function _lastTimeFor(exName, athId) {
+    const today = _todayISO();
+    let best = null; // { kg, reps, date }
+    (DB.sessions || []).forEach(s => {
+        if (s.athlete !== athId) return;
+        if (!s.date || s.date >= today) return;          // escludi oggi/in corso
+        const d = s.donePerExercise && s.donePerExercise[exName];
+        if (!d || !(d.kg > 0)) return;
+        if (!best || s.date > best.date) best = { kg: d.kg, reps: d.reps, date: s.date };
+    });
+    return best;
+}
+
+/* Etichetta relativa breve da una data ISO (YYYY-MM-DD): oggi / ieri / N gg fa / N sett. fa. */
+function _daysAgoLabel(iso) {
+    const d = new Date(iso + 'T00:00:00');
+    const now = new Date(_todayISO() + 'T00:00:00');
+    const days = Math.round((now - d) / 86400000);
+    if (days <= 0) return 'oggi';
+    if (days === 1) return 'ieri';
+    if (days < 14) return `${days} gg fa`;
+    const wk = Math.round(days / 7);
+    if (wk < 9) return `${wk} sett. fa`;
+    return `${Math.round(days / 30)} mesi fa`;
+}
+
+/* Storico per-serie dell'ultima volta su questo esercizio (stile Hevy "Previous").
+ *  Ritorna { sets:[{s,kg,reps},…], date } della sessione passata più recente con dati per-serie,
+ *  o null. Stesso filtro di _lastTimeFor (esclude la seduta odierna in corso). */
+function _lastTimeSetsFor(exName, athId) {
+    const today = _todayISO();
+    let best = null; // { sets, date }
+    (DB.sessions || []).forEach(s => {
+        if (s.athlete !== athId) return;
+        if (!s.date || s.date >= today) return;
+        const arr = s.setsPerExercise && s.setsPerExercise[exName];
+        if (!Array.isArray(arr) || !arr.length) return;
+        if (!best || s.date > best.date) best = { sets: arr, date: s.date };
+    });
+    return best;
+}
+
 // ─────────────────────────────────────────────────────────────
 // 2. loadLive()
 //    Carica e renderizza la scheda della sessione selezionata.
@@ -907,6 +954,23 @@ for (let l = 0; l < actualSet; l++) {
                 ? `<span class="ax-meta-rest"><span class="ax-sep">·</span> No rest</span>`
                 : `<span class="ax-meta-rest"><span class="ax-sep">·</span> Rec ${formatTime(totalSeconds)}</span>`;
 
+            // ── "Ultima volta": top set storico su questo esercizio (sovraccarico progressivo) ──
+            let lastTimeHtml = '';
+            if (!isVBT && !isIso) {
+                const lt = _lastTimeFor(ex.name, appState.selAthId);
+                if (lt) {
+                    // Freccia vs carico programmato di oggi: progressione a colpo d'occhio
+                    let arrow = '';
+                    if (actualKg > 0) {
+                        if (actualKg > lt.kg)      arrow = `<span class="ax-lt-up">↑</span>`;
+                        else if (actualKg < lt.kg) arrow = `<span class="ax-lt-down">↓</span>`;
+                        else                       arrow = `<span class="ax-lt-eq">=</span>`;
+                    }
+                    lastTimeHtml = `<div class="ax-lasttime">${arrow}Ultima volta <b>${lt.reps}×${lt.kg}kg</b>
+                        <span class="ax-sep">·</span> ${_daysAgoLabel(lt.date)}</div>`;
+                }
+            }
+
             // ── Badge infortuni zona anatomica ────────────────
             let injBadgeHtml = '';
             if (ex.anatomicalZone && ex.anatomicalZone !== '') {
@@ -957,6 +1021,9 @@ for (let l = 0; l < actualSet; l++) {
                   <b class="ax-load${autoRegBadge ? ' autoreg' : ''}">${renderTargetLoad}</b>
                   ${metaRestHtml}
                 </p>
+
+                <!-- 3. Ultima volta (riferimento storico) -->
+                ${lastTimeHtml}
 
                 <!-- 4. RIR · TUT · RPE (stessa riga, senza riquadro) -->
                 ${paramsRow}
@@ -1129,6 +1196,8 @@ export function updateLiveTotals(exs) {
     const e1rmPerExercise   = {};
     // Storico "carico fatto": set di lavoro più pesante realmente eseguito per esercizio
     const donePerExercise   = {};
+    // Storico per-serie: [{s, kg, reps}, …] allineato all'indice serie (stile Hevy "Previous")
+    const setsPerExercise   = {};
 
     const selectLiveSess = document.getElementById('lv-sess');
     const sessId         = selectLiveSess ? selectLiveSess.value : 'unknown';
@@ -1218,6 +1287,9 @@ let sKg  = parseFloat(targetKg)  || 0;
                 if (ex.name && sRep > 0 && sKg > 0 && !isSpeed) {
                     const prevDone = donePerExercise[ex.name];
                     if (!prevDone || sKg > prevDone.kg) donePerExercise[ex.name] = { kg: sKg, reps: sRep };
+                    // Storico per-serie (allineato all'indice serie l → s = l+1)
+                    if (!setsPerExercise[ex.name]) setsPerExercise[ex.name] = [];
+                    setsPerExercise[ex.name].push({ s: l + 1, kg: sKg, reps: sRep });
                 }
             }
         }
@@ -1250,6 +1322,11 @@ let sKg  = parseFloat(targetKg)  || 0;
     window.liveDonePerExercise = Object.fromEntries(
         Object.entries(donePerExercise).map(([k, v]) => [k, { kg: Math.round(v.kg * 10) / 10, reps: v.reps }])
     );
+    // Storico per-serie per esercizio (kg arrotondato a 0.1, ordine serie)
+    window.liveSetsPerExercise = Object.fromEntries(
+        Object.entries(setsPerExercise).map(([k, arr]) =>
+            [k, arr.map(x => ({ s: x.s, kg: Math.round(x.kg * 10) / 10, reps: x.reps }))])
+    );
 
     // Focus Mode: riempi i pallini di progresso globali ad ogni set completato
     updateFocusChrome();
@@ -1273,6 +1350,7 @@ let sKg  = parseFloat(targetKg)  || 0;
             sessioneEsistente.e1rmNDom        = Math.round(e1rmNDom);
             sessioneEsistente.e1rmPerExercise = roundedE1rmPerEx;
             sessioneEsistente.donePerExercise = window.liveDonePerExercise || {};
+            sessioneEsistente.setsPerExercise = window.liveSetsPerExercise || {};
         } else {
             // Crea la sessione automaticamente
             DB.sessions.push({
@@ -1289,6 +1367,7 @@ let sKg  = parseFloat(targetKg)  || 0;
                 maxE1rm:          Math.round(maxE1rm),
                 e1rmPerExercise:  roundedE1rmPerEx,
                 donePerExercise:  window.liveDonePerExercise || {},
+                setsPerExercise:  window.liveSetsPerExercise || {},
                 sRPE:             0,
                 rpe:              8,
                 qual:             4,
@@ -1591,6 +1670,34 @@ export function openRealLog(exIndex, setIndex) {
         document.getElementById('rl-timer-section').style.display  = 'block';
     } else {
         document.getElementById('rl-target').textContent = `Target Originale: ${_compactRep(targetRep).meta} rep @ ${targetKg} ${String(targetKg).includes('m/s') ? '' : 'kg'}`;
+
+        // ── "Ultima volta": storico per-serie (stile Hevy) con fallback al top set + tap "usa" ──
+        const ltBox = document.getElementById('rl-lasttime');
+        if (ltBox) {
+            const lblEl = document.getElementById('rl-lt-lbl');
+            const stt   = _lastTimeSetsFor(ex.name, appState.selAthId);
+            const thisSet = stt && stt.sets.find(x => x.s === parseInt(setIndex) + 1);
+            if (thisSet) {
+                // Serie specifica della volta scorsa
+                if (lblEl) lblEl.textContent = `Ultima volta (serie ${parseInt(setIndex) + 1})`;
+                document.getElementById('rl-lt-txt').textContent = `${thisSet.reps}×${thisSet.kg}kg`;
+                window._rlLastTime = { rep: thisSet.reps, kg: thisSet.kg };
+                ltBox.style.display = 'flex';
+            } else {
+                // Fallback: top set (sessioni pre-feature o serie non presente la volta scorsa)
+                const lt = _lastTimeFor(ex.name, appState.selAthId);
+                if (lt) {
+                    if (lblEl) lblEl.textContent = 'Ultima volta';
+                    document.getElementById('rl-lt-txt').textContent = `${lt.reps}×${lt.kg}kg`;
+                    window._rlLastTime = { rep: lt.reps, kg: lt.kg };
+                    ltBox.style.display = 'flex';
+                } else {
+                    window._rlLastTime = null;
+                    ltBox.style.display = 'none';
+                }
+            }
+        }
+
         const logKey  = `${activeSessId}-w${w}-${exIndex}-${setIndex}`;
         let actualRep = parseInt(targetRep)  || 0;
         let actualKg  = parseFloat(targetKg) || 0;
@@ -1640,6 +1747,17 @@ export function openRealLog(exIndex, setIndex) {
     }
 
     openMo('mo-reallog');
+    if (navigator.vibrate) navigator.vibrate(20);
+}
+
+// Pre-compila rep/kg nel modale con i valori dell'ultima volta (un tap → pronto a battere).
+export function useLastTime() {
+    const lt = window._rlLastTime;
+    if (!lt) return;
+    const repEl = document.getElementById('rl-rep');
+    const kgEl  = document.getElementById('rl-kg');
+    if (repEl) repEl.value = lt.rep;
+    if (kgEl)  kgEl.value  = lt.kg;
     if (navigator.vibrate) navigator.vibrate(20);
 }
 
@@ -2962,6 +3080,7 @@ export function endWorkout() {
             e1rmNDom: window.liveE1rmNDom || 0,
             e1rmPerExercise: existing?.e1rmPerExercise || {},
             donePerExercise: window.liveDonePerExercise || existing?.donePerExercise || {},
+            setsPerExercise: window.liveSetsPerExercise || existing?.setsPerExercise || {},
             sRPE: _rpe * 60, rpe: _rpe, qual: _stars,
             doms: '', flag: partial ? 'Parziale' : '',
             notes: note || (partial ? `Completati ${dotsDone}/${dotsTotal} set` : ''),

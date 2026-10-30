@@ -5902,6 +5902,7 @@ export async function submitFB() {
   max_e1rm: sessObj.maxE1rm, e1rm_dom: sessObj.e1rmDom, e1rm_ndom: sessObj.e1rmNDom,
   doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: '',
   done_per_exercise: sessObj.donePerExercise || window.liveDonePerExercise || {},
+  sets_per_exercise: sessObj.setsPerExercise || window.liveSetsPerExercise || {},
   e1rm_per_exercise: sessObj.e1rmPerExercise || {}
   }]);
   if (error) { sessObj._synced = false; toast(' Sync Cloud fallita. Dati salvati in locale.'); updateCloudStatus('error'); }

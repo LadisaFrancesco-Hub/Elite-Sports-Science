@@ -25,7 +25,7 @@ import { calculateACWR, renderAnalytics, renderAthProgressi,
          renderTestDB, setTestCat, showTestChart, closeTestChart } from './analytics.js';
 
 import { loadLive, updateLiveTotals, toggleDot,
-         openRealLog, saveRealLog, unlockAudio,
+         openRealLog, saveRealLog, useLastTime, unlockAudio,
          startTimer, startIsoTimer, formatTime,
          startCircuit, _resetCircuitUI, amrapLap,
          saveLiveNextLoad,
@@ -114,7 +114,7 @@ Object.assign(window, {
     calculateACWR, calculateEfficiencyIndex, calculateProgressionIndex, getRollingHrvTrend,
     renderTestDB, setTestCat, showTestChart, closeTestChart,
     // Workout
-    loadLive, updateLiveTotals, openRealLog, saveRealLog,
+    loadLive, updateLiveTotals, openRealLog, saveRealLog, useLastTime,
     unlockAudio, startTimer, startIsoTimer,
     startCircuit, _resetCircuitUI, amrapLap, formatTime, saveLiveNextLoad,
     toggleIsometricTimer, abortIsometricTimer, saveTimerSet,

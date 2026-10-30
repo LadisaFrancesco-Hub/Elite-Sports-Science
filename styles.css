@@ -2742,6 +2742,15 @@ body.focus-lock .bottom-bar { display: none !important; }
 .focus-stage .ax-rest-row { display: flex; }
 .ax-meta-rest { color: var(--muted); font-weight: 600; white-space: nowrap; }
 .focus-stage .ax-meta-rest { display: none; }
+/* "Ultima volta": riferimento storico sul set (sovraccarico progressivo) */
+.ax-lasttime { display: flex; align-items: center; gap: 5px; margin: 6px 0 0; font-size: 12px; color: var(--muted); font-weight: 600; }
+.focus-stage .ax-lasttime { justify-content: center; }
+.ax-lasttime b { color: var(--text); font-weight: 700; }
+.ax-lt-up   { color: var(--accent); font-weight: 800; }
+.ax-lt-down { color: var(--coral);  font-weight: 800; }
+.ax-lt-eq   { color: var(--muted);  font-weight: 800; }
+/* "usa" nel modale di log: pre-compila rep/kg con l'ultima volta */
+.rl-lt-use { background: var(--purple); color: #fff; border: none; border-radius: 7px; padding: 4px 11px; font-size: 11px; font-weight: 700; cursor: pointer; }
 /* Ramping: solo in Focus (all'atleta non serve prima di iniziare, risparmia spazio) */
 .ax-ramp { display: none; }
 .focus-stage .ax-ramp { display: block; }

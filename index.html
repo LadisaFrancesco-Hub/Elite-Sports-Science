@@ -436,6 +436,10 @@
   <div class="mo-box" style="max-width: 320px; text-align: center; border: 1px solid var(--purple);">
   <div class="mo-t" style="justify-content: center; margin-bottom: 5px; color: var(--purple);">Modifica Set <span id="rl-set-num"></span></div>
   <div style="font-size:12px; color:var(--muted); margin-bottom:15px;" id="rl-target">Target: 8 rep @ 100 kg</div>
+  <div id="rl-lasttime" style="display:none; align-items:center; justify-content:center; gap:8px; margin:-8px 0 15px; font-size:12px; color:var(--muted);">
+    <span><span id="rl-lt-lbl">Ultima volta</span> <b id="rl-lt-txt" style="color:var(--text)"></b></span>
+    <button type="button" id="rl-lt-use" class="rl-lt-use" onclick="useLastTime()">usa</button>
+  </div>
   <input type="hidden" id="rl-ex-i">
   <input type="hidden" id="rl-set-l">
 
@@ -1846,7 +1850,7 @@
      ⚠️ Bump APP_ASSET_VERSION insieme ad APP_VERSION in sw.js ad ogni deploy. -->
 <script>
 (function () {
-  var V = '7.40'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
+  var V = '7.41'; // APP_ASSET_VERSION — tenere in sync con sw.js APP_VERSION
   var MODS = ['state','utils','app','auth','wellness','workout','analytics','billing','badges','nutrition','team','branding','wearable'];
   var imports = {};
   MODS.forEach(function (m) { imports['./' + m + '.js'] = './' + m + '.js?v=' + V; });
