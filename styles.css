@@ -797,6 +797,109 @@ html body .aw-switch select {
 }
 
 /* ══════════════════════════════════════════════════════════════
+   EDITOR SCHEDE v7.39 — "console dati raffinata"
+   Riusa i token v4 globali (:root), SCOPED a #p-editor per non toccare
+   gli altri pannelli. CSS puro + 3 className nei template JS
+   (.ed-sec / .ed-circ / .ed-ex): nessuna logica/DOM toccati. Il blocco
+   @media (max-width:768px) resta DOPO e intatto (trasformazione iPhone).
+   ══════════════════════════════════════════════════════════════ */
+
+/* — Carte: da piatte a profonde (sheen + elevazione + ombra v4) — */
+#p-editor .card {
+  background: var(--sheen), var(--e1) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--sh-card) !important;
+}
+/* Header card: refresh colore/bordo (quelli annidati in wrapper flex) … */
+#p-editor .card-t { color: var(--text2); border-bottom-color: var(--line); }
+/* … e trattamento gradiente full-bleed sull'header figlio-diretto (card primaria).
+   L'editor era escluso dal trattamento base (.panel:not(#p-editor) … :371). */
+#p-editor .card > .card-t {
+  background: linear-gradient(180deg, var(--e3), var(--e2));
+  margin: -16px -18px 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+
+/* — Controlli form: superficie v4 + focus accento (non teal) —
+   #p-editor vince per specificità sulla regola base `html body input…` (:820). */
+#p-editor input,
+#p-editor select,
+#p-editor textarea {
+  background: var(--e2) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: var(--r-ctl) !important;
+}
+#p-editor input:focus,
+#p-editor select:focus,
+#p-editor textarea:focus {
+  border-color: var(--accent-line) !important;
+  background: var(--accent-wash) !important;
+  box-shadow: var(--focus-ring) !important;
+}
+/* Label di campo (anche la griglia parametri) più leggibili */
+#p-editor .fl { font-family: var(--fmono); color: var(--dim2); letter-spacing: .08em; }
+
+/* — Chip tab (blocchi + sedute): contenitore + stato attivo accentato — */
+#p-editor .sess-tabs {
+  background: var(--e2); border: 1px solid var(--line);
+  border-radius: 10px; padding: 4px;
+}
+#p-editor .sess-tab { color: var(--dim); border-radius: 7px; }
+#p-editor .sess-tab.on {
+  background: var(--accent-wash);
+  border: 1px solid var(--accent-line);
+  color: var(--text);
+}
+@media (hover:hover) and (pointer:fine) {
+  #p-editor .sess-tab:not(.on):hover { background: rgba(255,255,255,.045); color: var(--text2); }
+}
+
+/* — Header colonne esercizi — */
+#p-editor .ex-hdr span { color: var(--dim2); font-family: var(--fmono); }
+
+/* — Divisori di sezione (warm-up / centrale / cool-down) — */
+#p-editor .ed-sec {
+  background: linear-gradient(90deg, var(--e2), transparent) !important;
+  border-left: 3px solid var(--accent-line) !important;
+  border-radius: 8px !important;
+  margin: 22px 0 12px !important;
+}
+
+/* — Righe esercizio: superficie elevata, border-left di TIPO preservato
+   (l'inline border-left ha !important → resta il colore semantico del tipo). — */
+#p-editor .ed-ex {
+  background: var(--sheen), var(--e2) !important;
+  border-radius: 10px !important;
+  padding: 12px 14px !important;
+  box-shadow: var(--sh-card);
+}
+/* input/select dentro la riga → più scuri, "annidano" nella riga */
+#p-editor .ed-ex input,
+#p-editor .ed-ex select { background: var(--e1) !important; }
+
+/* — Blocco circuito: superficie elevata, accento del MODO preservato
+   (il border inline usa il colore di circuit/emom/amrap/tabata). — */
+#p-editor .ed-circ {
+  background: var(--sheen), var(--e2) !important;
+  border-radius: 14px !important;
+  box-shadow: var(--sh-card);
+}
+
+/* — Motion: cascata d'ingresso (riusa @keyframes ax-in globale) — */
+@media (prefers-reduced-motion: no-preference) {
+  #p-editor.on > * { animation: ax-in .5s var(--ease-out) both; }
+  #p-editor.on > *:nth-child(2) { animation-delay: .04s; }
+  #p-editor.on > *:nth-child(3) { animation-delay: .08s; }
+  #p-editor.on > *:nth-child(4) { animation-delay: .12s; }
+  #p-editor.on > *:nth-child(5) { animation-delay: .16s; }
+  #p-editor.on > *:nth-child(6) { animation-delay: .20s; }
+  #p-editor.on > *:nth-child(n+7) { animation-delay: .24s; }
+  #p-editor .card { transition: transform .18s var(--ease-out), border-color .2s; }
+}
+
+/* ══════════════════════════════════════════════════════════════
    FORM — Input, Select, Textarea
    ══════════════════════════════════════════════════════════════ */
 /* Base */

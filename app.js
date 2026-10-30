@@ -3682,7 +3682,7 @@ export function renderEdExercises() {
   const filteredExs = exs.map((ex, originalIndex) => ({ ex, originalIndex })).filter(item => (item.ex.section || 'centrale') === sez.id);
   if (!filteredExs.length) return;
 
-  wrap.innerHTML += `<div style="margin:20px 0 10px 0;padding:6px 12px;background:rgba(255,255,255,.02);border-radius:6px;border-left:3px solid var(--muted);">
+  wrap.innerHTML += `<div class="ed-sec" style="margin:20px 0 10px 0;padding:6px 12px;background:rgba(255,255,255,.02);border-radius:6px;border-left:3px solid var(--muted);">
   <span style="font-size:11px;font-weight:800;letter-spacing:.05em;color:var(--text);opacity:.8;">${sez.label}</span></div>`;
 
   filteredExs.forEach(({ ex, originalIndex: i }) => {
@@ -3725,7 +3725,7 @@ export function renderEdExercises() {
 
   const circDiv = document.createElement('div');
   circDiv.innerHTML = `
-  <div style="background:rgba(251,191,36,0.04);border:2px solid color-mix(in srgb, ${accentColor} 35%, transparent);border-radius:10px;padding:12px;margin-bottom:8px;position:relative;">
+  <div class="ed-circ" style="background:rgba(251,191,36,0.04);border:2px solid color-mix(in srgb, ${accentColor} 35%, transparent);border-radius:10px;padding:12px;margin-bottom:8px;position:relative;">
   <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap;">
   <div style="display:flex;flex-direction:column;gap:2px;flex-shrink:0;">
   <button onclick="moveExercise(${i},-1)" ${i===0?'disabled':''} style="background:${i===0?'var(--s1)':'var(--s2)'};border:1px solid var(--border);border-radius:4px;color:${i===0?'var(--muted)':accentColor};font-size:11px;padding:2px 6px;cursor:${i===0?'default':'pointer'};line-height:1;opacity:${i===0?'0.35':'1'}">▲</button>
@@ -3779,6 +3779,7 @@ export function renderEdExercises() {
   }
 
   const div = document.createElement('div');
+  div.className = 'ed-ex';
   div.style.cssText = `background:var(--s2);border-radius:8px;padding:10px 12px;margin-bottom:8px;border-left:4px solid ${borderColor} !important;`;
   div.innerHTML = `
   <div style="display:flex;gap:6px;margin-bottom:8px;align-items:center;flex-wrap:wrap;">
