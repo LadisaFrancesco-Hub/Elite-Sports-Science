@@ -14,7 +14,7 @@
 
 import { DB, appState, KEY, EXERCISE_LIBRARY, PROGRAM_TEMPLATES, rpeDescs, starDescs } from './state.js';
 import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus, playEntrance,
-         ensureBlocks, mesoWeekFromDate, activeBlock, sessionsForWeek, activeScheduledDays, sessionCloudRow,
+         ensureBlocks, mesoWeekFromDate, activeBlock, sessionsForWeek, activeScheduledDays, sessionCloudRow, messageCloudRow,
          uploadFormCheckVideo, hydrateMediaBubbles, mediaBubbleHtml,
          signFormCheckUrl, hasAnnotations, videoContentRect, drawAnnotationShapes,
          activeMomentShapes, annotationMoments,
@@ -1358,16 +1358,16 @@ async function _doNudge(athId) {
   ? `Ciao ${firstName}! Pronti a iniziare? Registra il tuo primo allenamento quando vuoi 💪`
   : `Ciao ${firstName}, non registri un allenamento da ${days} giorni. Tutto ok? Ci sei? 💪`;
 
-  const msg = { id: uid(), athlete_id: athId, from_type: 'coach', content,
-  created_at: new Date().toISOString(), read_at: new Date().toISOString() };
+  // id UUID client + _synced → reconcileUnsyncedMessages() lo recupera se offline.
+  const msg = { id: crypto.randomUUID(), athlete_id: athId, from_type: 'coach', content,
+  created_at: new Date().toISOString(), read_at: new Date().toISOString(), _synced: false };
   if (!DB.messages[athId]) DB.messages[athId] = [];
   DB.messages[athId].push(msg);
 
   try {
   if (window.mySupabase) {
-  const { data, error } = await window.mySupabase.from('messages')
-  .insert([{ athlete_id: athId, from_type: 'coach', content }]).select().single();
-  if (!error && data) { msg.id = data.id; msg.created_at = data.created_at; }
+  const { error } = await window.mySupabase.from('messages').upsert([messageCloudRow(msg)]);
+  if (!error) msg._synced = true;
   }
   } catch (e) { console.warn('[nudge] messaggio non sincronizzato:', e); }
   _sendPushNotification('athlete', athId, ' Il coach ti cerca', content.slice(0, 80), 'coach-reply');
@@ -5870,7 +5870,8 @@ export async function submitFB() {
   const cleanFlags = [...document.querySelectorAll('#pw-flags .on-a')].map(x => x.textContent).join(',');
   const cleanNotes = 'NOTE: ' + document.getElementById('pw-notes').value;
   const cleanVars = (document.getElementById('pw-vars')?.value || '').trim();
-  const generatedId = DB.sessions.find(s => s.athlete===appState.selAthId && s.session===sessionName && s.date===today)?.id || ('sess_'+uid());
+  const existingSess = DB.sessions.find(s => s.athlete===appState.selAthId && s.session===sessionName && s.date===today);
+  const generatedId = existingSess?.id || ('sess_'+uid());
 
   DB.sessions = DB.sessions.filter(s => !(s.athlete===appState.selAthId && s.session===sessionName && s.date===today));
 
@@ -5885,7 +5886,12 @@ export async function submitFB() {
   maxE1rm: sessType==='Palestra' ? (window.liveMaxE1rm||0) : 0,
   e1rmDom: sessType==='Palestra' ? (window.liveE1rmDom||0) : 0,
   e1rmNDom: sessType==='Palestra' ? (window.liveE1rmNDom||0) : 0,
-  doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: ''
+  doms: cleanDOMS, flag: cleanFlags, notes: cleanNotes, variations: cleanVars, reply: '',
+  // Dati per-esercizio durabili anche nel ramo offline: li porta nel sessObj locale
+  // (non solo nell'upsert cloud) → sessionCloudRow del reconcile li rispedisce pieni.
+  donePerExercise: sessType==='Palestra' ? (window.liveDonePerExercise || existingSess?.donePerExercise || {}) : {},
+  setsPerExercise: sessType==='Palestra' ? (window.liveSetsPerExercise || existingSess?.setsPerExercise || {}) : {},
+  e1rmPerExercise: sessType==='Palestra' ? (existingSess?.e1rmPerExercise || {}) : {}
   };
   sessObj._synced = false;
   DB.sessions.push(sessObj);
@@ -6491,21 +6497,24 @@ export async function sendMessageCoach() {
   input.value = '';
   input.disabled = true;
 
-  const msg = { athlete_id: athId, from_type: 'coach', content, created_at: new Date().toISOString(), read_at: new Date().toISOString() };
-
-  try {
-  if (window.mySupabase) {
-  const { data, error } = await window.mySupabase.from('messages').insert([{ athlete_id: athId, from_type: 'coach', content }]).select().single();
-  if (!error && data) { msg.id = data.id; msg.created_at = data.created_at; }
-  else if (error) { toast('Errore invio: ' + error.message); input.disabled = false; return; }
-  }
-  } catch (e) { toast('Errore connessione.'); input.disabled = false; return; }
-
+  // Ottimistico: il messaggio appare subito e viene risincronizzato da
+  // reconcileUnsyncedMessages() se l'upsert fallisce (offline). id UUID client
+  // → upsert idempotente, il realtime rimatcha per id (nessun duplicato).
+  const msg = { id: crypto.randomUUID(), athlete_id: athId, from_type: 'coach', content, created_at: new Date().toISOString(), read_at: new Date().toISOString(), _synced: false };
   if (!DB.messages) DB.messages = {};
   if (!DB.messages[athId]) DB.messages[athId] = [];
   DB.messages[athId].push(msg);
   input.disabled = false;
   renderMessaggi();
+  await saveDB();
+
+  if (window.mySupabase) {
+    try {
+      const { error } = await window.mySupabase.from('messages').upsert([messageCloudRow(msg)]);
+      if (!error) { msg._synced = true; await saveDB(); }
+      else { toast('Messaggio salvato — sync al ritorno online.'); }
+    } catch (e) { toast('Messaggio salvato — sync al ritorno online.'); }
+  }
   _sendPushNotification('athlete', athId, ' Messaggio dal Coach', content.slice(0, 80), 'coach-reply');
 }
 
@@ -6552,21 +6561,22 @@ export async function sendMessageAthleta() {
   input.value = '';
   input.disabled = true;
 
-  const msg = { athlete_id: athId, from_type: 'athlete', content, created_at: new Date().toISOString() };
-
-  try {
-  if (window.mySupabase) {
-  const { data, error } = await window.mySupabase.from('messages').insert([{ athlete_id: athId, from_type: 'athlete', content }]).select().single();
-  if (!error && data) { msg.id = data.id; msg.created_at = data.created_at; }
-  else if (error) { toast('Errore invio: ' + error.message); input.disabled = false; return; }
-  }
-  } catch (e) { toast('Errore connessione.'); input.disabled = false; return; }
-
+  // Ottimistico + reconcile (vedi sendMessageCoach).
+  const msg = { id: crypto.randomUUID(), athlete_id: athId, from_type: 'athlete', content, created_at: new Date().toISOString(), _synced: false };
   if (!DB.messages) DB.messages = {};
   if (!DB.messages[athId]) DB.messages[athId] = [];
   DB.messages[athId].push(msg);
   input.disabled = false;
   renderAthleteChat();
+  await saveDB();
+
+  if (window.mySupabase) {
+    try {
+      const { error } = await window.mySupabase.from('messages').upsert([messageCloudRow(msg)]);
+      if (!error) { msg._synced = true; await saveDB(); }
+      else { toast('Messaggio salvato — sync al ritorno online.'); }
+    } catch (e) { toast('Messaggio salvato — sync al ritorno online.'); }
+  }
   _sendPushNotification('coach', null, ' Messaggio da Atleta', content.slice(0, 80), 'messaggi');
 }
 
@@ -6583,17 +6593,19 @@ export async function onFormCheckPick(side, inputEl) {
   try {
     const path = await uploadFormCheckVideo(file, athId);
     const from_type = isCoach ? 'coach' : 'athlete';
-    const row = { athlete_id: athId, from_type, content: caption, media_url: path, media_type: 'video' };
-    if (isCoach) row.read_at = new Date().toISOString();
-    const msg = { ...row, created_at: new Date().toISOString() };
-    if (window.mySupabase) {
-      const { data, error } = await window.mySupabase.from('messages').insert([row]).select().single();
-      if (error) { toast('Errore invio: ' + error.message, { type: 'error' }); return; }
-      if (data) { msg.id = data.id; msg.created_at = data.created_at; }
-    }
+    // id UUID client + _synced: il video è già caricato (media_url), se l'upsert
+    // del messaggio fallisce reconcileUnsyncedMessages() lo recupera.
+    const msg = { id: crypto.randomUUID(), athlete_id: athId, from_type, content: caption, media_url: path, media_type: 'video', created_at: new Date().toISOString(), _synced: false };
+    if (isCoach) msg.read_at = new Date().toISOString();
     if (!DB.messages) DB.messages = {};
     if (!DB.messages[athId]) DB.messages[athId] = [];
     DB.messages[athId].push(msg);
+    await saveDB();
+    if (window.mySupabase) {
+      const { error } = await window.mySupabase.from('messages').upsert([messageCloudRow(msg)]);
+      if (!error) { msg._synced = true; await saveDB(); }
+      else { toast('Video salvato — sync al ritorno online.'); }
+    }
     if (isCoach) {
       renderMessaggi();
       _sendPushNotification('athlete', athId, ' Video dal Coach', 'Ti ha inviato un video', 'coach-reply');

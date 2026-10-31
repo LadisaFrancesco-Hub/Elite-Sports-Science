@@ -511,3 +511,23 @@ export function sessionCloudRow(s) {
         e1rm_per_exercise: s.e1rmPerExercise || {}
     };
 }
+
+/**
+ * Converte un messaggio locale in una riga cloud `messages`, con SOLO le colonne
+ * realmente esistenti. Esclude il campo locale `_synced` (come sessionCloudRow).
+ * L'id è un UUID generato lato client → upsert idempotente (la colonna è
+ * UUID PRIMARY KEY, il realtime rimatcha per id → nessun duplicato).
+ */
+export function messageCloudRow(m) {
+    const row = {
+        id:         m.id,
+        athlete_id: m.athlete_id,
+        from_type:  m.from_type,
+        content:    m.content,
+        created_at: m.created_at
+    };
+    if (m.read_at)    row.read_at    = m.read_at;
+    if (m.media_url)  row.media_url  = m.media_url;
+    if (m.media_type) row.media_type = m.media_type;
+    return row;
+}

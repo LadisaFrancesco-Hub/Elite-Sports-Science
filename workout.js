@@ -21,7 +21,7 @@
 
 import { DB, appState, EXERCISE_LIBRARY, KEY } from './state.js';
 import { uid, escHtml, toast, openMo, closeMo, athName, athById, updateCloudStatus,
-         mesoWeekFromDate, sessionsForWeek, sessionCloudRow } from './utils.js';
+         mesoWeekFromDate, sessionsForWeek, sessionCloudRow, messageCloudRow } from './utils.js';
 
 
 // ─────────────────────────────────────────────────────────────
@@ -42,6 +42,31 @@ export function reconcileUnsyncedSessions() {
             pending.forEach(s => { s._synced = true; });
             window.saveDB?.();
             updateCloudStatus('cloud');
+        });
+}
+
+
+// ─────────────────────────────────────────────────────────────
+// Riconciliazione messaggi: ri-sincronizza i messaggi creati offline
+// (upsert fallito / client assente). Marcati con _synced === false (campo
+// locale, NON in messageCloudRow). Stesso contratto di reconcileUnsyncedSessions:
+// chiamata su 'online', foreground e una volta dopo l'hydration. L'id è un UUID
+// client → upsert idempotente, il realtime rimatcha per id → nessun duplicato.
+// ─────────────────────────────────────────────────────────────
+export function reconcileUnsyncedMessages() {
+    if (!window.mySupabase || !navigator.onLine || !DB.messages) return;
+    const pending = [];
+    Object.values(DB.messages).forEach(arr => {
+        if (Array.isArray(arr)) arr.forEach(m => { if (m && m._synced === false) pending.push(m); });
+    });
+    if (!pending.length) return;
+    const rows = pending.map(messageCloudRow);
+    window.mySupabase.from('messages').upsert(rows)
+        .then(({ error }) => {
+            if (error) { console.error('[reconcile messages]', error); return; }
+            pending.forEach(m => { m._synced = true; });
+            window.saveDB?.();
+            window.updateMsgBadge?.();
         });
 }
 
@@ -3109,17 +3134,17 @@ export function endWorkout() {
         const parts  = [sessName, volStr, e1Str, `RPE ${_rpe}`, stars].filter(Boolean);
         const msgBody = parts.join(' · ') + (note ? `\n${note}` : '');
 
+        // Ottimistico + reconcile: il riepilogo appare subito e viene
+        // risincronizzato da reconcileUnsyncedMessages() se offline.
+        const sumMsg = { id: crypto.randomUUID(), athlete_id: athId, from_type: 'athlete', content: msgBody, created_at: new Date().toISOString(), _synced: false };
+        if (!DB.messages) DB.messages = {};
+        if (!DB.messages[athId]) DB.messages[athId] = [];
+        DB.messages[athId].push(sumMsg);
+        window.saveDB?.();
+        window.updateMsgBadge?.();
         if (window.mySupabase) {
-            const msgRow = { athlete_id: athId, from_type: 'athlete', content: msgBody };
-            window.mySupabase.from('messages').insert([msgRow]).select().single()
-                .then(({ data, error }) => {
-                    if (!error && data) {
-                        if (!DB.messages) DB.messages = {};
-                        if (!DB.messages[athId]) DB.messages[athId] = [];
-                        DB.messages[athId].push({ ...msgRow, id: data.id, created_at: data.created_at });
-                        window.updateMsgBadge?.();
-                    }
-                });
+            window.mySupabase.from('messages').upsert([messageCloudRow(sumMsg)])
+                .then(({ error }) => { if (!error) { sumMsg._synced = true; window.saveDB?.(); } });
         }
 
         toast('Inviato al coach!');
@@ -3138,7 +3163,11 @@ export function endWorkout() {
             week: weekVal, phase: DB.schedules[athId]?.phase || 'Accumulo',
             readiness: parseInt(document.getElementById('ring-n')?.textContent) || 80,
             vol, maxE1rm, e1rmDom: window.liveE1rmDom||0, e1rmNDom: window.liveE1rmNDom||0,
-            sRPE:0, rpe:0, qual:0, doms:'', flag: partial?'Parziale':'', notes:'', reply:''
+            sRPE:0, rpe:0, qual:0, doms:'', flag: partial?'Parziale':'', notes:'', reply:'',
+            // Per-esercizio durabile anche qui (vedi _saveAndSend / submitFB)
+            donePerExercise: window.liveDonePerExercise || {},
+            setsPerExercise: window.liveSetsPerExercise || {},
+            e1rmPerExercise: {}
         });
         window.saveDB();
         if (window.mySupabase) {

@@ -32,7 +32,7 @@ import { loadLive, updateLiveTotals, toggleDot,
          toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
          openVideoModal, closeVideoModal, endWorkout, restartLiveSession,
          startFocus, exitFocus, focusNext, focusBack, focusGoTo, updateFocusChrome,
-         reconcileUnsyncedSessions } from './workout.js';
+         reconcileUnsyncedSessions, reconcileUnsyncedMessages } from './workout.js';
 
 import { saveDB, seed, clearDemoData, go, toggleMobileMenu, renderWeekWidget,
          populateSelects, onAthChange, updateModalSessions,
@@ -120,7 +120,7 @@ Object.assign(window, {
     toggleIsometricTimer, abortIsometricTimer, saveTimerSet,
     openVideoModal, closeVideoModal, endWorkout, restartLiveSession,
     startFocus, exitFocus, focusNext, focusBack, focusGoTo, updateFocusChrome,
-    reconcileUnsyncedSessions,
+    reconcileUnsyncedSessions, reconcileUnsyncedMessages,
     // Atleti
     renderAthletes, openNewAthleteModal, openEditAthleteModal, deleteSelectedAthlete,
     // Storico
@@ -230,10 +230,12 @@ async function _bootstrap() {
     // / offline). Una volta dopo l'hydration, poi al ritorno online / in foreground.
     reconcileUnsyncedSessions();
     reconcileUnsyncedWellness();
+    reconcileUnsyncedMessages();
     window.addEventListener('online', reconcileUnsyncedSessions);
     window.addEventListener('online', reconcileUnsyncedWellness);
+    window.addEventListener('online', reconcileUnsyncedMessages);
     document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible') { reconcileUnsyncedSessions(); reconcileUnsyncedWellness(); }
+        if (document.visibilityState === 'visible') { reconcileUnsyncedSessions(); reconcileUnsyncedWellness(); reconcileUnsyncedMessages(); }
     });
 
     try {
