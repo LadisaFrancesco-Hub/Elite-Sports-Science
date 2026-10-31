@@ -83,6 +83,27 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 > redesign estetico coach pannello-per-pannello, round data-durability) →
 > `.claude/PROGRESS_ARCHIVE.md`. Sintesi delle ultime sessioni qui sotto.
 
+**Robustezza offline — round 5: reconcile messaggi + per-esercizio durabile (v7.42, 2026-10-31)** —
+DEPLOYATO. Nuovo audit onesto a 360° (3 Explore agent → claim verificati di persona; scartati falsi
+positivi: `renderNutritionCoach` orfana de-enfatizzata di proposito, `readinessScore` radar=0
+cosmetico, "messaggi salvati comunque in errore" falso perché i send fanno `return`). Direzione
+scelta dal coach: **robustezza offline**. Due buchi della stessa classe dei round 1-3. **(1)
+Messaggi senza reconcile**: ogni messaggio creato offline ora ha id `crypto.randomUUID()` + flag
+`_synced` e viene risincronizzato da nuova `reconcileUnsyncedMessages()` (clone di
+`reconcileUnsyncedSessions`, in `workout.js`) all'hydration/`online`/foreground. Nuovo
+`messageCloudRow` (`utils.js`) esclude `_synced`; 5 siti di invio unificati al pattern ottimistico
+(`sendMessageCoach`/`sendMessageAthleta`/`_doNudge`/`onFormCheckPick`/riepilogo `_saveAndSend`).
+Upsert per id UUID = idempotente, realtime rimatcha per id → nessun duplicato. **(2) Dati
+per-esercizio persi nel ramo offline di fine allenamento**: `submitFB` (`app.js`) + ramo "skip"
+(`workout.js`) ora portano `donePerExercise`/`setsPerExercise`/`e1rmPerExercise` nel `sessObj`
+**locale** (non solo nell'upsert cloud) → `sessionCloudRow` del reconcile li rispedisce pieni invece
+che vuoti (il path Focus `_saveAndSend` era già corretto). **Nessuna migrazione** (id messaggio già
+UUID, colonne per-esercizio esistenti). Verifica Chromium reale: reconcile messaggi idempotente
+(`_synced` false→true, `messageCloudRow` senza `_synced`, 2° giro 0 pending, no duplicati); vero
+`submitFB` offline → vero `reconcileUnsyncedSessions` rispedisce per-esercizio pieno (105×8, serie 2
+105×7); colonne `messages` confermate via `information_schema` (no PGRST204); 0 errori console.
+Commit `bf3d8d7`.
+
 **Loop atleta — "Ultima volta" + storico per-set (v7.41, 2026-10-30)** — DEPLOYATO.
 Riferimento sovraccarico progressivo preso dal cloud: (1) **"Ultima volta" inline** sotto
 la riga serie×reps della card (anteprima+Focus) con freccia ↑/↓/= vs il carico di oggi, da
