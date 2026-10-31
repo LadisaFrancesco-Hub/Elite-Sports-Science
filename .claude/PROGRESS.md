@@ -138,17 +138,28 @@ cockpit (soglie ≥75 green/≥50 amber/<50 coral); `_reloadWellness` a focus/on
 mano, nessuna query nuova), ultimo feedback atleta nel cruscotto (`_renderFeedbackCard`, badge
 risposto/da-rispondere), inattività specifica (nomi+giorni). Commit `3a940f6`.
 
-**Dati durabili — 3 round (v7.31, v7.32, v7.33, 2026-10-25/26)** — v7.31/v7.32 DEPLOYATI,
-v7.33 NON deployato (attende ok coach). Stessa classe di bug chiusa 3 volte: dati calcolati/
-salvati solo in locale, persi su nuovo device e invisibili al coach. **Round 1 (v7.31)**:
-`donePerExercise` durabile (colonna `sessions.done_per_exercise`), **badge** durabili
-(`atleti.badges`, merge local+cloud tiene la data più vecchia), flag `_synced` +
-`reconcileUnsyncedSessions`. **Round 2 (v7.32)**: `e1rmPerExercise` durabile
-(`sessions.e1rm_per_exercise`), **infortuni** durabili (`atleti.injuries` +
-`rebuildInjuriesFromAthletes` idempotente). **Round 3 (v7.33, non deployato)**: quick wellness
-check-in ora scrive su cloud (`saveWellnessCloud`), reconcile wellness, `cns_score` durabile.
-Pattern verifica: `information_schema` + round-trip DB non distruttivo + e2e JWT atleta reale
-(signUp autoconfirm, cleanup SQL); colonne nuove ereditano le policy RLS già validate.
+**Dati durabili — 3 round (v7.31, v7.32, v7.33, 2026-10-25/26)** — **tutti e 3 DEPLOYATI**
+(v7.33 era marcato "attende ok coach" ma è già in prod: committato `0c74602`, presente in HEAD
+e incluso nel bundle live v7.42 di cui è antenato; migrazione `wellness.cns_score` già applicata).
+Stessa classe di bug chiusa 3 volte: dati calcolati/salvati solo in locale, persi su nuovo device
+e invisibili al coach. **Round 1 (v7.31)**: `donePerExercise` durabile (colonna
+`sessions.done_per_exercise`), **badge** durabili (`atleti.badges`, merge local+cloud tiene la
+data più vecchia), flag `_synced` + `reconcileUnsyncedSessions`. **Round 2 (v7.32)**:
+`e1rmPerExercise` durabile (`sessions.e1rm_per_exercise`), **infortuni** durabili
+(`atleti.injuries` + `rebuildInjuriesFromAthletes` idempotente). **Round 3 (v7.33)**: quick
+wellness check-in ora scrive su cloud (`quickWellnessSubmit` → `saveWellnessCloud`),
+`reconcileUnsyncedWellness` (stash `coachOS_pending_wellness` → retry a online/foreground/
+hydration), `cns_score` durabile. **VERIFICATO e2e il 2026-10-31** (Chromium reale, atleta JWT
+reale signUp autoconfirm, cleanup SQL): (1) check-in rapido online → riga `wellness` con
+`readiness_score` reale = valore del ring (100, non il default 80) e sleep/sore/motiv
+round-trip; (2) `cns_score` round-trip pulito (upsert 42 → riletto 42, nessun `PGRST204`);
+(3) idempotenza (upsert ripetuto stesso id/giorno = 1 riga); (4) offline (client staccato) →
+dato in `coachOS_pending_wellness` (readiness 81, non perso, nessuna scrittura cloud) →
+`reconcileUnsyncedWellness` ri-upserta, svuota il pending, 2° giro no-op senza duplicati;
+0 errori console. Nota: `cns_score` da check-in rapido è 0 **by design** (il CNS score reale
+arriva solo dal Tap Test via `evaluateCnsTest`). Pattern verifica: `information_schema` +
+round-trip DB non distruttivo + e2e JWT atleta reale; colonne nuove ereditano le policy RLS
+già validate (`athlete_own_wellness` / `coach_full_wellness`).
 
 **Focus Mode atleta — allenamento "un esercizio alla volta" (v7.21→v7.29, 2026-10-24/25)** —
 DEPLOYATO. Vista full-screen stile TrainHeroic/Hevy sopra le card già renderizzate da
