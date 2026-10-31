@@ -484,14 +484,25 @@ export function renderAnalytics() {
   const lastWeekSess = sess.filter(s => s.week === lastWeek && s.sRPE > 0);
 
   if (lastWeekSess.length > 1) {
-  const loads = lastWeekSess.map(s => s.sRPE);
-  const sumLoad = loads.reduce((a, b) => a + b, 0);
-  const avgLoad = sumLoad / loads.length;
-  const variance = loads.reduce((a, b) => a + Math.pow(b - avgLoad, 2), 0) / loads.length;
+  // Monotonia di Foster: sui carichi GIORNALIERI dell'intera settimana
+  // (7 giorni di calendario), con i giorni di riposo = 0 UA. Sono proprio
+  // gli zeri a distinguere "sempre uguale" da "forte poi recupero":
+  // escludendoli (solo le sedute) la σ crollava e la monotonia veniva gonfiata,
+  // facendo scattare falsi allarmi su programmi normali (es. 3×/sett costante).
+  const dayLoadMap = {};
+  lastWeekSess.forEach(s => { dayLoadMap[s.date] = (dayLoadMap[s.date] || 0) + s.sRPE; });
+  const dayLoads = Object.values(dayLoadMap);
+  const sumLoad = dayLoads.reduce((a, b) => a + b, 0);
+  // Denominatore su 7 giorni (settimana piena); se i giorni con carico fossero
+  // più di 7 (dati anomali) usa quel numero per non troncare carico reale.
+  const nDays = Math.max(7, dayLoads.length);
+  const avgLoad = sumLoad / nDays;
+  const paddedLoads = dayLoads.concat(Array(Math.max(0, nDays - dayLoads.length)).fill(0));
+  const variance = paddedLoads.reduce((a, b) => a + Math.pow(b - avgLoad, 2), 0) / nDays;
   const stdDev = Math.sqrt(variance);
-
-  // Se la deviazione standard è troppo bassa (<5 UA) il carico è piatto → monotonia alta
-  const monotony = stdDev > 5 ? (avgLoad / stdDev) : 3.0;
+  // σ≈0 solo nel caso degenere di allenamento identico tutti i giorni (settimana
+  // davvero monotona) → valore alto ma finito per evitare la divisione per zero.
+  const monotony = stdDev > 0.01 ? (avgLoad / stdDev) : 2.5;
   const strain = sumLoad * monotony;
 
   let mColor = 'var(--teal)';

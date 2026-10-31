@@ -83,6 +83,25 @@ Deployata su Vercel. Struttura modulare: `app.js`, `main.js`, `workout.js`, `ana
 > redesign estetico coach pannello-per-pannello, round data-durability) →
 > `.claude/PROGRESS_ARCHIVE.md`. Sintesi delle ultime sessioni qui sotto.
 
+**Correttezza analytics — Monotonia di Foster "standard" (v7.43, 2026-10-31)** — DEPLOYATO.
+Nuovo giro di audit onesto a 360° (3 Explore agent → claim verificati di persona). La direzione
+"robustezza dati offline" è chiusa (round 1-5), quindi ho fatto scegliere al coach una nuova
+direzione: **rifiniture calcoli analytics** (le statistiche sono il differenziatore). Verifica
+rigorosa riga-per-riga → **quasi tutti i "bug di calcolo" segnalati erano falsi positivi**:
+ACWR `slice(3)` salta correttamente il warm-up (guard `min(3,len-1)` sensato); regressione HRV
+non divide mai per zero (gate `n≥10`, `denom` protetto); LSI esclude già la gamba singola via
+`find(e1rmDom>0 && e1rmNDom>0)`; Efficiency Index esclude giustamente le settimane non calcolabili.
+Non ho inventato fix su codice corretto. **Unica issue reale (metodologica, decisa col coach)**:
+l'Indice di Monotonia di Foster (`analytics.js:484+`) era calcolato **solo sulle sedute** con
+`sRPE>0`, escludendo i giorni di riposo → σ crollava, monotonia gonfiata, falso "ALLERTA Monotonia
+Eccessiva" su programmi normali (3×/sett costante → clamp fisso 3.0). **Fix (Foster validato)**:
+carichi **giornalieri** sull'intera settimana di 7 giorni, riposi = 0 UA (`dayLoadMap` per `s.date`,
+`nDays = max(7, giorni-con-carico)`, padding con zeri, guard σ≈0 → 2.5 finito). Verificato
+numericamente: 3×/sett costante ora **0.87** (ottimale) vs vecchio **3.0** (falso allarme);
+settimana variata 0.99 vs 2.53; 7/7 identico 2.5 (alto ma finito). `strain = sumLoad × monotony`
+invariato come semantica. Nessuna migrazione, nessuna colonna nuova: refactor aritmetico
+autocontenuto in `renderAnalytics`. Bump asset-version 7.42→7.43 (sw.js + index.html).
+
 **Robustezza offline — round 5: reconcile messaggi + per-esercizio durabile (v7.42, 2026-10-31)** —
 DEPLOYATO. Nuovo audit onesto a 360° (3 Explore agent → claim verificati di persona; scartati falsi
 positivi: `renderNutritionCoach` orfana de-enfatizzata di proposito, `readinessScore` radar=0
